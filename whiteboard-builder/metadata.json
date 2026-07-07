@@ -1,0 +1,6 @@
+{
+  "name": "Whiteboard Builder",
+  "description": "A drag-and-drop whiteboard dashboard builder with 24px grid spacing, resizable panels, and a component sidebar.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
