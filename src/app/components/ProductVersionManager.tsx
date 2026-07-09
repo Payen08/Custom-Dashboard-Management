@@ -97,6 +97,13 @@ function buildInitialData(): ProductCategory[] {
                   ],
                 },
                 {
+                  version: '2.1.0',
+                  packages: [
+                    { id: 'p15', name: 'device-backend-for-shadow-controller-x86_64.tar.gz', version: '2.1.0-rc.2', source: 'CI 构建 #3200', description: '墨影 Shadow 控制器后端服务包 v2.1，适配 x86_64', releaseNotes: '2.1.0 RC2 候选构建，新增多机械臂协同调度', architecture: 'x86_64', fileSize: '26.8 MB', createdAt: '2026-07-05 09:30' },
+                    { id: 'p16', name: 'device-backend-for-shadow-controller-arm64.tar.gz', version: '2.1.0-rc.2', source: 'CI 构建 #3200', description: '墨影 Shadow 控制器后端服务包 v2.1，适配 ARM64', releaseNotes: '2.1.0 RC2 候选构建，新增多机械臂协同调度', architecture: 'arm64', fileSize: '24.3 MB', createdAt: '2026-07-05 09:28' },
+                  ],
+                },
+                {
                   version: '1.6.0',
                   packages: [
                     { id: 'p4', name: 'device-backend-for-shadow-controller-x86_64.tar.gz', version: '1.6.0', source: 'CI 构建 #2650', description: '墨影 Shadow 控制器后端服务包', releaseNotes: '正式发布版本', architecture: 'x86_64', fileSize: '21.2 MB', createdAt: '2026-05-15 16:40' },
@@ -414,6 +421,7 @@ function CategoryTree({
   );
 }
 
+
 function VersionAccordion({
   group,
   onEditPackage,
@@ -514,13 +522,20 @@ function VersionAccordion({
                     <Badge tone={rc ? 'accent' : 'success'}>{rc ? 'RC' : '正式版'}</Badge>
                     <Badge>{pkg.architecture}</Badge>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--app-muted)', fontSize: 12, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--app-muted)', fontSize: 12, minWidth: 0, flexWrap: 'wrap' }}>
                     <span>{pkg.source}</span>
                     <span>·</span>
                     <span>{pkg.fileSize}</span>
                     <span>·</span>
                     <span>{pkg.createdAt}</span>
                   </div>
+                  {(pkg.description || pkg.releaseNotes) && (
+                    <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      {pkg.description && <span style={{ color: 'var(--app-text)', fontSize: 11 }}>{pkg.description}</span>}
+                      {pkg.description && pkg.releaseNotes && <span style={{ color: 'var(--app-border-strong)' }}>·</span>}
+                      {pkg.releaseNotes && <span style={{ color: 'var(--app-muted)', fontSize: 11, fontStyle: 'italic' }}>{pkg.releaseNotes}</span>}
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                   <ArcoIconButton type="text" size="small" icon={<Edit3 size={14} />} title="编辑" aria-label="编辑" onClick={() => onEditPackage(pkg)} />
@@ -652,7 +667,7 @@ function SoftwarePackageModal({
 }
 
 export function ProductVersionManager() {
-  const [categories] = useState<ProductCategory[]>(buildInitialData);
+  const [categories, setCategories] = useState<ProductCategory[]>(buildInitialData);
   const [revision, setRevision] = useState(0);
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>('moying');
   const [expandedSubs, setExpandedSubs] = useState<Set<string>>(new Set(['controllers', 'arms']));
@@ -661,6 +676,17 @@ export function ProductVersionManager() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [addBrandOpen, setAddBrandOpen] = useState(false);
+  const [createProductOpen, setCreateProductOpen] = useState(false);
+  const [newBrandCatId, setNewBrandCatId] = useState('');
+  const [newBrandSubId, setNewBrandSubId] = useState('');
+  const [newBrandName, setNewBrandName] = useState('');
+  const [newBrandSoftware, setNewBrandSoftware] = useState('');
+  // Batch publish
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [batchVersion, setBatchVersion] = useState('');
+  const [batchSelection, setBatchSelection] = useState<Set<string>>(new Set());
+  const [batchCatId, setBatchCatId] = useState('');
+  const [batchSubId, setBatchSubId] = useState('');
   const [form, setForm] = useState<PackageForm>(emptyForm);
   const [editPackage, setEditPackage] = useState<ProductPackage | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProductPackage | null>(null);
@@ -684,6 +710,114 @@ export function ProductVersionManager() {
   }, [brand, query, revision]);
 
   const totalPackages = versions.reduce((sum, versionGroup) => sum + versionGroup.packages.length, 0);
+
+  // Derived: resolve category from name or id
+  const resolvedCatId = categories.find(c => c.id === newBrandCatId || c.name === newBrandCatId)?.id;
+  const createBrandCat = categories.find(c => c.id === resolvedCatId) ?? categories[0];
+  const createBrandSub = createBrandCat?.subcategories.find(s => s.name === newBrandSubId || s.id === newBrandSubId);
+
+  function handleCreateProduct() {
+    const catName = categories.find(c => c.id === newBrandCatId)?.name ?? newBrandCatId;
+    if (!catName.trim()) return;
+
+    const next = categories.map(c => ({ ...c, subcategories: c.subcategories.map(s => ({ ...s, brands: [...s.brands] })) }));
+
+    // Find or create category
+    let cat = next.find(c => c.id === newBrandCatId || c.name === newBrandCatId);
+    if (!cat) {
+      cat = { id: catName.trim().toLowerCase().replace(/\s+/g, '-'), name: catName.trim(), icon: 'controller', subcategories: [] };
+      next.push(cat);
+    }
+
+    // Find or create subcategory
+    const subName = newBrandSubId.trim();
+    let sub: ProductSubcategory | undefined;
+    if (subName) {
+      sub = cat.subcategories.find(s => s.name === subName || s.id === subName);
+      if (!sub) {
+        sub = { id: subName.toLowerCase().replace(/\s+/g, '-'), name: subName, brands: [] };
+        cat.subcategories.push(sub);
+      }
+    } else {
+      sub = cat.subcategories[0];
+      if (!sub) {
+        sub = { id: 'default', name: '默认', brands: [] };
+        cat.subcategories.push(sub);
+      }
+    }
+
+    // Create brand if name provided
+    const name = newBrandName.trim();
+    if (name) {
+      sub.brands.push({
+        id: name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36),
+        name,
+        versions: [],
+      });
+    }
+
+    setCategories(next);
+    setNewBrandName('');
+    setNewBrandSoftware('');
+    setCreateProductOpen(false);
+  }
+
+  function openCreateProduct() {
+    setNewBrandCatId(categories[0]?.id ?? '');
+    setNewBrandSubId('');
+    setNewBrandName('');
+    setNewBrandSoftware('');
+    setCreateProductOpen(true);
+  }
+
+  function openBatchPublish() {
+    setBatchVersion('');
+    setBatchSelection(new Set());
+    setBatchCatId(categories[0]?.id ?? '');
+    setBatchSubId('');
+    setBatchOpen(true);
+  }
+
+  // Batch publish helpers
+  const batchCat = categories.find(c => c.id === batchCatId) ?? categories[0];
+  const batchSub = batchCat?.subcategories.find(s => s.id === batchSubId) ?? batchCat?.subcategories[0];
+  const allBatchVersions = (() => {
+    const vs = new Set<string>();
+    for (const cat of categories)
+      for (const sub of cat.subcategories)
+        for (const b of sub.brands)
+          for (const v of b.versions)
+            vs.add(v.version);
+    return [...vs].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+  })();
+
+  function toggleBatchBrand(brandId: string) {
+    setBatchSelection(prev => { const n = new Set(prev); n.has(brandId) ? n.delete(brandId) : n.add(brandId); return n; });
+  }
+
+  function handleBatchPublish() {
+    if (!batchVersion.trim() || batchSelection.size === 0) return;
+    const target = batchVersion.trim();
+    let count = 0;
+    for (const cat of categories) {
+      for (const sub of cat.subcategories) {
+        for (const b of sub.brands) {
+          if (!batchSelection.has(b.id)) continue;
+          let vg = b.versions.find(v => v.version === target);
+          if (!vg) { vg = { version: target, packages: [] }; b.versions.unshift(vg); }
+          const rcPkg = vg.packages.find(p => p.version.includes('-rc'));
+          if (rcPkg) {
+            rcPkg.version = target;
+            rcPkg.releaseNotes = '正式发布版本（由 RC 升级）';
+            count++;
+          }
+        }
+      }
+    }
+    setRevision(v => v + 1);
+    setBatchOpen(false);
+    alert('批量发布完成：' + count + ' 个品牌已发布 ' + target);
+  }
 
   function toggleSubcategory(id: string) {
     setExpandedSubs(prev => {
@@ -802,8 +936,19 @@ export function ProductVersionManager() {
         overflow: 'hidden',
       }}>
         <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--app-border)' }}>
-          <div style={{ color: 'var(--app-heading)', fontSize: 18, fontWeight: 700 }}>产品分类</div>
-          <div style={{ color: 'var(--app-muted)', fontSize: 12, marginTop: 3 }}>按产品线管理软件包版本</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ color: 'var(--app-heading)', fontSize: 18, fontWeight: 700 }}>产品分类</div>
+              <div style={{ color: 'var(--app-muted)', fontSize: 12, marginTop: 3 }}>按产品线管理软件包版本</div>
+            </div>
+            <ArcoIconButton
+              size="small"
+              icon={<Plus size={16} />}
+              aria-label="创建产品"
+              title="创建产品"
+              onClick={openCreateProduct}
+            />
+          </div>
         </div>
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
           <CategoryTree
@@ -813,15 +958,6 @@ export function ProductVersionManager() {
             onToggleSub={toggleSubcategory}
             onSelectBrand={setSelectedBrandId}
           />
-        </div>
-        <div style={{ borderTop: '1px solid var(--app-border)', padding: 14 }}>
-          <ArcoButton
-            long
-            icon={<Plus size={14} />}
-            onClick={() => setAddBrandOpen(true)}
-          >
-            添加品牌/型号
-          </ArcoButton>
         </div>
       </aside>
 
@@ -882,8 +1018,8 @@ export function ProductVersionManager() {
               />
             </div>
             {brand && (
-              <ArcoButton type="primary" icon={<Upload size={14} />} onClick={openCreate}>
-                发布新版本
+              <ArcoButton type="primary" icon={<Layers size={14} />} onClick={openBatchPublish}>
+                一键发布
               </ArcoButton>
             )}
           </div>
@@ -957,17 +1093,206 @@ export function ProductVersionManager() {
         </p>
       </ArcoModal>
 
+      {/* ── Create Product Model ── */}
       <ArcoModal
-        open={addBrandOpen}
-        onOpenChange={setAddBrandOpen}
-        title="添加品牌/型号"
-        icon={<Plus size={17} />}
-        width={380}
-        footer={<ArcoButton type="primary" onClick={() => setAddBrandOpen(false)}>知道了</ArcoButton>}
+        open={createProductOpen}
+        onOpenChange={setCreateProductOpen}
+        title="创建产品型号"
+        width={640}
+        footer={(
+          <>
+            <ArcoButton onClick={() => setCreateProductOpen(false)}>取消</ArcoButton>
+            <ArcoButton type="primary" onClick={handleCreateProduct}>创建产品型号</ArcoButton>
+          </>
+        )}
       >
-        <p style={{ color: 'var(--app-muted)', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
-          此功能将在后续版本中开放，敬请期待。
-        </p>
+        <div style={{ display: 'grid', gap: 18 }}>
+          {/* 产品路径 — 横向联级 */}
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--app-text)', marginBottom: 8 }}>
+              产品路径 <span style={{ color: 'var(--app-danger)' }}>*</span>
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: 'var(--app-soft)', borderRadius: 12, border: '1px solid var(--app-border)', overflow: 'hidden' }}>
+              <input
+                list="cat-list"
+                value={categories.find(c => c.id === newBrandCatId)?.name ?? newBrandCatId}
+                onChange={e => {
+                  const v = e.target.value;
+                  const m = categories.find(c => c.name === v);
+                  setNewBrandCatId(m ? m.id : v);
+                  setNewBrandSubId('');
+                }}
+                placeholder="产品类型"
+                style={{ flex: '1 1 0', minWidth: 0, height: 46, padding: '0 16px', border: 'none', background: 'transparent', color: 'var(--app-heading)', fontSize: 14, fontWeight: 500, outline: 'none', borderRight: '1px solid var(--app-border)' }}
+              />
+              <datalist id="cat-list">
+                {categories.map(c => <option key={c.id} value={c.name} />)}
+              </datalist>
+              <span style={{ color: 'var(--app-muted)', padding: '0 4px', fontSize: 14, flexShrink: 0 }}>/</span>
+              <input
+                list="sub-list"
+                value={newBrandSubId}
+                onChange={e => setNewBrandSubId(e.target.value)}
+                placeholder="子品类"
+                style={{ flex: '1 1 0', minWidth: 0, height: 46, padding: '0 16px', border: 'none', background: 'transparent', color: 'var(--app-text)', fontSize: 14, outline: 'none', borderRight: '1px solid var(--app-border)' }}
+              />
+              <datalist id="sub-list">
+                {createBrandCat?.subcategories.map(s => <option key={s.id} value={s.name} />)}
+              </datalist>
+              <span style={{ color: 'var(--app-muted)', padding: '0 4px', fontSize: 14, flexShrink: 0 }}>/</span>
+              <input
+                value={newBrandName}
+                onChange={e => setNewBrandName(e.target.value)}
+                placeholder="产品型号"
+                style={{ flex: '1 1 0', minWidth: 0, height: 46, padding: '0 16px', border: 'none', background: 'transparent', color: 'var(--app-text)', fontSize: 14, outline: 'none' }}
+              />
+            </div>
+          </div>
+
+          {/* 关联软件 — 条件显示 */}
+          {newBrandSubId.trim() !== '' && (
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--app-text)', marginBottom: 6 }}>关联软件</label>
+              <ArcoTextInput
+                value={newBrandSoftware}
+                onChange={e => setNewBrandSoftware(e.target.value)}
+                placeholder="输入关联软件包名，逗号分隔"
+                style={{ width: '100%', height: 44 }}
+              />
+            </div>
+          )}
+
+          {/* 路径预览 */}
+          <div style={{ background: 'var(--app-accent-soft)', borderRadius: 12, padding: '14px 18px', border: '1px solid var(--app-accent-border)' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--app-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>路径预览</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span style={{ color: 'var(--app-heading)', fontSize: 13, fontWeight: 600 }}>
+                {(categories.find(c => c.id === newBrandCatId)?.name ?? newBrandCatId) || '未选择'}
+              </span>
+              {newBrandSubId.trim() && (
+                <>
+                  <ChevronRight size={13} color="var(--app-muted)" />
+                  <span style={{ color: 'var(--app-text)', fontSize: 13 }}>{newBrandSubId.trim()}</span>
+                </>
+              )}
+              {newBrandName.trim() && (
+                <>
+                  <ChevronRight size={13} color="var(--app-muted)" />
+                  <span style={{ color: 'var(--app-accent)', fontSize: 13, fontWeight: 600 }}>{newBrandName.trim()}</span>
+                </>
+              )}
+              {!newBrandName.trim() && !newBrandSubId.trim() && (
+                <span style={{ color: 'var(--app-muted)', fontSize: 12 }}>—</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </ArcoModal>
+
+            
+            
+
+                        {/* ── Batch Publish Modal ── */}
+      <ArcoModal
+        open={batchOpen}
+        onOpenChange={setBatchOpen}
+        title="一键发布"
+        width={700}
+        footer={(
+          <>
+            <ArcoButton onClick={() => setBatchOpen(false)}>关闭</ArcoButton>
+            <ArcoButton type="primary" onClick={handleBatchPublish} disabled={!batchVersion.trim() || batchSelection.size === 0}>
+              一键发布（{batchSelection.size} 个品牌）
+            </ArcoButton>
+          </>
+        )}
+      >
+        <div style={{ display: 'grid', gridTemplateColumns: '150px 150px 1fr 170px', gap: 1, background: 'var(--app-border)', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--app-border)' }}>
+          <div style={{ background: 'var(--app-surface)', padding: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>产品分组</div>
+            {categories.map(cat => (
+              <button key={cat.id} onClick={() => { setBatchCatId(cat.id); setBatchSubId(''); }}
+                style={{ width: '100%', textAlign: 'left', padding: '7px 10px', border: 'none', borderRadius: 6, cursor: 'pointer',
+                  background: batchCatId === cat.id ? 'var(--app-accent-soft)' : 'transparent',
+                  color: batchCatId === cat.id ? 'var(--app-accent)' : 'var(--app-text)', fontSize: 12, fontWeight: batchCatId === cat.id ? 600 : 400, marginBottom: 2 }}>
+                {cat.name}
+              </button>
+            ))}
+          </div>
+          <div style={{ background: 'var(--app-surface)', padding: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>子产品</div>
+            {batchCat?.subcategories.map(sub => (
+              <button key={sub.id} onClick={() => setBatchSubId(sub.id)}
+                style={{ width: '100%', textAlign: 'left', padding: '7px 10px', border: 'none', borderRadius: 6, cursor: 'pointer',
+                  background: batchSubId === sub.id ? 'var(--app-accent-soft)' : 'transparent',
+                  color: batchSubId === sub.id ? 'var(--app-accent)' : 'var(--app-text)', fontSize: 12, fontWeight: batchSubId === sub.id ? 600 : 400, marginBottom: 2 }}>
+                {sub.name}
+              </button>
+            ))}
+          </div>
+          <div style={{ background: 'var(--app-surface)', padding: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>{batchSub?.name ?? '品牌'}（勾选发布）</div>
+            <div style={{ maxHeight: 260, overflow: 'auto' }}>
+              {(batchSub?.brands ?? []).map(br => {
+                const checked = batchSelection.has(br.id);
+                return (
+                  <label key={br.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, cursor: 'pointer',
+                    background: checked ? 'var(--app-accent-soft)' : 'transparent', marginBottom: 2 }}>
+                    <input type="checkbox" checked={checked} onChange={() => toggleBatchBrand(br.id)} style={{ accentColor: 'var(--app-accent)', width: 14, height: 14, flexShrink: 0 }} />
+                    <span style={{ color: checked ? 'var(--app-accent)' : 'var(--app-text)', fontSize: 12, fontWeight: checked ? 600 : 400 }}>{br.name}</span>
+                  </label>
+                );
+              })}
+              {(!batchSub || batchSub.brands.length === 0) && <div style={{ color: 'var(--app-muted)', fontSize: 11, padding: 12, textAlign: 'center' }}>暂无品牌</div>}
+            </div>
+          </div>
+          <div style={{ background: 'var(--app-surface)', padding: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>共同版本</div>
+            <div style={{ maxHeight: 260, overflow: 'auto' }}>
+              {allBatchVersions.map(ver => {
+                const active = batchVersion === ver;
+                return (
+                  <label key={ver} onClick={() => setBatchVersion(ver)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, cursor: 'pointer',
+                    background: active ? 'var(--app-accent-soft)' : 'transparent', marginBottom: 2 }}>
+                    <input type="radio" name="batchVersion" checked={active} onChange={() => setBatchVersion(ver)} style={{ accentColor: 'var(--app-accent)', width: 14, height: 14, flexShrink: 0 }} />
+                    <div>
+                      <span style={{ color: active ? 'var(--app-accent)' : 'var(--app-text)', fontSize: 13, fontWeight: active ? 600 : 400 }}>{ver}</span>
+                      <span style={{ color: 'var(--app-muted)', fontSize: 10, display: 'block' }}>正式版本</span>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      
+        {/* RC preview */}
+        {batchVersion.trim() && batchSelection.size > 0 && (() => {
+          const preview: { brandName: string; pkg: any; fromVer: string }[] = [];
+          for (const cat of categories)
+            for (const sub of cat.subcategories)
+              for (const b of sub.brands)
+                if (batchSelection.has(b.id)) {
+                  const vg = b.versions.find(v => v.version === batchVersion);
+                  if (vg) for (const p of vg.packages)
+                    if (p.version.includes('-rc')) preview.push({ brandName: b.name, pkg: p, fromVer: p.version });
+                }
+          if (preview.length === 0) return null;
+          return (
+            <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 10, background: 'var(--app-soft)', border: '1px solid var(--app-border)' }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--app-heading)', marginBottom: 8 }}>将发布以下测试包</div>
+              <div style={{ display: 'grid', gap: 6 }}>
+                {preview.map((p, i) => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: 'var(--app-surface)', border: '1px solid var(--app-border)' }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--app-accent)' }}>{p.brandName}</span>
+                    <code style={{ fontSize: 11, color: 'var(--app-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.pkg.name}</code>
+                    <span style={{ fontSize: 11, color: 'var(--app-muted)', whiteSpace: 'nowrap' }}>{p.fromVer} → <span style={{ color: 'var(--app-accent)', fontWeight: 600 }}>{batchVersion}</span></span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </ArcoModal>
     </div>
   );

@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import {
-  ArrowLeft, Bell, Box, CheckCircle2, ChevronRight, Download, Eye, FileText,
-  Folder, Home, LayoutGrid, Moon, Package, PanelLeft, Pencil, RotateCcw, Save, Search, Sun, Trash2, Users, Wand2,
+  Activity, ArrowLeft, ArrowRight, Bell, Box, CheckCircle2, ChevronRight, Clock3, Cpu, Download, Eye, FileKey2, FileText,
+  Folder, Home, LayoutGrid, LogOut, Moon, Package, PanelLeft, Pencil, RotateCcw, Save, Search, ShieldCheck, Sun, Trash2, User, Users, Wand2,
 } from 'lucide-react';
 import { PanelList } from './components/PanelList';
 import { ComponentLibrary } from './components/ComponentLibrary';
@@ -11,23 +11,701 @@ import { CanvasArea } from './components/CanvasArea';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { RobotModelManager } from './components/RobotModelManager';
 import { ProductVersionManager } from './components/ProductVersionManager';
+import { SoftwareManager } from './components/SoftwareManager';
+import { useComponentCatalog } from './components/useComponentCatalog';
 import { ArcoButton, ArcoIconButton, ArcoModal } from './components/ArcoLike';
+import { APP_THEME_VARS, type ThemeMode } from './theme';
 import {
   type HomepageScheme, type PlacedItem,
-  COMPONENT_DEFS, COMPONENT_PROPS, GRID_COLS, GRID_ROWS, CANVAS_W, CANVAS_H,
+  COMPONENT_PROPS, GRID_COLS, GRID_ROWS, CANVAS_W, CANVAS_H,
   INITIAL_SCHEMES, INITIAL_ITEMS, isFree,
 } from './shared';
 
 const FONT = "'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
 
-type EditorNavKey = 'home' | 'status' | 'components' | 'records' | 'alerts' | 'settings' | 'apps' | 'products';
-type AppThemeMode = 'light' | 'dark';
+type EditorNavKey = 'home' | 'status' | 'components' | 'records' | 'alerts' | 'settings' | 'apps' | 'products' | 'software';
+type AppThemeMode = ThemeMode;
+type WorkspaceProduct = 'login' | 'workspace' | 'software' | 'authorization' | 'machine';
 
 const ROBOT_THEME_STORAGE_KEY = 'robot-manager-theme-mode';
 
 function initialRobotThemeMode(): AppThemeMode {
   if (typeof window === 'undefined') return 'light';
   return window.localStorage.getItem(ROBOT_THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light';
+}
+
+const WORKSPACE_PRODUCTS = [
+  {
+    key: 'software' as const,
+    icon: Package,
+    eyebrow: 'Software',
+    title: '软件管理',
+    description: '统一管理软件包、产品版本、测试包与发布流程。',
+    meta: '版本与制品',
+  },
+  {
+    key: 'authorization' as const,
+    icon: ShieldCheck,
+    eyebrow: 'License',
+    title: '授权平台',
+    description: '集中配置产品授权、许可策略与设备使用权限。',
+    meta: '许可与权限',
+  },
+  {
+    key: 'machine' as const,
+    icon: Box,
+    eyebrow: 'Digital Machine',
+    title: '数字造机',
+    description: '配置机器人型号、组件生态与自定义运行面板。',
+    meta: '型号与工作台',
+  },
+];
+
+function WorkspaceLauncher({
+  themeMode,
+  onThemeToggle,
+  onReturnLogin,
+  onOpen,
+}: {
+  themeMode: AppThemeMode;
+  onThemeToggle: () => void;
+  onReturnLogin: () => void;
+  onOpen: (product: Exclude<WorkspaceProduct, 'workspace' | 'login'>) => void;
+}) {
+  const isDark = themeMode === 'dark';
+
+  return (
+    <div className="workspace-launcher">
+      <style>{`
+        .workspace-launcher {
+          width: 100%;
+          height: 100%;
+          min-height: 0;
+          overflow: auto;
+          background: var(--app-bg);
+          color: var(--app-heading);
+          font-family: ${FONT};
+        }
+        .workspace-launcher__header {
+          height: 64px;
+          padding: 0 32px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 24px;
+          border-bottom: 1px solid var(--app-border);
+          background: var(--app-surface);
+          position: sticky;
+          top: 0;
+          z-index: 10;
+        }
+        .workspace-launcher__main {
+          width: min(1180px, calc(100% - 48px));
+          min-height: calc(100% - 64px);
+          margin: 0 auto;
+          padding: 44px 0 40px;
+          box-sizing: border-box;
+        }
+        .workspace-launcher__grid {
+          display: grid;
+          grid-template-columns: repeat(12, minmax(0, 1fr));
+          grid-template-rows: repeat(2, minmax(180px, 1fr));
+          gap: 16px;
+          margin-top: 28px;
+        }
+        .workspace-product {
+          padding: 24px;
+          border: 1px solid var(--app-border);
+          border-radius: 16px;
+          background: var(--app-surface);
+          color: var(--app-heading);
+          text-align: left;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+        }
+        .workspace-product--primary {
+          grid-column: span 7;
+          grid-row: span 2;
+          min-height: 404px;
+          padding: 28px;
+          border-color: var(--app-border);
+          background: var(--app-surface);
+          color: var(--app-heading);
+          overflow: hidden;
+          position: relative;
+        }
+        .workspace-product--secondary {
+          grid-column: span 5;
+          min-height: 194px;
+        }
+        .workspace-product:hover {
+          border-color: var(--app-accent-border);
+          box-shadow: 0 8px 24px var(--app-shadow-color);
+        }
+        .workspace-product--primary:hover {
+          border-color: var(--app-accent-border);
+          box-shadow: 0 12px 32px var(--app-shadow-color);
+        }
+        .workspace-product:focus-visible,
+        .workspace-icon-button:focus-visible {
+          outline: 3px solid var(--app-accent-soft);
+          outline-offset: 2px;
+        }
+        .workspace-machine-visual {
+          position: absolute;
+          right: 24px;
+          bottom: 26px;
+          width: 46%;
+          height: 58%;
+          border: 1px solid var(--app-scene-border);
+          border-radius: 16px;
+          background: var(--app-scene);
+          overflow: hidden;
+        }
+        .workspace-primary-content {
+          position: relative;
+          z-index: 1;
+          width: 52%;
+          min-width: 260px;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+        }
+        .workspace-primary-entry {
+          margin-top: auto;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: var(--app-accent);
+          font-size: 13px;
+          font-weight: 650;
+        }
+        .workspace-machine-axis {
+          position: absolute;
+          left: 20px;
+          bottom: 20px;
+          width: 52px;
+          height: 1px;
+          background: var(--app-danger);
+        }
+        .workspace-machine-axis::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          bottom: 0;
+          width: 1px;
+          height: 40px;
+          background: var(--app-success);
+        }
+        .workspace-machine-body {
+          position: absolute;
+          left: 50%;
+          bottom: 38px;
+          width: 74px;
+          height: 62px;
+          margin-left: -37px;
+          border: 1px solid var(--app-accent-border);
+          border-radius: 8px;
+          background: var(--app-accent-soft);
+        }
+        .workspace-machine-arm {
+          position: absolute;
+          left: calc(50% + 7px);
+          bottom: 96px;
+          width: 18px;
+          height: 70px;
+          border-radius: 8px;
+          background: var(--app-brand);
+          transform: rotate(23deg);
+          transform-origin: bottom center;
+        }
+        .workspace-machine-arm::after {
+          content: "";
+          position: absolute;
+          left: 2px;
+          top: -48px;
+          width: 14px;
+          height: 56px;
+          border-radius: 8px;
+          background: var(--app-accent);
+          transform: rotate(34deg);
+          transform-origin: bottom center;
+        }
+        .workspace-machine-floor {
+          position: absolute;
+          left: 14%;
+          right: 14%;
+          bottom: 37px;
+          height: 1px;
+          background: var(--app-scene-border);
+          box-shadow: 0 -36px 0 var(--app-neutral-soft), 0 -72px 0 var(--app-surface), 0 -108px 0 var(--app-soft);
+        }
+        .workspace-product__footer {
+          margin-top: auto;
+          padding-top: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          color: var(--app-accent);
+          font-size: 13px;
+          font-weight: 600;
+        }
+        .workspace-recent {
+          margin-top: 16px;
+          padding: 14px 18px;
+          border: 1px solid var(--app-border);
+          border-radius: 16px;
+          background: var(--app-surface);
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          color: var(--app-text);
+          font-size: 13px;
+        }
+        @media (max-width: 860px) {
+          .workspace-launcher__grid {
+            grid-template-columns: 1fr;
+            grid-template-rows: none;
+          }
+          .workspace-product--primary,
+          .workspace-product--secondary {
+            grid-column: auto;
+            grid-row: auto;
+          }
+          .workspace-product--primary { min-height: 360px; }
+          .workspace-product--secondary { min-height: 190px; }
+          .workspace-launcher__main { padding-top: 36px; }
+        }
+        @media (max-width: 520px) {
+          .workspace-launcher__header { height: 56px; padding: 0 16px; }
+          .workspace-launcher__main {
+            width: calc(100% - 32px);
+            min-height: calc(100% - 56px);
+            padding: 36px 0 32px;
+          }
+          .workspace-launcher__grid { margin-top: 28px; }
+          .workspace-product--primary { min-height: 500px; }
+          .workspace-primary-content {
+            position: static;
+            width: 100%;
+            min-width: 0;
+            height: auto;
+          }
+          .workspace-primary-entry {
+            position: absolute;
+            left: 28px;
+            bottom: 220px;
+          }
+          .workspace-machine-visual {
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            width: auto;
+            height: 180px;
+          }
+          .workspace-recent { align-items: flex-start; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .workspace-product { transition: none; }
+        }
+      `}</style>
+
+      <header className="workspace-launcher__header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+          <div style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: 'var(--app-brand)',
+            color: '#FFFFFF',
+            display: 'grid',
+            placeItems: 'center',
+            flexShrink: 0,
+          }}>
+            <Box size={18} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25 }}>墨影工作台</div>
+            <div style={{ marginTop: 2, color: 'var(--app-muted)', fontSize: 11 }}>产品与设备开发中心</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ArcoButton icon={<LogOut size={14} />} onClick={onReturnLogin}>返回登录</ArcoButton>
+          <button
+            className="workspace-icon-button"
+            onClick={onThemeToggle}
+            title={isDark ? '切换为浅色模式' : '切换为暗色模式'}
+            aria-label={isDark ? '切换为浅色模式' : '切换为暗色模式'}
+            style={{
+              width: 36,
+              height: 36,
+              border: '1px solid var(--app-border)',
+              borderRadius: 8,
+              background: 'var(--app-surface)',
+              color: 'var(--app-text)',
+              display: 'grid',
+              placeItems: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            {isDark ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+        </div>
+      </header>
+
+      <main className="workspace-launcher__main">
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24 }}>
+          <div style={{ maxWidth: 660 }}>
+            <div style={{
+              color: 'var(--app-accent)',
+              fontSize: 12,
+              fontWeight: 700,
+              lineHeight: 1.5,
+              marginBottom: 10,
+            }}>
+              MOYING WORKBENCH
+            </div>
+            <h1 style={{ margin: 0, fontSize: 30, lineHeight: 1.25, fontWeight: 700, letterSpacing: 0 }}>
+              上午好，robot-admin
+            </h1>
+            <p style={{ margin: '12px 0 0', color: 'var(--app-text)', fontSize: 14, lineHeight: 1.7 }}>
+              从一个工作台进入软件、授权与数字造机能力。
+            </p>
+          </div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '7px 10px',
+            borderRadius: 8,
+            border: '1px solid var(--app-border)',
+            background: 'var(--app-surface)',
+            color: 'var(--app-text)',
+            fontSize: 12,
+            flexShrink: 0,
+          }}>
+            <span style={{ width: 7, height: 7, borderRadius: 99, background: 'var(--app-success)' }} />
+            所有服务运行正常
+          </div>
+        </div>
+
+        <div className="workspace-launcher__grid" aria-label="工作空间列表">
+          <button className="workspace-product workspace-product--primary" onClick={() => onOpen('machine')} aria-label="进入数字造机">
+            <div className="workspace-primary-content">
+              <div style={{
+                width: 44, height: 44, borderRadius: 12, display: 'grid', placeItems: 'center',
+                color: '#FFFFFF', background: 'var(--app-brand)', border: '1px solid var(--app-accent-border)',
+              }}>
+                <Cpu size={21} />
+              </div>
+              <div style={{ marginTop: 28, color: 'var(--app-muted)', fontSize: 11, fontWeight: 700 }}>DIGITAL MACHINE</div>
+              <h2 style={{ margin: '7px 0 0', fontSize: 24, lineHeight: 1.3, fontWeight: 700 }}>数字造机</h2>
+              <p style={{ margin: '12px 0 0', color: 'var(--app-text)', fontSize: 13, lineHeight: 1.7 }}>
+                从机器人型号、三维模型到组件生态与运行面板，完成数字设备配置。
+              </p>
+              <div className="workspace-primary-entry">
+                进入工作空间 <ArrowRight size={16} />
+              </div>
+            </div>
+            <div className="workspace-machine-visual" aria-hidden="true">
+              <div className="workspace-machine-floor" />
+              <div className="workspace-machine-axis" />
+              <div className="workspace-machine-body" />
+              <div className="workspace-machine-arm" />
+              <div style={{ position: 'absolute', top: 14, left: 14, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--app-scene-muted)', fontSize: 10 }}>
+                <Activity size={12} color="var(--app-success)" /> MCR-01 · ONLINE
+              </div>
+            </div>
+          </button>
+
+          {WORKSPACE_PRODUCTS.filter(product => product.key !== 'machine').map(product => {
+            const Icon = product.icon;
+            return (
+              <button key={product.key} className="workspace-product workspace-product--secondary" onClick={() => onOpen(product.key)} aria-label={`进入${product.title}`}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12, display: 'grid', placeItems: 'center',
+                    color: 'var(--app-accent)', background: 'var(--app-accent-soft)', border: '1px solid var(--app-accent-border)',
+                  }}>
+                    <Icon size={19} />
+                  </div>
+                  <ArrowRight size={16} color="var(--app-muted)" />
+                </div>
+                <div style={{ marginTop: 20 }}>
+                  <div style={{ color: 'var(--app-muted)', fontSize: 10, fontWeight: 700 }}>{product.eyebrow.toUpperCase()}</div>
+                  <h2 style={{ margin: '5px 0 0', fontSize: 18, lineHeight: 1.35, fontWeight: 650 }}>{product.title}</h2>
+                  <p style={{ margin: '8px 0 0', color: 'var(--app-text)', fontSize: 13, lineHeight: 1.6 }}>{product.description}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="workspace-recent">
+          <Clock3 size={16} color="var(--app-accent)" style={{ flexShrink: 0 }} />
+          <span style={{ color: 'var(--app-muted)', flexShrink: 0 }}>最近访问</span>
+          <strong style={{ color: 'var(--app-heading)', fontWeight: 600 }}>MCR复合机器人 · 软件版本 2.1.0</strong>
+          <span style={{ flex: 1 }} />
+          <span style={{ color: 'var(--app-muted)', flexShrink: 0 }}>今天 09:42</span>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function WorkspaceLogin({
+  themeMode,
+  onThemeToggle,
+  onLogin,
+}: {
+  themeMode: AppThemeMode;
+  onThemeToggle: () => void;
+  onLogin: () => void;
+}) {
+  const isDark = themeMode === 'dark';
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      minHeight: 0,
+      display: 'grid',
+      placeItems: 'center',
+      padding: 24,
+      boxSizing: 'border-box',
+      background: 'var(--app-bg)',
+      color: 'var(--app-heading)',
+      fontFamily: FONT,
+      position: 'relative',
+    }}>
+      <button
+        onClick={onThemeToggle}
+        title={isDark ? '切换为浅色模式' : '切换为暗色模式'}
+        aria-label={isDark ? '切换为浅色模式' : '切换为暗色模式'}
+        style={{
+          position: 'absolute',
+          top: 20,
+          right: 20,
+          width: 36,
+          height: 36,
+          border: '1px solid var(--app-border)',
+          borderRadius: 8,
+          background: 'var(--app-surface)',
+          color: 'var(--app-text)',
+          display: 'grid',
+          placeItems: 'center',
+          cursor: 'pointer',
+        }}
+      >
+        {isDark ? <Sun size={17} /> : <Moon size={17} />}
+      </button>
+
+      <main style={{
+        width: 'min(400px, 100%)',
+        padding: 32,
+        borderRadius: 16,
+        border: '1px solid var(--app-border)',
+        background: 'var(--app-surface)',
+        boxSizing: 'border-box',
+      }}>
+        <div style={{
+          width: 44,
+          height: 44,
+          borderRadius: 12,
+          display: 'grid',
+          placeItems: 'center',
+          color: '#FFFFFF',
+          background: 'var(--app-brand)',
+        }}>
+          <Box size={21} />
+        </div>
+        <h1 style={{ margin: '24px 0 0', fontSize: 24, lineHeight: 1.35, fontWeight: 700 }}>登录墨影工作台</h1>
+        <p style={{ margin: '8px 0 24px', color: 'var(--app-muted)', fontSize: 13, lineHeight: 1.65 }}>
+          使用工作台账号进入产品与设备开发中心。
+        </p>
+        <form
+          onSubmit={event => {
+            event.preventDefault();
+            onLogin();
+          }}
+        >
+          <label htmlFor="workspace-account" style={{ display: 'block', color: 'var(--app-text)', fontSize: 13, fontWeight: 600 }}>
+            账号
+          </label>
+          <div style={{ position: 'relative', marginTop: 8 }}>
+            <User size={15} color="var(--app-muted)" style={{ position: 'absolute', left: 12, top: 12, pointerEvents: 'none' }} />
+            <input
+              id="workspace-account"
+              autoComplete="username"
+              defaultValue="robot-admin"
+              style={{
+                width: '100%',
+                height: 40,
+                padding: '0 12px 0 36px',
+                borderRadius: 8,
+                border: '1px solid var(--app-border)',
+                background: 'var(--app-soft)',
+                color: 'var(--app-heading)',
+                outline: 'none',
+                boxSizing: 'border-box',
+                fontSize: 13,
+              }}
+            />
+          </div>
+          <label htmlFor="workspace-password" style={{ display: 'block', marginTop: 18, color: 'var(--app-text)', fontSize: 13, fontWeight: 600 }}>
+            密码
+          </label>
+          <div style={{ position: 'relative', marginTop: 8 }}>
+            <FileKey2 size={15} color="var(--app-muted)" style={{ position: 'absolute', left: 12, top: 12, pointerEvents: 'none' }} />
+            <input
+              id="workspace-password"
+              type="password"
+              autoComplete="current-password"
+              defaultValue="12345678"
+              style={{
+                width: '100%',
+                height: 40,
+                padding: '0 12px 0 36px',
+                borderRadius: 8,
+                border: '1px solid var(--app-border)',
+                background: 'var(--app-soft)',
+                color: 'var(--app-heading)',
+                outline: 'none',
+                boxSizing: 'border-box',
+                fontSize: 13,
+              }}
+            />
+          </div>
+          <button
+            type="submit"
+            style={{
+              width: '100%',
+              height: 40,
+              marginTop: 24,
+              border: 'none',
+              borderRadius: 8,
+              background: 'var(--app-brand)',
+              color: '#FFFFFF',
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            登录
+          </button>
+        </form>
+      </main>
+    </div>
+  );
+}
+
+function WorkspaceModulePlaceholder({
+  title,
+  description,
+  icon,
+  onBack,
+}: {
+  title: string;
+  description: string;
+  icon: ReactNode;
+  onBack: () => void;
+}) {
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      display: 'grid',
+      placeItems: 'center',
+      padding: 24,
+      boxSizing: 'border-box',
+      background: 'var(--app-bg)',
+      fontFamily: FONT,
+    }}>
+      <section style={{
+        width: 'min(520px, 100%)',
+        padding: 32,
+        borderRadius: 16,
+        border: '1px solid var(--app-border)',
+        background: 'var(--app-surface)',
+      }}>
+        <div style={{
+          width: 44,
+          height: 44,
+          borderRadius: 12,
+          display: 'grid',
+          placeItems: 'center',
+          color: 'var(--app-accent)',
+          background: 'var(--app-accent-soft)',
+          border: '1px solid var(--app-accent-border)',
+        }}>
+          {icon}
+        </div>
+        <h1 style={{ margin: '24px 0 0', color: 'var(--app-heading)', fontSize: 24, lineHeight: 1.35 }}>{title}</h1>
+        <p style={{ margin: '10px 0 28px', color: 'var(--app-muted)', fontSize: 14, lineHeight: 1.7 }}>{description}</p>
+        <ArcoButton icon={<ArrowLeft size={14} />} onClick={onBack}>返回墨影工作台</ArcoButton>
+      </section>
+    </div>
+  );
+}
+
+function WorkspaceProductFrame({
+  title,
+  themeMode,
+  onThemeToggle,
+  onBack,
+  children,
+}: {
+  title: string;
+  themeMode: AppThemeMode;
+  onThemeToggle: () => void;
+  onBack: () => void;
+  children: ReactNode;
+}) {
+  const isDark = themeMode === 'dark';
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      minHeight: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      background: 'var(--app-bg)',
+      fontFamily: FONT,
+    }}>
+      <header style={{
+        height: 56,
+        padding: '0 20px',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 16,
+        borderBottom: '1px solid var(--app-border)',
+        background: 'var(--app-surface)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <ArcoIconButton
+            type="text"
+            icon={<ArrowLeft size={16} />}
+            onClick={onBack}
+            aria-label="返回墨影工作台"
+            title="返回墨影工作台"
+          />
+          <span style={{ color: 'var(--app-heading)', fontSize: 15, fontWeight: 650 }}>{title}</span>
+        </div>
+        <ArcoIconButton
+          type="text"
+          icon={isDark ? <Sun size={16} /> : <Moon size={16} />}
+          onClick={onThemeToggle}
+          aria-label={isDark ? '切换为浅色模式' : '切换为暗色模式'}
+          title={isDark ? '切换为浅色模式' : '切换为暗色模式'}
+        />
+      </header>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>{children}</div>
+    </div>
+  );
 }
 
 const EDITOR_NAV_META: Record<EditorNavKey, { label: string; description: string }> = {
@@ -39,23 +717,92 @@ const EDITOR_NAV_META: Record<EditorNavKey, { label: string; description: string
   settings: { label: '设置', description: '配置当前编辑器偏好' },
   apps: { label: '型号管理', description: '管理机器人型号、拓扑结构与模型导出' },
   products: { label: '版本管理', description: '产品包与版本迭代发布管理' },
+  software: { label: '软件产品', description: '管理软件产品信息、标识码与授权' },
 };
+
+// ── Edit mode props passed through to GlobalTopBar ─────
+interface EditTopBarProps {
+  scheme: HomepageScheme;
+  saveState: 'idle' | 'saved';
+  onAutoFill: () => void;
+  onPreview: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+}
 
 // ── Global Top Bar ──────────────────────────────────────
 
 function GlobalTopBar({
   themeMode = 'light',
   onThemeToggle,
+  edit,
 }: {
   themeMode?: AppThemeMode;
   onThemeToggle?: () => void;
+  edit?: EditTopBarProps;
 }) {
   const isDark = themeMode === 'dark';
-  const barBg = isDark ? '#232324' : '#FFFFFF';
-  const barBorder = isDark ? '#353537' : '#E5E6EB';
-  const textColor = isDark ? '#C9CDD4' : '#4E5969';
-  const hoverBg = isDark ? '#2E2E30' : '#F2F3F5';
+  const barBg = 'var(--app-surface)';
+  const barBorder = 'var(--app-border)';
+  const textColor = 'var(--app-text)';
+  const hoverBg = 'var(--app-soft)';
 
+  // ── Edit mode: breadcrumb left, actions right ──
+  if (edit) {
+    const { scheme, saveState, onAutoFill, onPreview, onSave, onCancel } = edit;
+    return (
+      <header style={{
+        height: 56,
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 24px',
+        background: barBg,
+        borderBottom: `1px solid ${barBorder}`,
+      }}>
+        {/* Left: breadcrumb + title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <span style={{ color: 'var(--app-muted)', fontSize: 12 }}>首页</span>
+          <ChevronRight size={11} color="var(--app-muted)" />
+          <span style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {getSchemePageTitle(scheme)}
+          </span>
+          <span style={{
+            background: 'var(--app-accent-soft)', color: 'var(--app-accent)',
+            fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 99, flexShrink: 0,
+          }}>
+            {scheme.version}
+          </span>
+        </div>
+
+        {/* Right: actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <span style={{ color: 'var(--app-muted)', fontSize: 11 }}>上次编辑 {scheme.lastEdited}</span>
+          <ArcoButton onClick={onPreview} size="small" icon={<Eye size={13} />}>
+            预览
+          </ArcoButton>
+          <ArcoButton onClick={onAutoFill} size="small" icon={<Wand2 size={13} />}>
+            自动填补
+          </ArcoButton>
+          <ArcoButton onClick={onCancel} size="small">
+            取消
+          </ArcoButton>
+          <ArcoButton
+            onClick={onSave}
+            size="small"
+            type={saveState === 'saved' ? 'default' : 'primary'}
+            status={saveState === 'saved' ? 'success' : 'normal'}
+            icon={saveState === 'saved' ? <CheckCircle2 size={13} /> : <Save size={13} />}
+          >
+            {saveState === 'saved' ? '已保存' : '保存'}
+          </ArcoButton>
+        </div>
+      </header>
+    );
+  }
+
+  // ── Default top bar ──
   return (
     <header style={{
       height: 52,
@@ -137,20 +884,21 @@ function GlobalTopBar({
 function EditorNavRail({
   active,
   onChange,
+  onWorkspace,
   themeMode = 'light',
 }: {
   active: EditorNavKey;
   onChange: (key: EditorNavKey) => void;
+  onWorkspace?: () => void;
   themeMode?: AppThemeMode;
 }) {
-  const isDark = themeMode === 'dark';
-  const bg = isDark ? '#232324' : '#FFFFFF';
-  const textColor = isDark ? '#C9CDD4' : '#4E5969';
-  const mutedColor = isDark ? '#5E626A' : '#86909C';
-  const hoverBg = isDark ? '#2E2E30' : '#F2F3F5';
-  const activeBg = isDark ? '#1B2D4A' : '#E8F3FF';
-  const activeColor = isDark ? '#4080FF' : '#2D2499';
-  const borderColor = isDark ? '#353537' : '#E5E6EB';
+  const bg = 'var(--app-surface)';
+  const textColor = 'var(--app-text)';
+  const mutedColor = 'var(--app-muted)';
+  const hoverBg = 'var(--app-soft)';
+  const activeBg = 'var(--app-accent-soft)';
+  const activeColor = 'var(--app-accent)';
+  const borderColor = 'var(--app-border)';
 
   const navItems = [
     { key: 'home' as const, icon: Home, label: '首页自定义' },
@@ -158,6 +906,7 @@ function EditorNavRail({
     { key: 'components' as const, icon: Folder, label: '组件库' },
     { key: 'records' as const, icon: LayoutGrid, label: '外设库' },
     { key: 'products' as const, icon: Package, label: '版本管理' },
+    { key: 'software' as const, icon: Cpu, label: '软件产品' },
     { key: 'status' as const, icon: Users, label: '用户管理' },
   ];
 
@@ -212,12 +961,29 @@ function EditorNavRail({
         borderRight: `1px solid ${borderColor}`,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28, padding: '0 10px' }}>
+      <button
+        onClick={onWorkspace}
+        title="返回墨影工作台"
+        aria-label="返回墨影工作台"
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginBottom: 28,
+          padding: '4px 10px',
+          border: 'none',
+          borderRadius: 8,
+          background: 'transparent',
+          textAlign: 'left',
+          cursor: onWorkspace ? 'pointer' : 'default',
+        }}
+      >
         <div style={{
           width: 34,
           height: 34,
           borderRadius: 12,
-          background: 'var(--app-accent)',
+          background: 'var(--app-brand)',
           color: '#FFFFFF',
           display: 'flex',
           alignItems: 'center',
@@ -227,10 +993,10 @@ function EditorNavRail({
           <Box size={17} />
         </div>
         <div style={{ minWidth: 0 }}>
-          <div style={{ color: isDark ? '#F2F3F5' : '#1D2129', fontSize: 14, fontWeight: 700, lineHeight: 1.25 }}>数字造机</div>
+          <div style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 700, lineHeight: 1.25 }}>数字造机</div>
           <div style={{ color: mutedColor, fontSize: 10, marginTop: 2 }}>百川软件 · 版本管理中心</div>
         </div>
-      </div>
+      </button>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {navItems.map(item => renderItem(item.key, item.icon, item.label))}
@@ -251,12 +1017,18 @@ function AppShell({
   themeMode,
   onThemeToggle,
   onNavChange,
+  onWorkspace,
+  sidebarCollapsed = false,
+  edit,
   children,
 }: {
   active: EditorNavKey;
   themeMode: AppThemeMode;
   onThemeToggle: () => void;
   onNavChange: (key: EditorNavKey) => void;
+  onWorkspace?: () => void;
+  sidebarCollapsed?: boolean;
+  edit?: EditTopBarProps;
   children: ReactNode;
 }) {
   return (
@@ -269,9 +1041,11 @@ function AppShell({
         background: 'var(--app-bg)',
         overflow: 'hidden',
       }}>
-        <EditorNavRail active={active} themeMode={themeMode} onChange={onNavChange} />
+        {!sidebarCollapsed && (
+          <EditorNavRail active={active} themeMode={themeMode} onChange={onNavChange} onWorkspace={onWorkspace} />
+        )}
         <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <GlobalTopBar themeMode={themeMode} onThemeToggle={onThemeToggle} />
+          <GlobalTopBar themeMode={themeMode} onThemeToggle={onThemeToggle} edit={edit} />
           <div style={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
             {children}
           </div>
@@ -301,11 +1075,11 @@ function EditorPlaceholderPanel({
       margin: '24px 0 24px 12px',
       background: 'var(--app-surface)',
       borderRadius: 16,
-      border: '1px solid #E5E6EB',
+      border: '1px solid var(--app-border)',
       boxShadow: 'none',
       overflow: 'hidden',
     }}>
-      <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #E5E6EB', flexShrink: 0 }}>
+      <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid var(--app-border)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <ArcoIconButton
             onClick={onExit}
@@ -323,7 +1097,7 @@ function EditorPlaceholderPanel({
         <div style={{
           borderRadius: 8, padding: '24px 20px',
           background: 'var(--app-soft)',
-          border: '1px dashed #C9CDD4',
+          border: '1px dashed var(--app-border-strong)',
           textAlign: 'center',
         }}>
           <p style={{ color: 'var(--app-text)', fontSize: 13, fontWeight: 500, margin: '0 0 6px' }}>{meta.label}</p>
@@ -397,12 +1171,14 @@ function EditToolbar({
   onAutoFill,
   onPreview,
   onSave,
+  onCancel,
 }: {
   scheme?: HomepageScheme;
   saveState: 'idle' | 'saved';
   onAutoFill: () => void;
   onPreview: () => void;
   onSave: () => void;
+  onCancel: () => void;
 }) {
   if (!scheme) return null;
 
@@ -418,7 +1194,7 @@ function EditToolbar({
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
         <span style={{ color: 'var(--app-muted)', fontSize: 12 }}>首页</span>
-        <ChevronRight size={11} color="#C9CDD4" />
+        <ChevronRight size={11} color="var(--app-muted)" />
         <span style={{ color: 'var(--app-heading)', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {getSchemePageTitle(scheme)}
         </span>
@@ -437,6 +1213,9 @@ function EditToolbar({
         </ArcoButton>
         <ArcoButton onClick={onAutoFill} icon={<Wand2 size={13} />}>
           自动填补
+        </ArcoButton>
+        <ArcoButton onClick={onCancel}>
+          取消
         </ArcoButton>
         <ArcoButton
           onClick={onSave}
@@ -518,6 +1297,8 @@ function fillEmptySpaces(items: PlacedItem[]): PlacedItem[] {
 }
 
 export default function App() {
+  const { components: catalogComponents } = useComponentCatalog();
+  const [workspaceProduct, setWorkspaceProduct] = useState<WorkspaceProduct>('workspace');
   const [schemes, setSchemes] = useState<HomepageScheme[]>(INITIAL_SCHEMES);
   const [activeSchemeId, setActiveSchemeId] = useState('s1');
   const [canvasItems, setCanvasItems] = useState<Record<string, PlacedItem[]>>(INITIAL_ITEMS);
@@ -541,46 +1322,12 @@ export default function App() {
 
   // Inject global dark/light CSS variables
   useEffect(() => {
-    const vars: Record<string, string> = robotThemeMode === 'dark' ? {
-      '--app-bg': '#17171A',
-      '--app-surface': '#232324',
-      '--app-border': '#353537',
-      '--app-border-strong': '#484849',
-      '--app-heading': '#F2F3F5',
-      '--app-text': '#C9CDD4',
-      '--app-muted': '#86909C',
-      '--app-subtle': '#5E626A',
-      '--app-soft': '#2E2E30',
-      '--app-accent': '#4080FF',
-      '--app-accent-soft': '#1B2D4A',
-      '--app-accent-border': '#2B4A7A',
-      '--app-success': '#27C346',
-      '--app-success-soft': '#1A3520',
-      '--app-danger': '#F76965',
-      '--app-danger-soft': '#3A211F',
-      '--app-danger-border': '#6B3630',
-    } : {
-      '--app-bg': '#F2F3F5',
-      '--app-surface': '#FFFFFF',
-      '--app-border': '#E5E6EB',
-      '--app-border-strong': '#C9CDD4',
-      '--app-heading': '#1D2129',
-      '--app-text': '#4E5969',
-      '--app-muted': '#86909C',
-      '--app-subtle': '#C9CDD4',
-      '--app-soft': '#F7F8FA',
-      '--app-accent': '#165DFF',
-      '--app-accent-soft': '#E8F3FF',
-      '--app-accent-border': '#BEDAFF',
-      '--app-success': '#00B42A',
-      '--app-success-soft': '#E8FFEA',
-      '--app-danger': '#F53F3F',
-      '--app-danger-soft': '#FFECE8',
-      '--app-danger-border': '#FFBBAE',
-    };
+    const vars = APP_THEME_VARS[robotThemeMode];
     Object.entries(vars).forEach(([k, v]) => {
       document.documentElement.style.setProperty(k, v);
     });
+    document.documentElement.classList.toggle('dark', robotThemeMode === 'dark');
+    document.documentElement.dataset.theme = robotThemeMode;
   }, [robotThemeMode]);
 
   const activeScheme = schemes.find(s => s.id === activeSchemeId);
@@ -705,7 +1452,7 @@ export default function App() {
   }, [canvasItems, schemes]);
 
   const addItem = useCallback((defId: string, col: number, row: number) => {
-    const def = COMPONENT_DEFS.find(d => d.id === defId);
+    const def = catalogComponents.find(d => d.id === defId);
     if (!def) return;
     const newItem: PlacedItem = {
       instanceId: `item-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -714,7 +1461,7 @@ export default function App() {
       config: defaultConfig(defId),
     };
     setCanvasItems(prev => ({ ...prev, [activeSchemeId]: [...(prev[activeSchemeId] ?? []), newItem] }));
-  }, [activeSchemeId]);
+  }, [activeSchemeId, catalogComponents]);
 
   const removeItem = useCallback((instanceId: string) => {
     setCanvasItems(prev => ({
@@ -790,6 +1537,66 @@ export default function App() {
     setActiveEditorNav(key);
   }, []);
 
+  const returnToWorkspace = useCallback(() => {
+    setWorkspaceProduct('workspace');
+    setIsEditing(false);
+    setIsCanvasPreview(false);
+    setActiveEditorNav('home');
+    setSelectedItemId(null);
+  }, []);
+
+  if (workspaceProduct === 'login') {
+    return (
+      <WorkspaceLogin
+        themeMode={robotThemeMode}
+        onThemeToggle={toggleRobotThemeMode}
+        onLogin={() => setWorkspaceProduct('workspace')}
+      />
+    );
+  }
+
+  if (workspaceProduct === 'workspace') {
+    return (
+      <WorkspaceLauncher
+        themeMode={robotThemeMode}
+        onThemeToggle={toggleRobotThemeMode}
+        onReturnLogin={() => setWorkspaceProduct('login')}
+        onOpen={setWorkspaceProduct}
+      />
+    );
+  }
+
+  if (workspaceProduct === 'software') {
+    return (
+      <WorkspaceProductFrame
+        title="软件管理"
+        themeMode={robotThemeMode}
+        onThemeToggle={toggleRobotThemeMode}
+        onBack={returnToWorkspace}
+      >
+        <ProductVersionManager />
+      </WorkspaceProductFrame>
+    );
+  }
+
+  if (workspaceProduct === 'authorization') {
+    return (
+      <WorkspaceProductFrame
+        title="授权平台"
+        themeMode={robotThemeMode}
+        onThemeToggle={toggleRobotThemeMode}
+        onBack={returnToWorkspace}
+      >
+        <WorkspaceModulePlaceholder
+          title="授权平台"
+          description="产品授权、许可策略与设备权限将在这里统一管理。当前启动页和跨产品导航已接通。"
+          icon={<FileKey2 size={21} />}
+          onBack={returnToWorkspace}
+        />
+      </WorkspaceProductFrame>
+    );
+  }
+
   if (!isCanvasPreview && activeEditorNav === 'apps') {
     return (
       <AppShell
@@ -797,6 +1604,7 @@ export default function App() {
         themeMode={robotThemeMode}
         onThemeToggle={toggleRobotThemeMode}
         onNavChange={handleShellNavChange}
+        onWorkspace={returnToWorkspace}
       >
         <RobotModelManager themeMode={robotThemeMode} />
       </AppShell>
@@ -810,8 +1618,23 @@ export default function App() {
         themeMode={robotThemeMode}
         onThemeToggle={toggleRobotThemeMode}
         onNavChange={handleShellNavChange}
+        onWorkspace={returnToWorkspace}
       >
         <ProductVersionManager />
+      </AppShell>
+    );
+  }
+
+  if (!isCanvasPreview && activeEditorNav === 'software') {
+    return (
+      <AppShell
+        active={activeEditorNav}
+        themeMode={robotThemeMode}
+        onThemeToggle={toggleRobotThemeMode}
+        onNavChange={handleShellNavChange}
+        onWorkspace={returnToWorkspace}
+      >
+        <SoftwareManager />
       </AppShell>
     );
   }
@@ -824,6 +1647,16 @@ export default function App() {
         themeMode={robotThemeMode}
         onThemeToggle={toggleRobotThemeMode}
         onNavChange={handleShellNavChange}
+        onWorkspace={returnToWorkspace}
+        sidebarCollapsed
+        edit={!isCanvasPreview && activeScheme ? {
+          scheme: activeScheme,
+          saveState,
+          onAutoFill: autoFill,
+          onPreview: () => { setSelectedItemId(null); setIsCanvasPreview(true); },
+          onSave: handleSave,
+          onCancel: () => { setIsEditing(false); setIsCanvasPreview(false); setActiveEditorNav('home'); setSelectedItemId(null); },
+        } : undefined}
       >
         <div style={{ height: '100%', display: 'flex', minHeight: 0, background: 'var(--app-bg)' }}>
           {!isCanvasPreview && (
@@ -842,16 +1675,8 @@ export default function App() {
             </>
           )}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-            {!isCanvasPreview && (
-              <EditToolbar
-                scheme={activeScheme}
-                saveState={saveState}
-                onAutoFill={autoFill}
-                onPreview={() => { setSelectedItemId(null); setIsCanvasPreview(true); }}
-                onSave={handleSave}
-              />
-            )}
             <CanvasArea
+              componentDefs={catalogComponents}
               items={activeItems}
               isEditing={!isCanvasPreview}
               selectedItemId={isCanvasPreview ? null : selectedItemId}
@@ -879,7 +1704,7 @@ export default function App() {
                   background: 'var(--app-heading)',
                   color: 'var(--app-surface)',
                   border: 'none',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                  boxShadow: '0 4px 16px var(--app-shadow-color)',
                   fontSize: 14,
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -891,6 +1716,7 @@ export default function App() {
           </div>
           {!isCanvasPreview && (
             <PropertiesPanel
+              componentDefs={catalogComponents}
               item={selectedItem}
               onUpdateConfig={updateItemConfig}
               onUpdateSize={updateItemSize}
@@ -916,6 +1742,7 @@ export default function App() {
       themeMode={robotThemeMode}
       onThemeToggle={toggleRobotThemeMode}
       onNavChange={handleShellNavChange}
+      onWorkspace={returnToWorkspace}
     >
       <div style={{
         height: '100%',
@@ -1039,6 +1866,7 @@ export default function App() {
             overflow: 'hidden',
           }}>
             <CanvasArea
+              componentDefs={catalogComponents}
               items={activeItems}
               isEditing={false}
               selectedItemId={null}

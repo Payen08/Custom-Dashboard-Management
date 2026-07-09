@@ -2,7 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import { useDrop } from 'react-dnd';
 import { Bot, Eye, Layers, Maximize2, Package, Rocket, X } from 'lucide-react';
 import {
-  type PlacedItem, type DragItem,
+  type PlacedItem, type DragItem, type ComponentDef,
   COMPONENT_DEFS, GRID_COLS, GRID_ROWS, CELL_W, CELL_H, CANVAS_W, CANVAS_H, isFree,
 } from '../shared';
 import { ArcoButton } from './ArcoLike';
@@ -14,15 +14,15 @@ function KpiMetricsWidget() {
   const metrics = [
     { label: '运行时长', value: '11:45',  unit: '',    color: 'var(--app-accent)' },
     { label: '生产节拍', value: '4.2',    unit: 's',   color: 'var(--app-success)' },
-    { label: '生产效率', value: '0.8',    unit: '/s',  color: '#722ED1' },
-    { label: '完成任务', value: '12',     unit: '件',  color: '#FF7D00' },
+    { label: '生产效率', value: '0.8',    unit: '/s',  color: 'var(--app-info)' },
+    { label: '完成任务', value: '12',     unit: '件',  color: 'var(--app-warning)' },
   ];
   return (
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
       {metrics.map((m, i) => (
         <div key={i} style={{
           flex: 1, borderRadius: 8, padding: '8px 12px',
-          background: 'var(--app-soft)', border: `1px solid ${m.color}22`,
+          background: 'var(--app-soft)', border: `1px solid color-mix(in srgb, ${m.color} 18%, transparent)`,
           display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2,
         }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
@@ -79,9 +79,9 @@ function DeviceStatusWidget() {
 function AlertInfoWidget() {
   const alerts = [
     { text: '机械臂轨迹规划失败', detail: '位置: A25 | 14:32', level: 'error', action: '处理',  actionColor: 'var(--app-danger)' },
-    { text: '视觉定位相机超时',   detail: '位置: B区 | 14:28', level: 'error', action: '处理中', actionColor: '#FF7D00' },
+    { text: '视觉定位相机超时',   detail: '位置: B区 | 14:28', level: 'error', action: '处理中', actionColor: 'var(--app-warning)' },
     { text: 'IO模块通信异常',     detail: '14:10',             level: 'warn',  action: '忽略',  actionColor: 'var(--app-muted)' },
-    { text: '电池单元电量低',     detail: '13:58',             level: 'warn',  action: '待处理', actionColor: '#FF7D00' },
+    { text: '电池单元电量低',     detail: '13:58',             level: 'warn',  action: '待处理', actionColor: 'var(--app-warning)' },
   ];
   return (
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '12px 14px', display: 'flex', flexDirection: 'column' }}>
@@ -96,10 +96,10 @@ function AlertInfoWidget() {
           <div key={i} style={{
             borderRadius: 8, padding: '8px 12px',
             background: a.level === 'error' ? 'var(--app-danger-soft)' : 'var(--app-soft)',
-            border: `1px solid ${a.level === 'error' ? 'var(--app-danger-border)' : '#FF7D0055'}`,
+            border: `1px solid ${a.level === 'error' ? 'var(--app-danger-border)' : 'var(--app-warning)'}`,
           }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
-              <div style={{ width: 7, height: 7, borderRadius: 99, flexShrink: 0, marginTop: 3, background: a.level === 'error' ? 'var(--app-danger)' : '#FF7D00' }} />
+              <div style={{ width: 7, height: 7, borderRadius: 99, flexShrink: 0, marginTop: 3, background: a.level === 'error' ? 'var(--app-danger)' : 'var(--app-warning)' }} />
               <span style={{ color: 'var(--app-heading)', fontSize: 12, fontWeight: 600, flex: 1 }}>{a.text}</span>
               <span style={{
                 color: a.actionColor, fontSize: 10, fontWeight: 500,
@@ -122,8 +122,8 @@ function MapViewWidget() {
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
         <defs>
           <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#1D2129" />
-            <stop offset="100%" stopColor="#2B2F36" />
+            <stop offset="0%" stopColor="var(--app-scene)" />
+            <stop offset="100%" stopColor="var(--app-scene-soft)" />
           </linearGradient>
         </defs>
         <rect width="100%" height="100%" fill="url(#skyGrad)" />
@@ -133,69 +133,69 @@ function MapViewWidget() {
           <line key={`h${i}`}
             x1={`${50 - (50 - t * 100) * 0.3}%`} y1={`${40 + t * 45}%`}
             x2={`${50 + (50 - t * 100) * 0.3}%`} y2={`${40 + t * 45}%`}
-            stroke="rgba(106,161,255,0.16)" strokeWidth="0.5"
+            stroke="var(--app-accent)" strokeOpacity="0.16" strokeWidth="0.5"
           />
         ))}
         {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((n, i) => (
           <line key={`v${i}`}
             x1="50%" y1="40%"
             x2={`${50 + n * 12}%`} y2="85%"
-            stroke="rgba(106,161,255,0.12)" strokeWidth="0.5"
+            stroke="var(--app-accent)" strokeOpacity="0.12" strokeWidth="0.5"
           />
         ))}
 
         {/* Factory walls outline */}
-        <rect x="20%" y="30%" width="60%" height="45%" rx="2" fill="none" stroke="rgba(106,161,255,0.12)" strokeWidth="1" />
+        <rect x="20%" y="30%" width="60%" height="45%" rx="2" fill="none" stroke="var(--app-accent)" strokeOpacity="0.12" strokeWidth="1" />
 
         {/* Robot arm base */}
-        <ellipse cx="50%" cy="68%" rx="8%" ry="2.5%" fill="rgba(22,93,255,0.5)" stroke="#165DFF" strokeWidth="0.5" />
+        <ellipse cx="50%" cy="68%" rx="8%" ry="2.5%" fill="var(--app-brand)" fillOpacity="0.5" stroke="var(--app-brand)" strokeWidth="0.5" />
 
         {/* Robot arm body */}
-        <rect x="47%" y="52%" width="6%" height="18%" rx="2" fill="#165DFF" stroke="#6AA1FF" strokeWidth="0.5" />
+        <rect x="47%" y="52%" width="6%" height="18%" rx="2" fill="var(--app-brand)" stroke="var(--app-accent)" strokeWidth="0.5" />
 
         {/* Robot arm upper */}
         <rect x="46%" y="36%" width="4%" height="18%" rx="2"
-          fill="#4080FF" stroke="#6AA1FF" strokeWidth="0.5"
+          fill="var(--app-brand)" stroke="var(--app-accent)" strokeWidth="0.5"
           style={{ transformOrigin: '48% 52%', transform: 'rotate(-15deg)' }}
         />
 
         {/* Robot arm forearm */}
         <rect x="48%" y="26%" width="3%" height="14%" rx="2"
-          fill="#4080FF" stroke="#BEDAFF" strokeWidth="0.5"
+          fill="var(--app-brand)" stroke="var(--app-accent-border)" strokeWidth="0.5"
           style={{ transformOrigin: '49.5% 36%', transform: 'rotate(20deg)' }}
         />
 
         {/* End effector / gripper */}
-        <circle cx="52%" cy="24%" r="2.5%" fill="#6AA1FF" opacity="0.9" />
-        <circle cx="52%" cy="24%" r="1.2%" fill="#BEDAFF" />
+        <circle cx="52%" cy="24%" r="2.5%" fill="var(--app-accent)" opacity="0.9" />
+        <circle cx="52%" cy="24%" r="1.2%" fill="var(--app-accent-border)" />
 
         {/* Status glow rings */}
-        <circle cx="50%" cy="68%" r="12%" fill="none" stroke="rgba(22,93,255,0.12)" strokeWidth="2" />
-        <circle cx="50%" cy="68%" r="18%" fill="none" stroke="rgba(22,93,255,0.06)" strokeWidth="1.5" />
+        <circle cx="50%" cy="68%" r="12%" fill="none" stroke="var(--app-accent)" strokeOpacity="0.16" strokeWidth="2" />
+        <circle cx="50%" cy="68%" r="18%" fill="none" stroke="var(--app-accent)" strokeOpacity="0.08" strokeWidth="1.5" />
 
         {/* Coordinate axes */}
-        <line x1="8%" y1="88%" x2="16%" y2="88%" stroke="#F53F3F" strokeWidth="1.5" />
-        <line x1="8%" y1="88%" x2="8%"  y2="80%" stroke="#00B42A" strokeWidth="1.5" />
-        <text x="17%" y="90%" fill="#F53F3F" fontSize="10" fontFamily="monospace">X</text>
-        <text x="6%"  y="79%" fill="#00B42A" fontSize="10" fontFamily="monospace">Y</text>
+        <line x1="8%" y1="88%" x2="16%" y2="88%" stroke="var(--app-danger)" strokeWidth="1.5" />
+        <line x1="8%" y1="88%" x2="8%"  y2="80%" stroke="var(--app-success)" strokeWidth="1.5" />
+        <text x="17%" y="90%" fill="var(--app-danger)" fontSize="10" fontFamily="monospace">X</text>
+        <text x="6%"  y="79%" fill="var(--app-success)" fontSize="10" fontFamily="monospace">Y</text>
       </svg>
 
       {/* Title */}
       <div style={{ position: 'absolute', top: 12, left: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ color: '#C9CDD4', fontSize: 13, fontWeight: 500 }}>实时地图与机器人状态</span>
-        <span style={{ background: 'rgba(0,180,42,0.16)', color: 'var(--app-success)', fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99, border: '1px solid rgba(0,180,42,0.24)' }}>● 在线</span>
+        <span style={{ color: 'var(--app-scene-text)', fontSize: 13, fontWeight: 500 }}>实时地图与机器人状态</span>
+        <span style={{ background: 'var(--app-success-soft)', color: 'var(--app-success)', fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99, border: '1px solid var(--app-success)' }}>● 在线</span>
       </div>
 
       {/* Expand icon */}
       <div style={{ position: 'absolute', top: 12, right: 14, color: 'var(--app-text)', cursor: 'pointer', fontSize: 14 }}>⛶</div>
 
       {/* Coordinate readout */}
-      <div style={{ position: 'absolute', bottom: 10, left: 14, background: 'rgba(0,0,0,0.5)', borderRadius: 8, padding: '4px 10px' }}>
+      <div style={{ position: 'absolute', bottom: 10, left: 14, background: 'var(--app-overlay)', borderRadius: 8, padding: '4px 10px' }}>
         <span style={{ color: 'var(--app-muted)', fontSize: 10, fontFamily: 'monospace' }}>
           X: 124.3 / Y: -82.1 / Z: 445.6 mm
         </span>
       </div>
-      <div style={{ position: 'absolute', bottom: 10, right: 14, background: 'rgba(0,0,0,0.5)', borderRadius: 8, padding: '4px 10px' }}>
+      <div style={{ position: 'absolute', bottom: 10, right: 14, background: 'var(--app-overlay)', borderRadius: 8, padding: '4px 10px' }}>
         <span style={{ color: 'var(--app-muted)', fontSize: 10, fontFamily: 'monospace' }}>速度: 0.8 m/s</span>
       </div>
     </div>
@@ -276,7 +276,7 @@ function TrayStatusWidget() {
           <div style={{ display: 'flex', gap: 4 }}>
             {prodStatus.map(p => (
               <div key={p.num} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                <div style={{ width: '100%', aspectRatio: '1', borderRadius: 8, background: p.bg, border: `1px solid ${p.color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '100%', aspectRatio: '1', borderRadius: 8, background: p.bg, border: `1px solid color-mix(in srgb, ${p.color} 27%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <span style={{ color: p.color, fontSize: 12, fontWeight: 600 }}>{p.num}</span>
                 </div>
                 <span style={{ color: p.color, fontSize: 9, fontWeight: 600 }}>{p.label}</span>
@@ -308,11 +308,11 @@ function ActiveTasksWidget() {
         {tasks.map((t, i) => (
           <div key={i} style={{
             borderRadius: 8, padding: '10px 12px',
-            background: 'var(--app-soft)', border: `1px solid ${t.color}22`,
+            background: 'var(--app-soft)', border: `1px solid color-mix(in srgb, ${t.color} 18%, transparent)`,
           }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
               {/* Robot icon */}
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: `${t.color}18`, border: `1px solid ${t.color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: `color-mix(in srgb, ${t.color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${t.color} 20%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Bot size={14} color={t.color} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -404,6 +404,7 @@ interface DropPreview { col: number; row: number; colSpan: number; rowSpan: numb
 // ── CanvasArea ────────────────────────────────────────────────────────────────
 
 interface CanvasAreaProps {
+  componentDefs?: ComponentDef[];
   items: PlacedItem[];
   isEditing: boolean;
   selectedItemId: string | null;
@@ -437,6 +438,7 @@ type CanvasInteraction =
     };
 
 export function CanvasArea({
+  componentDefs = COMPONENT_DEFS,
   items,
   isEditing,
   selectedItemId,
@@ -627,8 +629,8 @@ export function CanvasArea({
           background: isEditing ? 'var(--app-soft)' : 'transparent',
           border: isEditing ? '1px solid var(--app-border-strong)' : 'none',
           boxShadow: isEditing
-            ? 'inset 0 1px 0 color-mix(in srgb, var(--app-surface) 72%, transparent), 0 16px 42px rgba(0,0,0,0.12)'
-            : '0 8px 32px rgba(0,0,0,0.1), none',
+            ? 'inset 0 1px 0 color-mix(in srgb, var(--app-surface) 72%, transparent), 0 16px 42px var(--app-shadow-color)'
+            : '0 8px 32px var(--app-shadow-color)',
           overflow: 'hidden',
         }}>
           <div style={{
@@ -685,7 +687,7 @@ export function CanvasArea({
               top:  (dropPreview.row - 1) * CELL_H + 5,
               width:  dropPreview.colSpan * CELL_W - 10,
               height: dropPreview.rowSpan * CELL_H - 10,
-              background: dropPreview.canPlace ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+              background: dropPreview.canPlace ? 'var(--app-success-soft)' : 'var(--app-danger-soft)',
               border: `2px dashed ${dropPreview.canPlace ? 'var(--app-success)' : 'var(--app-danger)'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
@@ -697,7 +699,7 @@ export function CanvasArea({
 
           {/* Placed components */}
           {items.map(item => {
-            const def = COMPONENT_DEFS.find(d => d.id === item.defId);
+            const def = componentDefs.find(d => d.id === item.defId);
             if (!def) return null;
             const Widget = WIDGET_MAP[item.defId] ?? (() => (
               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--app-surface)', color: 'var(--app-muted)', fontSize: 14 }}>{def.name}</div>
@@ -720,8 +722,8 @@ export function CanvasArea({
                   cursor: isEditing ? 'grab' : 'default',
                   border: `2px solid ${isSelected ? 'var(--app-accent)' : 'transparent'}`,
                   boxShadow: isSelected
-                    ? '0 0 0 3px rgba(59,114,246,0.15), 0 4px 20px rgba(59,114,246,0.15)'
-                    : '0 2px 10px rgba(0,0,0,0.07)',
+                    ? '0 0 0 3px color-mix(in srgb, var(--app-accent) 18%, transparent), 0 4px 20px var(--app-shadow-color)'
+                    : '0 2px 10px var(--app-shadow-color)',
                   zIndex: isSelected ? 5 : 1,
                   transition: 'border-color 0.15s, box-shadow 0.15s',
                 }}
@@ -758,10 +760,10 @@ export function CanvasArea({
                       width: 28,
                       height: 28,
                       borderRadius: 9,
-                      background: 'var(--app-accent)',
+                      background: 'var(--app-brand)',
                       color: 'var(--app-surface)',
                       border: '1px solid color-mix(in srgb, var(--app-surface) 65%, transparent)',
-                      boxShadow: '0 4px 12px rgba(59,114,246,0.28)',
+                      boxShadow: '0 4px 12px var(--app-shadow-color)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',

@@ -1,9 +1,10 @@
 import { X, Trash2, Settings2 } from 'lucide-react';
-import { type PlacedItem, COMPONENT_DEFS, COMPONENT_PROPS, GRID_COLS, GRID_ROWS, type PropField } from '../shared';
+import { type PlacedItem, type ComponentDef, COMPONENT_DEFS, COMPONENT_PROPS, GRID_COLS, GRID_ROWS, type PropField } from '../shared';
 import { ArcoButton, ArcoField, ArcoIconButton, ArcoSelect, ArcoTextInput } from './ArcoLike';
 
 interface Props {
   item: PlacedItem | null;
+  componentDefs?: ComponentDef[];
   onUpdateConfig: (instanceId: string, key: string, value: string | number | boolean) => void;
   onUpdateSize: (instanceId: string, colSpan: number, rowSpan: number) => void;
   onRemove: (instanceId: string) => void;
@@ -66,7 +67,7 @@ function ToggleField({ field, value, onChange }: {
           width: 16, height: 16,
           background: 'var(--app-surface)',
           left: value ? 21 : 3,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+          boxShadow: '0 1px 3px var(--app-shadow-color)',
           transition: 'left 0.2s',
         }} />
       </button>
@@ -157,9 +158,9 @@ function SizeField({ label, value, min, max, onChange }: {
 
 // ── PropertiesPanel ──────────────────────────────────────────────────────────
 
-export function PropertiesPanel({ item, onUpdateConfig, onUpdateSize, onRemove, onClose }: Props) {
+export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, onUpdateConfig, onUpdateSize, onRemove, onClose }: Props) {
   const emptyState = !item;
-  const def = item ? COMPONENT_DEFS.find(d => d.id === item.defId) : undefined;
+  const def = item ? componentDefs.find(d => d.id === item.defId) : undefined;
   if (!emptyState && !def) return null;
 
   const fields = item ? COMPONENT_PROPS[item.defId] ?? [] : [];
@@ -183,7 +184,7 @@ export function PropertiesPanel({ item, onUpdateConfig, onUpdateSize, onRemove, 
       background: 'var(--app-surface)',
       borderRadius: 16,
       border: '1px solid var(--app-border)',
-      boxShadow: '0 18px 44px -32px rgba(15, 23, 42, 0.35)',
+      boxShadow: '0 18px 44px -32px var(--app-shadow-color)',
       overflow: 'hidden',
     }}>
       <div style={{
@@ -243,7 +244,7 @@ export function PropertiesPanel({ item, onUpdateConfig, onUpdateSize, onRemove, 
                 {item.colSpan}×{item.rowSpan} 格
               </span>
             </div>
-            <p style={{ color: 'var(--app-muted)', fontSize: 12, margin: 0, lineHeight: 1.6 }}>{def.description}</p>
+            <p style={{ color: 'var(--app-text)', fontSize: 12, margin: 0, lineHeight: 1.6 }}>{def.description}</p>
           </div>
         )}
         {item && (

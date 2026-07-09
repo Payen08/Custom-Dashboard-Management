@@ -13,12 +13,12 @@ import {
   ArcoTextArea,
   ArcoTextInput,
 } from './ArcoLike';
+import { ROBOT_THEME_VARS, type ThemeMode } from '../theme';
 
 type PublishStatus = 'published' | 'draft';
 type TopologyKind = 'link' | 'joint';
 type SoftwarePackageSlot = 'controller' | 'armDriver' | 'endEffector' | 'powerDriver' | 'perception';
 type JointType = 'fixed' | 'revolute' | 'continuous' | 'prismatic';
-type ThemeMode = 'light' | 'dark';
 
 interface RobotPose {
   rotation: number;
@@ -132,88 +132,6 @@ const DEFAULT_AXIS: Vector3 = { x: 0, y: 0, z: 1 };
 const DEFAULT_LIMIT: JointLimit = { lower: -180, upper: 180, effort: 80, velocity: 1.2 };
 const JOINT_TYPES: JointType[] = ['fixed', 'revolute', 'continuous', 'prismatic'];
 const THEME_STORAGE_KEY = 'robot-manager-theme-mode';
-
-const ROBOT_THEME_VARS: Record<ThemeMode, Record<string, string>> = {
-  light: {
-    // ── Arco Design 色彩体系 ──
-    '--robot-page': '#F2F3F5',
-    '--robot-surface': '#FFFFFF',
-    '--robot-surface-raised': '#FFFFFF',
-    '--robot-soft': '#F7F8FA',
-    '--robot-border': '#E5E6EB',
-    '--robot-border-strong': '#C9CDD4',
-    '--robot-heading': '#1D2129',
-    '--robot-text': '#4E5969',
-    '--robot-muted': '#86909C',
-    '--robot-subtle': '#C9CDD4',
-    '--robot-accent': '#165DFF',
-    '--robot-accent-text': '#165DFF',
-    '--robot-accent-contrast': '#FFFFFF',
-    '--robot-accent-soft': '#E8F3FF',
-    '--robot-accent-border': '#BEDAFF',
-    '--robot-shadow': 'none',
-    '--robot-shadow-soft': '0 1px 2px rgba(0,0,0,0.04)',
-    '--robot-dialog-shadow': '0 8px 40px rgba(0,0,0,0.12)',
-    '--robot-overlay': 'rgba(0,0,0,0.4)',
-    '--robot-input-bg': '#F7F8FA',
-    '--robot-success': '#00B42A',
-    '--robot-success-soft': '#E8FFEA',
-    '--robot-success-border': '#AFF0B5',
-    '--robot-danger': '#F53F3F',
-    '--robot-danger-contrast': '#FFFFFF',
-    '--robot-danger-soft': '#FFECE8',
-    '--robot-danger-border': '#FFBBAE',
-    '--robot-scene-top': '#1D2129',
-    '--robot-scene-bottom': '#2B2F36',
-    '--robot-scene-bg': '#23262B',
-    '--robot-scene-muted': 'rgba(201,205,212,0.14)',
-    '--robot-hud-bg': 'rgba(29,33,41,0.88)',
-    '--robot-hud-border': 'rgba(201,205,212,0.22)',
-    '--robot-hud-text': '#E5E6EB',
-    '--robot-axis-x': '#F53F3F',
-    '--robot-axis-y': '#00B42A',
-    '--robot-axis-z': '#165DFF',
-  },
-  dark: {
-    '--robot-page': '#17171A',
-    '--robot-surface': '#232324',
-    '--robot-surface-raised': '#2A2A2B',
-    '--robot-soft': '#2E2E30',
-    '--robot-border': '#353537',
-    '--robot-border-strong': '#484849',
-    '--robot-heading': '#F2F3F5',
-    '--robot-text': '#C9CDD4',
-    '--robot-muted': '#86909C',
-    '--robot-subtle': '#5E626A',
-    '--robot-accent': '#4080FF',
-    '--robot-accent-text': '#6AA1FF',
-    '--robot-accent-contrast': '#17171A',
-    '--robot-accent-soft': '#1B2D4A',
-    '--robot-accent-border': '#2B4A7A',
-    '--robot-shadow': '0 2px 8px rgba(0,0,0,0.32)',
-    '--robot-shadow-soft': '0 1px 2px rgba(0,0,0,0.24)',
-    '--robot-dialog-shadow': '0 8px 40px rgba(0,0,0,0.48)',
-    '--robot-overlay': 'rgba(0,0,0,0.6)',
-    '--robot-input-bg': '#2E2E30',
-    '--robot-success': '#27C346',
-    '--robot-success-soft': '#1A3520',
-    '--robot-success-border': '#2B5A32',
-    '--robot-danger': '#F76965',
-    '--robot-danger-contrast': '#17171A',
-    '--robot-danger-soft': '#3A211F',
-    '--robot-danger-border': '#6B3630',
-    '--robot-scene-top': '#17171A',
-    '--robot-scene-bottom': '#232324',
-    '--robot-scene-bg': '#1A1A1B',
-    '--robot-scene-muted': 'rgba(201,205,212,0.12)',
-    '--robot-hud-bg': 'rgba(23,23,26,0.92)',
-    '--robot-hud-border': 'rgba(64,128,255,0.24)',
-    '--robot-hud-text': '#C9CDD4',
-    '--robot-axis-x': '#F76965',
-    '--robot-axis-y': '#27C346',
-    '--robot-axis-z': '#4080FF',
-  },
-};
 
 function initialThemeMode(): ThemeMode {
   if (typeof window === 'undefined') return 'light';
@@ -1078,7 +996,7 @@ function RobotScene({
           </g>
 
           <g transform={`translate(360 ${baseY}) rotate(${model.pose.rotation})`} filter="url(#robot-glow)">
-            <ellipse cx="0" cy="116" rx="92" ry="18" fill="rgba(214,180,94,0.13)" stroke="var(--robot-accent)" opacity="0.7" />
+            <ellipse cx="0" cy="116" rx="92" ry="18" fill="var(--robot-accent)" fillOpacity="0.13" stroke="var(--robot-accent)" opacity="0.7" />
             {isHumanoid ? (
               <>
                 <rect x="-26" y="-18" width="52" height="92" rx="18" fill="var(--robot-accent)" stroke="var(--robot-accent-border)" strokeWidth="2" />
@@ -1504,7 +1422,7 @@ function SoftwareVersionPanel({
                             minHeight: 28,
                             display: 'flex',
                             alignItems: 'center',
-                            color: selected ? 'var(--robot-muted)' : 'var(--robot-subtle)',
+                            color: selected ? 'var(--robot-text)' : 'var(--robot-muted)',
                             fontSize: 13,
                             fontWeight: selected ? 700 : 500,
                             whiteSpace: 'nowrap',
@@ -2005,18 +1923,18 @@ export function RobotModelManager({
                   padding: 12,
                   marginBottom: 8,
                   cursor: 'pointer',
-                  boxShadow: active ? '0 0 0 3px color-mix(in srgb, var(--robot-accent) 18%, transparent)' : 'none',
+                  boxShadow: 'none',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
-                  <span style={{ color: 'var(--robot-heading)', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ color: active ? 'var(--robot-accent-text)' : 'var(--robot-heading)', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {model.name}
                   </span>
                   <span style={{ borderRadius: 999, background: status.bg, color: status.color, border: `1px solid ${status.border}`, fontSize: 10, fontWeight: 600, padding: '2px 8px', flexShrink: 0 }}>
                     {status.label}
                   </span>
                 </div>
-                <div style={{ color: 'var(--robot-muted)', fontSize: 11, lineHeight: 1.6 }}>
+                <div style={{ color: active ? 'var(--robot-text)' : 'var(--robot-muted)', fontSize: 11, lineHeight: 1.6 }}>
                   {model.type} · {model.version}<br />
                   {model.componentCount} 组件 · {model.peripherals.length} 外设
                 </div>
@@ -2055,7 +1973,7 @@ export function RobotModelManager({
               </span>
             </div>
             {/* Stats row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--robot-muted)', fontSize: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--robot-text)', fontSize: 12, flexWrap: 'wrap' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <Box size={11} />{activeModel.type}
               </span>

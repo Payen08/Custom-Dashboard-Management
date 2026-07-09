@@ -1,6 +1,6 @@
 .arcoui-button {
-  --arcoui-button-bg: color-mix(in srgb, var(--arcoui-soft) 86%, var(--arcoui-surface));
-  --arcoui-button-color: var(--arcoui-text);
+  --arcoui-button-bg: var(--arcoui-neutral-soft);
+  --arcoui-button-color: var(--arcoui-heading);
   --arcoui-button-border: transparent;
   height: 32px;
   padding: 0 14px;
@@ -62,7 +62,7 @@
   --arcoui-button-bg: var(--arcoui-accent);
   --arcoui-button-color: var(--arcoui-accent-contrast);
   --arcoui-button-border: var(--arcoui-accent);
-  box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--arcoui-accent) 70%, transparent);
+  box-shadow: 0 6px 14px -10px color-mix(in srgb, var(--arcoui-accent) 60%, transparent);
 }
 
 .arcoui-button[data-type="secondary"] {
@@ -101,18 +101,24 @@
   --arcoui-button-border: var(--arcoui-success);
 }
 
+.arcoui-button[data-status="warning"] {
+  --arcoui-button-bg: var(--arcoui-warning-soft);
+  --arcoui-button-color: var(--arcoui-warning);
+  --arcoui-button-border: transparent;
+}
+
 .arcoui-button:not(:disabled):hover {
-  background: color-mix(in srgb, var(--arcoui-soft) 72%, var(--arcoui-surface));
+  background: color-mix(in srgb, var(--arcoui-neutral-soft) 78%, var(--arcoui-surface));
   border-color: transparent;
   filter: none;
-  box-shadow: 0 8px 18px -14px rgba(0, 0, 0, 0.35);
-  transform: translateY(-1px);
+  box-shadow: none;
+  transform: none;
 }
 
 .arcoui-button[data-type="primary"]:not(:disabled):hover {
-  background: color-mix(in srgb, var(--arcoui-accent) 86%, #ffffff);
+  background: color-mix(in srgb, var(--arcoui-accent) 92%, #ffffff);
   border-color: transparent;
-  box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--arcoui-accent) 80%, transparent);
+  box-shadow: 0 8px 18px -12px color-mix(in srgb, var(--arcoui-accent) 70%, transparent);
 }
 
 .arcoui-button[data-type="secondary"]:not(:disabled):hover {

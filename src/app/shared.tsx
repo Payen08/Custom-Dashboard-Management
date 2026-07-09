@@ -25,6 +25,11 @@ export interface ComponentDef {
   rowSpan: number;
   description: string;
   scopes: string[];
+  tags: string[];
+  isCustom: boolean;
+  packageName?: string;
+  packageSize?: string;
+  importedAt?: string;
 }
 
 export interface PlacedItem {
@@ -137,36 +142,50 @@ export const COMPONENT_DEFS: ComponentDef[] = [
     id: 'kpi-metrics', name: '运行指标', categoryId: 'monitor', colSpan: 6, rowSpan: 1,
     description: '展示任务数、生产节拍、生产效率等核心运行KPI，数据实时刷新',
     scopes: ['复合机器人', 'AGV'],
+    tags: ['KPI', '仪表盘', '实时'],
+    isCustom: false,
   },
   {
     id: 'device-status', name: '设备状态', categoryId: 'monitor', colSpan: 2, rowSpan: 7,
     description: '列出感盘、机械臂、夹具、相机等所有连接设备的实时在线状态',
     scopes: ['复合机器人'],
+    tags: ['设备', '状态', '实时'],
+    isCustom: false,
   },
   {
     id: 'alert-info', name: '告警信息', categoryId: 'monitor', colSpan: 4, rowSpan: 4,
     description: '展示轨迹规划失败、通信异常等活跃告警，支持处理、忽略操作',
     scopes: ['通用'],
+    tags: ['告警', '通知', '实时'],
+    isCustom: false,
   },
   {
     id: 'map-view', name: '实时地图', categoryId: 'map', colSpan: 6, rowSpan: 5,
     description: '3D可视化机器人工作空间，实时显示机器人位置、姿态与运动轨迹',
     scopes: ['复合机器人', 'AGV', '巡检'],
+    tags: ['地图', '3D', '可视化'],
+    isCustom: false,
   },
   {
     id: 'tray-status', name: '料盘情况', categoryId: 'production', colSpan: 6, rowSpan: 3,
     description: '展示生料盘、暂料盘的占用状态及料盘生产完成进度与汇总统计',
     scopes: ['复合机器人'],
+    tags: ['料盘', '生产', '统计'],
+    isCustom: false,
   },
   {
     id: 'active-tasks', name: '正在执行的任务', categoryId: 'task', colSpan: 4, rowSpan: 3,
     description: '实时显示当前执行中的任务列表，含任务名称、类型，支持一键取消',
     scopes: ['复合机器人', 'AGV'],
+    tags: ['任务', '执行', '实时'],
+    isCustom: false,
   },
   {
     id: 'task-queue', name: '任务队列', categoryId: 'task', colSpan: 4, rowSpan: 6,
     description: '展示任务执行队列，含月始时间、往来次数及详情查看入口',
     scopes: ['通用'],
+    tags: ['队列', '任务', '历史'],
+    isCustom: false,
   },
 ];
 

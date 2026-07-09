@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Plus, MoreHorizontal, LayoutGrid, Pencil, Copy, Trash2, Download, Search } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { CATEGORIES, COMPONENT_DEFS, type HomepageScheme } from '../shared';
+import { type HomepageScheme } from '../shared';
 import { ArcoButton, ArcoModal, ArcoTextInput } from './ArcoLike';
+import { ComponentManagerDialog } from './ComponentManagerDialog';
 
 interface PanelListProps {
   schemes: HomepageScheme[];
@@ -81,7 +82,7 @@ export function PanelList({
         background: 'var(--app-surface)',
         border: '1px solid var(--app-border)',
         borderRadius: 16,
-        boxShadow: '0 18px 44px -32px rgba(15, 23, 42, 0.35)',
+        boxShadow: '0 18px 44px -32px var(--app-shadow-color)',
         overflow: 'hidden',
       }}
     >
@@ -121,7 +122,7 @@ export function PanelList({
                 marginBottom: 12,
                 borderRadius: 16,
                 background: active ? 'var(--app-accent-soft)' : 'var(--app-surface)',
-                border: active ? '2px solid #2D2499' : '1px solid transparent',
+                border: active ? '2px solid var(--app-accent)' : '1px solid transparent',
                 transition: 'background 0.12s ease, border-color 0.12s ease',
                 position: 'relative',
                 boxSizing: 'border-box',
@@ -134,7 +135,7 @@ export function PanelList({
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                     <span
                       style={{
-                        color: 'var(--app-heading)',
+                        color: active ? 'var(--app-accent)' : 'var(--app-heading)',
                         fontSize: 16,
                         fontWeight: 600,
                         overflow: 'hidden',
@@ -182,7 +183,7 @@ export function PanelList({
                         background: 'var(--app-surface)',
                         border: '1px solid var(--app-border)',
                         minWidth: 150,
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                        boxShadow: '0 4px 16px var(--app-shadow-color)',
                       }}
                       align="end"
                       sideOffset={4}
@@ -259,88 +260,7 @@ export function PanelList({
         </ArcoButton>
       </div>
 
-      {/* Component catalog dialog */}
-      <ArcoModal
-        open={catalogOpen}
-        onOpenChange={setCatalogOpen}
-        title="组件清单"
-        description="查看当前可用于自定义首页搭建的组件、默认尺寸与适用范围。"
-        icon={<LayoutGrid size={18} />}
-        width={680}
-        maxHeight="calc(100vh - 72px)"
-        bodyStyle={{ padding: '18px 24px 20px' }}
-        footer={<ArcoButton type="primary" onClick={() => setCatalogOpen(false)}>关闭</ArcoButton>}
-      >
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }}>
-                  <span style={{ borderRadius: 999, background: 'var(--app-accent-soft)', color: 'var(--app-accent)', fontSize: 11, fontWeight: 600, padding: '5px 10px' }}>
-                    {COMPONENT_DEFS.length} 个组件
-                  </span>
-                  <span style={{ borderRadius: 999, background: 'var(--app-soft)', color: 'var(--app-muted)', fontSize: 11, fontWeight: 600, padding: '5px 10px', border: '1px solid var(--app-border)' }}>
-                    {CATEGORIES.length} 个分类
-                  </span>
-            </div>
-
-              {CATEGORIES.map(category => {
-                const items = COMPONENT_DEFS.filter(def => def.categoryId === category.id);
-                if (items.length === 0) return null;
-
-                return (
-                  <section key={category.id} style={{ marginBottom: 18 }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: 10,
-                    }}>
-                      <div style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 600 }}>{category.name}</div>
-                      <div style={{ color: 'var(--app-muted)', fontSize: 11, fontWeight: 600 }}>{items.length} 个</div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
-                      {items.map(def => (
-                        <div
-                          key={def.id}
-                          style={{
-                            borderRadius: 8,
-                            background: 'var(--app-soft)',
-                            border: '1px solid var(--app-border)',
-                            padding: '13px 14px',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
-                            <div style={{ color: 'var(--app-heading)', fontSize: 13, fontWeight: 600, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {def.name}
-                            </div>
-                            <span style={{ flexShrink: 0, background: 'var(--app-accent-soft)', color: 'var(--app-accent)', fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 999 }}>
-                              {def.colSpan}×{def.rowSpan}格
-                            </span>
-                          </div>
-                          <p style={{ color: 'var(--app-muted)', fontSize: 12, lineHeight: 1.6, margin: '0 0 10px' }}>
-                            {def.description}
-                          </p>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                            {def.scopes.map(scope => (
-                              <span
-                                key={scope}
-                                style={{
-                                  borderRadius: 999,
-                                  background: scope === '通用' ? 'var(--app-border)' : 'var(--app-success-soft)',
-                                  color: scope === '通用' ? 'var(--app-muted)' : 'var(--app-success)',
-                                  fontSize: 10,
-                                  fontWeight: 600,
-                                  padding: '3px 8px',
-                                }}
-                              >
-                                {scope}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                );
-              })}
-      </ArcoModal>
+      <ComponentManagerDialog open={catalogOpen} onOpenChange={setCatalogOpen} />
 
       {/* Rename dialog */}
       <ArcoModal
