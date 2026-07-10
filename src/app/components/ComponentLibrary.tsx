@@ -8,6 +8,9 @@ import { useComponentCatalog } from './useComponentCatalog';
 
 interface ComponentLibraryProps {
   onExit?: () => void;
+  title?: string;
+  showBack?: boolean;
+  editorLayout?: boolean;
 }
 
 const CATEGORY_META: Record<string, { icon: React.ReactNode; color: string; bg: string; border: string }> = {
@@ -68,7 +71,7 @@ function DraggableCard({ def, categoryId }: { def: ComponentDef; categoryId: str
   );
 }
 
-export function ComponentLibrary({ onExit }: ComponentLibraryProps = {}) {
+export function ComponentLibrary({ onExit, title = '组件库', showBack = true, editorLayout = false }: ComponentLibraryProps = {}) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set(CATEGORIES.map(c => c.id)));
   const [query, setQuery] = useState('');
   const [managerOpen, setManagerOpen] = useState(false);
@@ -77,11 +80,11 @@ export function ComponentLibrary({ onExit }: ComponentLibraryProps = {}) {
   function toggle(id: string) { setExpanded(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); }
 
   return (
-    <div style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', margin: '16px 0 16px 12px', background: 'var(--app-surface)', borderRadius: 16, border: '1px solid var(--app-border)', boxShadow: 'none', overflow: 'hidden' }}>
+    <div style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', margin: editorLayout ? '24px 0 24px 24px' : '16px 0 16px 12px', background: 'var(--app-surface)', borderRadius: 16, border: '1px solid var(--app-border)', boxShadow: 'none', overflow: 'hidden' }}>
       <div style={{ padding: '16px 18px 14px', borderBottom: '1px solid var(--app-border)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-          <ArcoIconButton onClick={onExit} aria-label="返回" title="返回" type="text" size="small" icon={<ArrowLeft size={16} />} />
-          <div><div style={{ color: 'var(--app-heading)', fontSize: 16, fontWeight: 600, lineHeight: 1.2 }}>组件库</div></div>
+          {showBack && <ArcoIconButton onClick={onExit} aria-label="返回" title="返回" type="text" size="small" icon={<ArrowLeft size={16} />} />}
+          <div><div style={{ color: 'var(--app-heading)', fontSize: 16, fontWeight: 600, lineHeight: 1.2 }}>{title}</div></div>
         </div>
         <label style={{ display: 'block' }}>
           <span style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>搜索组件</span>

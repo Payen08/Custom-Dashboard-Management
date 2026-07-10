@@ -724,10 +724,77 @@ const EDITOR_NAV_META: Record<EditorNavKey, { label: string; description: string
 interface EditTopBarProps {
   scheme: HomepageScheme;
   saveState: 'idle' | 'saved';
+  onExit: () => void;
   onAutoFill: () => void;
   onPreview: () => void;
+  onExport: () => void;
   onSave: () => void;
-  onCancel: () => void;
+}
+
+function EditorWorkspaceHeader({
+  scheme,
+  saveState,
+  onExit,
+  onAutoFill,
+  onPreview,
+  onExport,
+  onSave,
+}: EditTopBarProps) {
+  return (
+    <header style={{
+      padding: '20px 24px 16px',
+      display: 'flex',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      gap: '12px 20px',
+      flexWrap: 'wrap',
+      flexShrink: 0,
+    }}>
+      <div style={{ minWidth: 0, flex: '1 1 260px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <ArcoIconButton
+          type="text"
+          size="small"
+          icon={<ArrowLeft size={17} />}
+          onClick={onExit}
+          aria-label="返回自定义首页"
+          title="返回自定义首页"
+          style={{ marginTop: 2 }}
+        />
+        <div style={{ minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <h1 style={{ color: 'var(--app-heading)', fontSize: 20, lineHeight: 1.3, fontWeight: 600, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {getSchemePageTitle(scheme)}
+          </h1>
+          <span style={{
+            background: 'var(--app-accent-soft)', color: 'var(--app-accent)', border: '1px solid var(--app-accent-border)',
+            fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 8, flexShrink: 0,
+          }}>
+            {scheme.name} · {scheme.version}
+          </span>
+        </div>
+        <div style={{ marginTop: 8, color: 'var(--app-text)', fontSize: 13 }}>
+          上次编辑 {scheme.lastEdited} · {CANVAS_W} × {CANVAS_H} PX
+        </div>
+        </div>
+      </div>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8,
+        flex: '0 1 440px', flexWrap: 'wrap', marginLeft: 'auto',
+      }}>
+        <ArcoButton onClick={onPreview} icon={<Eye size={14} />}>预览</ArcoButton>
+        <ArcoButton onClick={onAutoFill} icon={<Wand2 size={14} />}>自动填补</ArcoButton>
+        <ArcoButton type="secondary" onClick={onExport} icon={<Download size={14} />}>导出看板</ArcoButton>
+        <ArcoButton
+          onClick={onSave}
+          type={saveState === 'saved' ? 'default' : 'primary'}
+          status={saveState === 'saved' ? 'success' : 'normal'}
+          icon={saveState === 'saved' ? <CheckCircle2 size={14} /> : <Save size={14} />}
+        >
+          {saveState === 'saved' ? '已保存' : '保存并提交'}
+        </ArcoButton>
+      </div>
+    </header>
+  );
 }
 
 // ── Global Top Bar ──────────────────────────────────────
@@ -735,72 +802,15 @@ interface EditTopBarProps {
 function GlobalTopBar({
   themeMode = 'light',
   onThemeToggle,
-  edit,
 }: {
   themeMode?: AppThemeMode;
   onThemeToggle?: () => void;
-  edit?: EditTopBarProps;
 }) {
   const isDark = themeMode === 'dark';
   const barBg = 'var(--app-surface)';
   const barBorder = 'var(--app-border)';
   const textColor = 'var(--app-text)';
   const hoverBg = 'var(--app-soft)';
-
-  // ── Edit mode: breadcrumb left, actions right ──
-  if (edit) {
-    const { scheme, saveState, onAutoFill, onPreview, onSave, onCancel } = edit;
-    return (
-      <header style={{
-        height: 56,
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 24px',
-        background: barBg,
-        borderBottom: `1px solid ${barBorder}`,
-      }}>
-        {/* Left: breadcrumb + title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <span style={{ color: 'var(--app-muted)', fontSize: 12 }}>首页</span>
-          <ChevronRight size={11} color="var(--app-muted)" />
-          <span style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {getSchemePageTitle(scheme)}
-          </span>
-          <span style={{
-            background: 'var(--app-accent-soft)', color: 'var(--app-accent)',
-            fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 99, flexShrink: 0,
-          }}>
-            {scheme.version}
-          </span>
-        </div>
-
-        {/* Right: actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <span style={{ color: 'var(--app-muted)', fontSize: 11 }}>上次编辑 {scheme.lastEdited}</span>
-          <ArcoButton onClick={onPreview} size="small" icon={<Eye size={13} />}>
-            预览
-          </ArcoButton>
-          <ArcoButton onClick={onAutoFill} size="small" icon={<Wand2 size={13} />}>
-            自动填补
-          </ArcoButton>
-          <ArcoButton onClick={onCancel} size="small">
-            取消
-          </ArcoButton>
-          <ArcoButton
-            onClick={onSave}
-            size="small"
-            type={saveState === 'saved' ? 'default' : 'primary'}
-            status={saveState === 'saved' ? 'success' : 'normal'}
-            icon={saveState === 'saved' ? <CheckCircle2 size={13} /> : <Save size={13} />}
-          >
-            {saveState === 'saved' ? '已保存' : '保存'}
-          </ArcoButton>
-        </div>
-      </header>
-    );
-  }
 
   // ── Default top bar ──
   return (
@@ -1019,7 +1029,7 @@ function AppShell({
   onNavChange,
   onWorkspace,
   sidebarCollapsed = false,
-  edit,
+  hideTopBar = false,
   children,
 }: {
   active: EditorNavKey;
@@ -1028,7 +1038,7 @@ function AppShell({
   onNavChange: (key: EditorNavKey) => void;
   onWorkspace?: () => void;
   sidebarCollapsed?: boolean;
-  edit?: EditTopBarProps;
+  hideTopBar?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -1045,7 +1055,7 @@ function AppShell({
           <EditorNavRail active={active} themeMode={themeMode} onChange={onNavChange} onWorkspace={onWorkspace} />
         )}
         <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <GlobalTopBar themeMode={themeMode} onThemeToggle={onThemeToggle} edit={edit} />
+          {!hideTopBar && <GlobalTopBar themeMode={themeMode} onThemeToggle={onThemeToggle} />}
           <div style={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
             {children}
           </div>
@@ -1649,20 +1659,16 @@ export default function App() {
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
         sidebarCollapsed
-        edit={!isCanvasPreview && activeScheme ? {
-          scheme: activeScheme,
-          saveState,
-          onAutoFill: autoFill,
-          onPreview: () => { setSelectedItemId(null); setIsCanvasPreview(true); },
-          onSave: handleSave,
-          onCancel: () => { setIsEditing(false); setIsCanvasPreview(false); setActiveEditorNav('home'); setSelectedItemId(null); },
-        } : undefined}
+        hideTopBar
       >
         <div style={{ height: '100%', display: 'flex', minHeight: 0, background: 'var(--app-bg)' }}>
           {!isCanvasPreview && (
             <>
               {activeEditorNav === 'components' ? (
                 <ComponentLibrary
+                  title="编辑面板"
+                  showBack={false}
+                  editorLayout
                   onExit={() => { setIsEditing(false); setIsCanvasPreview(false); setActiveEditorNav('home'); setSelectedItemId(null); }}
                 />
               ) : (
@@ -1674,55 +1680,56 @@ export default function App() {
               )}
             </>
           )}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-            <CanvasArea
-              componentDefs={catalogComponents}
-              items={activeItems}
-              isEditing={!isCanvasPreview}
-              selectedItemId={isCanvasPreview ? null : selectedItemId}
-              onSelectItem={isCanvasPreview ? () => {} : setSelectedItemId}
-              onAddItem={addItem}
-              onMoveItem={moveItem}
-              onResizeItem={updateItemSize}
-              onRemoveItem={removeItem}
-            />
-            {isCanvasPreview && (
-              <button
-                onClick={() => setIsCanvasPreview(false)}
-                style={{
-                  position: 'fixed',
-                  left: '50%',
-                  bottom: 24,
-                  transform: 'translateX(-50%)',
-                  zIndex: 50,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  padding: '12px 22px',
-                  borderRadius: 99,
-                  background: 'var(--app-heading)',
-                  color: 'var(--app-surface)',
-                  border: 'none',
-                  boxShadow: '0 4px 16px var(--app-shadow-color)',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                <ArrowLeft size={15} />退出预览
-              </button>
+          <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', margin: isCanvasPreview ? '24px' : '24px 24px 24px 12px', background: 'var(--app-surface)', border: '1px solid var(--app-border)', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, overflow: 'hidden' }}>
+              {!isCanvasPreview && activeScheme && (
+                <EditorWorkspaceHeader
+                  scheme={activeScheme}
+                  saveState={saveState}
+                  onExit={() => { setIsEditing(false); setIsCanvasPreview(false); setActiveEditorNav('home'); setSelectedItemId(null); }}
+                  onAutoFill={autoFill}
+                  onPreview={() => { setSelectedItemId(null); setIsCanvasPreview(true); }}
+                  onExport={() => exportScheme(activeScheme.id)}
+                  onSave={handleSave}
+                />
+              )}
+              <CanvasArea
+                componentDefs={catalogComponents}
+                items={activeItems}
+                isEditing={!isCanvasPreview}
+                selectedItemId={isCanvasPreview ? null : selectedItemId}
+                onSelectItem={isCanvasPreview ? () => {} : setSelectedItemId}
+                onAddItem={addItem}
+                onMoveItem={moveItem}
+                onResizeItem={updateItemSize}
+                onRemoveItem={removeItem}
+              />
+            </div>
+            {!isCanvasPreview && (
+              <PropertiesPanel
+                componentDefs={catalogComponents}
+                item={selectedItem}
+                showTitleIcon={false}
+                embedded
+                onUpdateConfig={updateItemConfig}
+                onUpdateSize={updateItemSize}
+                onRemove={removeItem}
+                onClose={() => setSelectedItemId(null)}
+              />
             )}
           </div>
-          {!isCanvasPreview && (
-            <PropertiesPanel
-              componentDefs={catalogComponents}
-              item={selectedItem}
-              onUpdateConfig={updateItemConfig}
-              onUpdateSize={updateItemSize}
-              onRemove={removeItem}
-              onClose={() => setSelectedItemId(null)}
-            />
+          {isCanvasPreview && (
+            <button
+              onClick={() => setIsCanvasPreview(false)}
+              style={{
+                position: 'fixed', left: '50%', bottom: 24, transform: 'translateX(-50%)', zIndex: 50,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 22px',
+                borderRadius: 99, background: 'var(--app-heading)', color: 'var(--app-surface)', border: 'none',
+                boxShadow: '0 4px 16px var(--app-shadow-color)', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              <ArrowLeft size={15} />退出预览
+            </button>
           )}
           <DeleteHomepageDialog
             scheme={deleteTarget}

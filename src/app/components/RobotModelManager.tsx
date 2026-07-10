@@ -1681,7 +1681,7 @@ export function RobotModelManager({
   themeMode?: ThemeMode;
 } = {}) {
   const [models, setModels] = useState<RobotModel[]>(INITIAL_ROBOT_MODELS);
-  const [activeId, setActiveId] = useState(INITIAL_ROBOT_MODELS[0].id);
+  const [activeId, setActiveId] = useState<string | null>(INITIAL_ROBOT_MODELS[0]?.id ?? null);
   const [editingScene, setEditingScene] = useState(false);
   const [modelDialogOpen, setModelDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -1698,12 +1698,18 @@ export function RobotModelManager({
   const [urdfImportError, setUrdfImportError] = useState<string | null>(null);
 
   const themeMode = controlledThemeMode ?? internalThemeMode;
-  const activeModel = models.find(model => model.id === activeId) ?? models[0];
-  const flatTopology = useMemo(() => flattenTopology(activeModel.topology), [activeModel.topology]);
+  const activeModel = activeId ? (models.find(model => model.id === activeId) ?? null) : null;
+  const flatTopology = useMemo(() => activeModel ? flattenTopology(activeModel.topology) : [], [activeModel]);
   const selectedTopologyNode = useMemo(
-    () => findTopologyNode(activeModel.topology, selectedTopologyId) ?? activeModel.topology[0],
-    [activeModel.topology, selectedTopologyId],
+    () => activeModel ? (findTopologyNode(activeModel.topology, selectedTopologyId) ?? activeModel.topology[0]) : null,
+    [activeModel, selectedTopologyId],
   );
+
+  // Keep a valid active model after hot reloads, deletions, or restored local state.
+  useEffect(() => {
+    if (activeId && models.some(model => model.id === activeId)) return;
+    setActiveId(models[0]?.id ?? null);
+  }, [activeId, models]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -1713,6 +1719,24 @@ export function RobotModelManager({
     document.documentElement.dataset.robotTheme = themeMode;
     window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
   }, [themeMode]);
+
+  if (!activeModel) {
+    return (
+      <div style={{
+        ...robotThemeVars(themeMode),
+        flex: 1,
+        minWidth: 0,
+        height: '100%',
+        display: 'grid',
+        placeItems: 'center',
+        background: 'var(--robot-page)',
+        color: 'var(--robot-muted)',
+        fontSize: 13,
+      }}>
+        正在恢复当前机器人型号…
+      </div>
+    );
+  }
 
   function updateActive(partial: Partial<RobotModel>) {
     setModels(prev => prev.map(model => model.id === activeModel.id ? { ...model, ...partial, updatedAt: nowLabel() } : model));

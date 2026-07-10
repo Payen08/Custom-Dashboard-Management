@@ -392,8 +392,8 @@ const WIDGET_MAP: Record<string, React.ComponentType> = {
   'task-queue':    TaskQueueWidget,
 };
 
-const EDIT_FRAME_PAD_X = 40;
-const EDIT_FRAME_PAD_Y = 32;
+const EDIT_FRAME_PAD_X = 32;
+const EDIT_FRAME_PAD_Y = 28;
 const EDIT_FRAME_RADIUS = 24;
 const CANVAS_MIN_SCALE = 0.12;
 
@@ -608,8 +608,8 @@ export function CanvasArea({
       style={{
         flex: 1,
         overflow: 'auto',
-        padding: '12px 24px 24px',
-        background: 'var(--app-bg)',
+        padding: '12px 16px 20px',
+        background: isEditing ? 'var(--app-surface)' : 'var(--app-bg)',
       }}
     >
       <div style={{

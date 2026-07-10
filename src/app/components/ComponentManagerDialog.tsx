@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  BarChart2, CheckCircle2, ChevronLeft, Edit3, FileArchive, LayoutGrid, Plus, Search, Tag, Trash2, Upload, X,
+  BarChart2, CheckCircle2, Edit3, FileArchive, LayoutGrid, Plus, Search, Tag, Trash2, Upload, X,
 } from 'lucide-react';
 import { type ComponentDef } from '../shared';
 import {
@@ -12,6 +12,7 @@ type CatalogFilter = 'all' | 'system' | 'custom';
 type DialogView = 'manage' | 'add' | 'edit';
 
 const ALL_SCOPES = ['复合机器人', 'AGV', '巡检', '通用'];
+const MAX_TAGS = 8;
 
 function componentNameFromFile(fileName: string) {
   return fileName
@@ -106,11 +107,37 @@ export function ComponentManagerDialog({
     setView('manage');
   }
 
-  function addTag() {
-    const tag = tagInput.trim();
-    if (!tag || form.tags.includes(tag)) return;
-    setForm(previous => ({ ...previous, tags: [...previous.tags, tag] }));
+  function addTags(value: string) {
+    const nextTags = value
+      .split(/[,，]/)
+      .map(tag => tag.trim())
+      .filter(Boolean);
+
+    if (nextTags.length === 0) return;
+    setForm(previous => {
+      const tags = [...previous.tags];
+      for (const tag of nextTags) {
+        if (tags.length >= MAX_TAGS) break;
+        if (!tags.includes(tag)) tags.push(tag);
+      }
+      return { ...previous, tags };
+    });
     setTagInput('');
+  }
+
+  function addTag() {
+    addTags(tagInput);
+  }
+
+  function addSuggestedTag(tag: string) {
+    setForm(previous => {
+      if (previous.tags.includes(tag) || previous.tags.length >= MAX_TAGS) return previous;
+      return { ...previous, tags: [...previous.tags, tag] };
+    });
+  }
+
+  function removeTag(tag: string) {
+    setForm(previous => ({ ...previous, tags: previous.tags.filter(item => item !== tag) }));
   }
 
   function toggleScope(scope: string) {
@@ -126,6 +153,81 @@ export function ComponentManagerDialog({
   const isForm = view !== 'manage';
   const systemCount = components.filter(component => !component.isCustom).length;
   const customCount = components.length - systemCount;
+  const suggestedTags = useMemo(() => {
+    const allTags = new Set<string>();
+    for (const component of components) for (const tag of component.tags) allTags.add(tag);
+    return [...allTags].filter(tag => !form.tags.includes(tag)).slice(0, 6);
+  }, [components, form.tags]);
+
+  function renderTagEditor(placeholder: string, ariaLabel: string) {
+    const atLimit = form.tags.length >= MAX_TAGS;
+    return (
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
+          <div style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 600 }}>标签</div>
+          <span style={{ color: 'var(--app-muted)', fontSize: 11 }}>{form.tags.length}/{MAX_TAGS}</span>
+        </div>
+        {form.tags.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+            {form.tags.map(tag => (
+              <span key={tag} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5, height: 28, padding: '0 7px 0 9px', borderRadius: 8,
+                background: 'var(--app-accent-soft)', color: 'var(--app-accent)', border: '1px solid var(--app-accent-border)',
+                fontSize: 11, fontWeight: 600,
+              }}>
+                <Tag size={11} />{tag}
+                <button
+                  onClick={() => removeTag(tag)}
+                  aria-label={`移除标签${tag}`}
+                  title={`移除标签${tag}`}
+                  style={{ display: 'grid', placeItems: 'center', width: 16, height: 16, padding: 0, border: 0, borderRadius: 4, background: 'transparent', color: 'inherit', cursor: 'pointer' }}
+                >
+                  <X size={11} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        {suggestedTags.length > 0 && !atLimit && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+            {suggestedTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => addSuggestedTag(tag)}
+                style={{ height: 26, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '0 8px', borderRadius: 8, border: '1px solid var(--app-border)', background: 'var(--app-soft)', color: 'var(--app-text)', fontSize: 11, cursor: 'pointer' }}
+              >
+                <Plus size={10} />{tag}
+              </button>
+            ))}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <ArcoTextInput
+            value={tagInput}
+            onChange={event => setTagInput(event.target.value)}
+            onKeyDown={event => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                addTag();
+              }
+            }}
+            placeholder={atLimit ? '最多添加 8 个标签' : placeholder}
+            aria-label={ariaLabel}
+            disabled={atLimit}
+            style={{ flex: 1, height: 36 }}
+          />
+          <ArcoIconButton
+            type="secondary"
+            icon={<Plus size={15} />}
+            aria-label="添加标签"
+            title="添加标签"
+            onClick={addTag}
+            disabled={atLimit || !tagInput.trim()}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ArcoModal
@@ -140,15 +242,10 @@ export function ComponentManagerDialog({
         : isForm
           ? '维护组件适用范围和标签。'
           : '统一管理自定义首页和组件库使用的组件。'}
-      icon={view === 'add' ? <Upload size={17} /> : isForm ? <Edit3 size={17} /> : <LayoutGrid size={17} />}
+      icon={view === 'add' ? undefined : isForm ? <Edit3 size={17} /> : <LayoutGrid size={17} />}
       width={isForm ? 620 : 920}
       maxHeight="calc(100vh - 48px)"
       bodyStyle={{ padding: isForm ? '20px 24px 24px' : '0 24px 20px' }}
-      headerExtra={isForm ? (
-        <ArcoButton type="text" size="small" icon={<ChevronLeft size={14} />} onClick={() => setView('manage')}>
-          返回列表
-        </ArcoButton>
-      ) : undefined}
       footer={isForm ? (
         <>
           <ArcoButton onClick={() => setView('manage')}>取消</ArcoButton>
@@ -413,69 +510,7 @@ export function ComponentManagerDialog({
               <ArcoIconButton type="text" size="small" icon={<X size={13} />} aria-label="移除组件包" onClick={() => setPackageFile(null)} />
             </div>
           )}
-          <div>
-            <div style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 600, marginBottom: 7 }}>标签</div>
-            {form.tags.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 9 }}>
-                {form.tags.map(tag => (
-                  <span key={tag} style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    height: 28,
-                    padding: '0 9px',
-                    borderRadius: 8,
-                    background: 'var(--app-accent-soft)',
-                    color: 'var(--app-accent)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                  }}>
-                    <Tag size={11} />{tag}
-                    <button
-                      onClick={() => setForm(previous => ({ ...previous, tags: previous.tags.filter(item => item !== tag) }))}
-                      aria-label={`移除标签${tag}`}
-                      style={{ display: 'grid', placeItems: 'center', padding: 0, border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer' }}
-                    >
-                      <X size={11} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            {/* Existing tag suggestions */}
-            {(() => {
-              const allTags = new Set<string>();
-              for (const comp of components) for (const t of comp.tags) allTags.add(t);
-              const suggestions = [...allTags].filter(t => !form.tags.includes(t)).slice(0, 8);
-              if (suggestions.length === 0) return null;
-              return (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
-                  {suggestions.map(tag => (
-                    <button key={tag} onClick={() => { setForm(prev => ({ ...prev, tags: [...prev.tags, tag] })); }}
-                      style={{ padding: '3px 10px', borderRadius: 8, border: '1px dashed var(--app-border)', background: 'transparent', color: 'var(--app-muted)', fontSize: 11, cursor: 'pointer' }}>
-                      + {tag}
-                    </button>
-                  ))}
-                </div>
-              );
-            })()}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <ArcoTextInput
-                value={tagInput}
-                onChange={event => setTagInput(event.target.value)}
-                onKeyDown={event => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    addTag();
-                  }
-                }}
-                placeholder="输入标签，例如：实时、告警"
-                aria-label="导入组件标签"
-                style={{ flex: 1 }}
-              />
-              <ArcoButton icon={<Plus size={13} />} onClick={addTag} disabled={!tagInput.trim()}>添加标签</ArcoButton>
-            </div>
-          </div>
+          {renderTagEditor('输入标签，例如：实时、告警', '导入组件标签')}
         </div>
       ) : (
         <div style={{ display: 'grid', gap: 18 }}>
@@ -525,50 +560,7 @@ export function ComponentManagerDialog({
               </div>
           </div>
 
-          <div>
-            <div style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 600, marginBottom: 7 }}>标签</div>
-            <div style={{ minHeight: 32, display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 9 }}>
-              {form.tags.map(tag => (
-                <span key={tag} style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  height: 28,
-                  padding: '0 9px',
-                  borderRadius: 8,
-                  background: 'var(--app-accent-soft)',
-                  color: 'var(--app-accent)',
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}>
-                  <Tag size={11} />{tag}
-                  <button
-                    onClick={() => setForm(previous => ({ ...previous, tags: previous.tags.filter(item => item !== tag) }))}
-                    aria-label={`移除标签${tag}`}
-                    style={{ display: 'grid', placeItems: 'center', padding: 0, border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer' }}
-                  >
-                    <X size={11} />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <ArcoTextInput
-                value={tagInput}
-                onChange={event => setTagInput(event.target.value)}
-                onKeyDown={event => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    addTag();
-                  }
-                }}
-                placeholder="输入标签名称"
-                aria-label="标签名称"
-                style={{ flex: 1 }}
-              />
-              <ArcoButton icon={<Plus size={13} />} onClick={addTag} disabled={!tagInput.trim()}>添加标签</ArcoButton>
-            </div>
-          </div>
+          {renderTagEditor('输入标签名称', '标签名称')}
         </div>
       )}
     </ArcoModal>

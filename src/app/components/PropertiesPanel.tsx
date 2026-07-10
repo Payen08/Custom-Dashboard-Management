@@ -5,6 +5,8 @@ import { ArcoButton, ArcoField, ArcoIconButton, ArcoSelect, ArcoTextInput } from
 interface Props {
   item: PlacedItem | null;
   componentDefs?: ComponentDef[];
+  showTitleIcon?: boolean;
+  embedded?: boolean;
   onUpdateConfig: (instanceId: string, key: string, value: string | number | boolean) => void;
   onUpdateSize: (instanceId: string, colSpan: number, rowSpan: number) => void;
   onRemove: (instanceId: string) => void;
@@ -158,7 +160,7 @@ function SizeField({ label, value, min, max, onChange }: {
 
 // ── PropertiesPanel ──────────────────────────────────────────────────────────
 
-export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, onUpdateConfig, onUpdateSize, onRemove, onClose }: Props) {
+export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, showTitleIcon = true, embedded = false, onUpdateConfig, onUpdateSize, onRemove, onClose }: Props) {
   const emptyState = !item;
   const def = item ? componentDefs.find(d => d.id === item.defId) : undefined;
   if (!emptyState && !def) return null;
@@ -178,9 +180,9 @@ export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, onUpdate
 
   return (
     <div style={{
-      width: 280, flexShrink: 0,
+      width: embedded ? 'clamp(288px, 20vw, 320px)' : 280, flexShrink: 0,
       display: 'flex', flexDirection: 'column',
-      margin: '16px 12px 16px 0',
+      margin: embedded ? '16px 16px 16px 0' : '16px 12px 16px 0',
       background: 'var(--app-surface)',
       borderRadius: 16,
       border: '1px solid var(--app-border)',
@@ -197,7 +199,7 @@ export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, onUpdate
         justifyContent: 'space-between',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Settings2 size={16} color="var(--app-accent)" />
+          {showTitleIcon && <Settings2 size={16} color="var(--app-accent)" />}
           <span style={{ color: 'var(--app-heading)', fontSize: 16, fontWeight: 600 }}>组件属性</span>
         </div>
         {item && (
