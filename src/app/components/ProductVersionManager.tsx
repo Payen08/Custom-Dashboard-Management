@@ -424,11 +424,17 @@ function CategoryTree({
 
 function VersionAccordion({
   group,
+  selectedPkgIds,
+  onTogglePkg,
+  onBatchDelete,
   onEditPackage,
   onDeletePackage,
   onDownloadPackage,
 }: {
   group: ProductVersionGroup;
+  selectedPkgIds: Set<string>;
+  onTogglePkg: (pkgId: string) => void;
+  onBatchDelete: () => void;
   onEditPackage: (pkg: ProductPackage) => void;
   onDeletePackage: (pkg: ProductPackage) => void;
   onDownloadPackage: (pkg: ProductPackage) => void;
@@ -476,7 +482,33 @@ function VersionAccordion({
         <span style={{ fontSize: 14, fontWeight: 700 }}>{group.version}</span>
         {hasRC && <Badge tone="accent">RC</Badge>}
         <span style={{ flex: 1 }} />
-        <Badge>{group.packages.length} 个包</Badge>
+        {(() => {
+          const selCount = group.packages.filter(p => selectedPkgIds.has(p.id)).length;
+          const total = group.packages.length;
+          if (selCount > 0) {
+            return (
+              <>
+                <span style={{ color: 'var(--app-accent)', fontSize: 12, fontWeight: 500 }}>已选 {selCount}</span>
+                <ArcoButton size="small" onClick={e => {
+                  e.stopPropagation();
+                  const ids = group.packages.map(p => p.id);
+                  const allSel = ids.every(id => selectedPkgIds.has(id));
+                  ids.forEach(id => { if (allSel) onTogglePkg(id); else if (!selectedPkgIds.has(id)) onTogglePkg(id); });
+                }}>
+                  {group.packages.every(p => selectedPkgIds.has(p.id)) ? '取消' : '全选'}
+                </ArcoButton>
+                <ArcoButton size="small" status="danger" icon={<Trash2 size={12} />} onClick={e => {
+                  e.stopPropagation();
+                  group.packages = group.packages.filter(p => !selectedPkgIds.has(p.id));
+                  onBatchDelete();
+                }}>
+                  删除
+                </ArcoButton>
+              </>
+            );
+          }
+          return <Badge>{total} 个包</Badge>;
+        })()}
       </button>
 
       {isOpen && (
@@ -489,11 +521,18 @@ function VersionAccordion({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 14,
+                  gap: 12,
                   padding: '14px 16px',
                   borderBottom: '1px solid var(--app-border)',
+                  background: selectedPkgIds.has(pkg.id) ? 'var(--app-accent-soft)' : 'transparent',
                 }}
               >
+                <input
+                  type="checkbox"
+                  checked={selectedPkgIds.has(pkg.id)}
+                  onChange={() => onTogglePkg(pkg.id)}
+                  style={{ accentColor: 'var(--app-accent)', width: 15, height: 15, flexShrink: 0, cursor: 'pointer' }}
+                />
                 <div style={{
                   width: 42,
                   height: 42,
@@ -685,11 +724,12 @@ export function ProductVersionManager() {
   const [batchOpen, setBatchOpen] = useState(false);
   const [batchVersion, setBatchVersion] = useState('');
   const [batchSelection, setBatchSelection] = useState<Set<string>>(new Set());
-  const [batchCatId, setBatchCatId] = useState('');
-  const [batchSubId, setBatchSubId] = useState('');
+  const [batchCatIds, setBatchCatIds] = useState<Set<string>>(new Set());
+  const [batchSubIds, setBatchSubIds] = useState<Set<string>>(new Set());
   const [form, setForm] = useState<PackageForm>(emptyForm);
   const [editPackage, setEditPackage] = useState<ProductPackage | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProductPackage | null>(null);
+  const [selectedPkgIds, setSelectedPkgIds] = useState<Set<string>>(new Set());
 
   const brand = useMemo(() => findBrand(categories, selectedBrandId), [categories, selectedBrandId, revision]);
   const versions = useMemo(() => {
@@ -773,14 +813,26 @@ export function ProductVersionManager() {
   function openBatchPublish() {
     setBatchVersion('');
     setBatchSelection(new Set());
-    setBatchCatId(categories[0]?.id ?? '');
-    setBatchSubId('');
+    setBatchCatIds(new Set(categories.length > 0 ? [categories[0].id] : []));
+    setBatchSubIds(new Set());
     setBatchOpen(true);
   }
 
-  // Batch publish helpers
-  const batchCat = categories.find(c => c.id === batchCatId) ?? categories[0];
-  const batchSub = batchCat?.subcategories.find(s => s.id === batchSubId) ?? batchCat?.subcategories[0];
+  // Derived: brands from selected categories + subcategories
+  const batchBrands = (() => {
+    const result: { brand: ProductBrand; catName: string; subName: string }[] = [];
+    for (const cat of categories) {
+      if (!batchCatIds.has(cat.id)) continue;
+      for (const sub of cat.subcategories) {
+        if (batchSubIds.size > 0 && !batchSubIds.has(sub.id)) continue;
+        for (const b of sub.brands) {
+          result.push({ brand: b, catName: cat.name, subName: sub.name });
+        }
+      }
+    }
+    return result;
+  })();
+
   const allBatchVersions = (() => {
     const vs = new Set<string>();
     for (const cat of categories)
@@ -791,6 +843,15 @@ export function ProductVersionManager() {
     return [...vs].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
   })();
 
+  function toggleBatchCat(catId: string) {
+    setBatchCatIds(prev => { const n = new Set(prev); n.has(catId) ? n.delete(catId) : n.add(catId); return n; });
+    setBatchSubIds(new Set());
+  }
+
+  function toggleBatchSub(subId: string) {
+    setBatchSubIds(prev => { const n = new Set(prev); n.has(subId) ? n.delete(subId) : n.add(subId); return n; });
+  }
+
   function toggleBatchBrand(brandId: string) {
     setBatchSelection(prev => { const n = new Set(prev); n.has(brandId) ? n.delete(brandId) : n.add(brandId); return n; });
   }
@@ -800,7 +861,9 @@ export function ProductVersionManager() {
     const target = batchVersion.trim();
     let count = 0;
     for (const cat of categories) {
+      if (!batchCatIds.has(cat.id)) continue;
       for (const sub of cat.subcategories) {
+        if (batchSubIds.size > 0 && !batchSubIds.has(sub.id)) continue;
         for (const b of sub.brands) {
           if (!batchSelection.has(b.id)) continue;
           let vg = b.versions.find(v => v.version === target);
@@ -826,6 +889,23 @@ export function ProductVersionManager() {
       else next.add(id);
       return next;
     });
+  }
+
+  function togglePkgSelect(pkgId: string) {
+    setSelectedPkgIds(prev => { const n = new Set(prev); n.has(pkgId) ? n.delete(pkgId) : n.add(pkgId); return n; });
+  }
+
+  function selectAllPkgs() {
+    if (!brand) return;
+    const allIds = new Set(brand.versions.flatMap(v => v.packages.map(p => p.id)));
+    setSelectedPkgIds(prev => prev.size === allIds.size ? new Set() : allIds);
+  }
+
+  function batchDeletePkgs() {
+    if (!brand || selectedPkgIds.size === 0) return;
+    brand.versions = brand.versions.filter(vg => vg.packages.length > 0);
+    setRevision(v => v + 1);
+    setSelectedPkgIds(new Set());
   }
 
   function openCreate() {
@@ -1018,9 +1098,11 @@ export function ProductVersionManager() {
               />
             </div>
             {brand && (
-              <ArcoButton type="primary" icon={<Layers size={14} />} onClick={openBatchPublish}>
-                一键发布
-              </ArcoButton>
+              <>
+                <ArcoButton type="primary" icon={<Layers size={14} />} onClick={openBatchPublish}>
+                  一键发版
+                </ArcoButton>
+              </>
             )}
           </div>
         </header>
@@ -1041,6 +1123,9 @@ export function ProductVersionManager() {
               <VersionAccordion
                 key={versionGroup.version}
                 group={versionGroup}
+                selectedPkgIds={selectedPkgIds}
+                onTogglePkg={togglePkgSelect}
+                onBatchDelete={batchDeletePkgs}
                 onEditPackage={openEdit}
                 onDeletePackage={openDelete}
                 onDownloadPackage={pkg => window.alert(`下载 ${pkg.name}`)}
@@ -1196,44 +1281,64 @@ export function ProductVersionManager() {
       <ArcoModal
         open={batchOpen}
         onOpenChange={setBatchOpen}
-        title="一键发布"
-        width={700}
+        title="一键发版"
+        width={720}
         footer={(
           <>
             <ArcoButton onClick={() => setBatchOpen(false)}>关闭</ArcoButton>
             <ArcoButton type="primary" onClick={handleBatchPublish} disabled={!batchVersion.trim() || batchSelection.size === 0}>
-              一键发布（{batchSelection.size} 个品牌）
+              一键发版（{batchSelection.size} 个品牌）
             </ArcoButton>
           </>
         )}
       >
-        <div style={{ display: 'grid', gridTemplateColumns: '150px 150px 1fr 170px', gap: 1, background: 'var(--app-border)', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--app-border)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '160px 160px 1fr 170px', gap: 1, background: 'var(--app-border)', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--app-border)' }}>
+          {/* Col 1: 产品分组 — 多选 */}
           <div style={{ background: 'var(--app-surface)', padding: 8 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>产品分组</div>
-            {categories.map(cat => (
-              <button key={cat.id} onClick={() => { setBatchCatId(cat.id); setBatchSubId(''); }}
-                style={{ width: '100%', textAlign: 'left', padding: '7px 10px', border: 'none', borderRadius: 6, cursor: 'pointer',
-                  background: batchCatId === cat.id ? 'var(--app-accent-soft)' : 'transparent',
-                  color: batchCatId === cat.id ? 'var(--app-accent)' : 'var(--app-text)', fontSize: 12, fontWeight: batchCatId === cat.id ? 600 : 400, marginBottom: 2 }}>
-                {cat.name}
-              </button>
-            ))}
+            {categories.map(cat => {
+              const checked = batchCatIds.has(cat.id);
+              return (
+                <label key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, cursor: 'pointer',
+                  background: checked ? 'var(--app-accent-soft)' : 'transparent', marginBottom: 2 }}>
+                  <input type="checkbox" checked={checked} onChange={() => toggleBatchCat(cat.id)} style={{ accentColor: 'var(--app-accent)', width: 14, height: 14, flexShrink: 0 }} />
+                  <span style={{ color: checked ? 'var(--app-accent)' : 'var(--app-text)', fontSize: 12, fontWeight: checked ? 600 : 400 }}>{cat.name}</span>
+                </label>
+              );
+            })}
           </div>
+
+          {/* Col 2: 子产品 — 多选（基于选中产品分组的所有子产品） */}
           <div style={{ background: 'var(--app-surface)', padding: 8 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>子产品</div>
-            {batchCat?.subcategories.map(sub => (
-              <button key={sub.id} onClick={() => setBatchSubId(sub.id)}
-                style={{ width: '100%', textAlign: 'left', padding: '7px 10px', border: 'none', borderRadius: 6, cursor: 'pointer',
-                  background: batchSubId === sub.id ? 'var(--app-accent-soft)' : 'transparent',
-                  color: batchSubId === sub.id ? 'var(--app-accent)' : 'var(--app-text)', fontSize: 12, fontWeight: batchSubId === sub.id ? 600 : 400, marginBottom: 2 }}>
-                {sub.name}
-              </button>
-            ))}
+            {(() => {
+              const subs: { id: string; name: string }[] = [];
+              const seen = new Set<string>();
+              for (const cat of categories) {
+                if (!batchCatIds.has(cat.id)) continue;
+                for (const s of cat.subcategories) {
+                  if (!seen.has(s.id)) { seen.add(s.id); subs.push({ id: s.id, name: s.name }); }
+                }
+              }
+              return subs.map(sub => {
+                const checked = batchSubIds.has(sub.id);
+                return (
+                  <label key={sub.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, cursor: 'pointer',
+                    background: checked ? 'var(--app-accent-soft)' : 'transparent', marginBottom: 2 }}>
+                    <input type="checkbox" checked={checked} onChange={() => toggleBatchSub(sub.id)} style={{ accentColor: 'var(--app-accent)', width: 14, height: 14, flexShrink: 0 }} />
+                    <span style={{ color: checked ? 'var(--app-accent)' : 'var(--app-text)', fontSize: 12, fontWeight: checked ? 600 : 400 }}>{sub.name}</span>
+                  </label>
+                );
+              });
+            })()}
+            {batchCatIds.size === 0 && <div style={{ color: 'var(--app-muted)', fontSize: 11, padding: 12, textAlign: 'center' }}>请先选择产品分组</div>}
           </div>
+
+          {/* Col 3: 品牌 — 多选 */}
           <div style={{ background: 'var(--app-surface)', padding: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>{batchSub?.name ?? '品牌'}（勾选发布）</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>产品（勾选发布）</div>
             <div style={{ maxHeight: 260, overflow: 'auto' }}>
-              {(batchSub?.brands ?? []).map(br => {
+              {batchBrands.length > 0 ? batchBrands.map(({ brand: br }) => {
                 const checked = batchSelection.has(br.id);
                 return (
                   <label key={br.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, cursor: 'pointer',
@@ -1242,10 +1347,11 @@ export function ProductVersionManager() {
                     <span style={{ color: checked ? 'var(--app-accent)' : 'var(--app-text)', fontSize: 12, fontWeight: checked ? 600 : 400 }}>{br.name}</span>
                   </label>
                 );
-              })}
-              {(!batchSub || batchSub.brands.length === 0) && <div style={{ color: 'var(--app-muted)', fontSize: 11, padding: 12, textAlign: 'center' }}>暂无品牌</div>}
+              }) : <div style={{ color: 'var(--app-muted)', fontSize: 11, padding: 12, textAlign: 'center' }}>暂无产品</div>}
             </div>
           </div>
+
+          {/* Col 4: 共同版本 */}
           <div style={{ background: 'var(--app-surface)', padding: 8 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>共同版本</div>
             <div style={{ maxHeight: 260, overflow: 'auto' }}>

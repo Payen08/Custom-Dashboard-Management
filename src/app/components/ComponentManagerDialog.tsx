@@ -413,19 +413,6 @@ export function ComponentManagerDialog({
               <ArcoIconButton type="text" size="small" icon={<X size={13} />} aria-label="移除组件包" onClick={() => setPackageFile(null)} />
             </div>
           )}
-          <label style={{ display: 'grid', gap: 7, color: 'var(--app-text)', fontSize: 12, fontWeight: 600 }}>
-            组件描述
-            <ArcoTextArea
-              value={form.description}
-              onChange={event => setForm(previous => ({ ...previous, description: event.target.value }))}
-              rows={3}
-              maxLength={200}
-              placeholder="补充组件用途、展示内容或数据来源"
-            />
-            <span style={{ justifySelf: 'end', color: 'var(--app-muted)', fontSize: 10, fontWeight: 400 }}>
-              {form.description.length}/200
-            </span>
-          </label>
           <div>
             <div style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 600, marginBottom: 7 }}>标签</div>
             {form.tags.length > 0 && (
@@ -455,6 +442,23 @@ export function ComponentManagerDialog({
                 ))}
               </div>
             )}
+            {/* Existing tag suggestions */}
+            {(() => {
+              const allTags = new Set<string>();
+              for (const comp of components) for (const t of comp.tags) allTags.add(t);
+              const suggestions = [...allTags].filter(t => !form.tags.includes(t)).slice(0, 8);
+              if (suggestions.length === 0) return null;
+              return (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+                  {suggestions.map(tag => (
+                    <button key={tag} onClick={() => { setForm(prev => ({ ...prev, tags: [...prev.tags, tag] })); }}
+                      style={{ padding: '3px 10px', borderRadius: 8, border: '1px dashed var(--app-border)', background: 'transparent', color: 'var(--app-muted)', fontSize: 11, cursor: 'pointer' }}>
+                      + {tag}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
             <div style={{ display: 'flex', gap: 8 }}>
               <ArcoTextInput
                 value={tagInput}
