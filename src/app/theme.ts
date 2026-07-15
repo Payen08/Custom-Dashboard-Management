@@ -85,8 +85,50 @@ export const THEME_PALETTES: Record<ThemeMode, ThemePalette> = {
   },
 };
 
+function designSystemSemanticVars(palette: ThemePalette, mode: ThemeMode): Record<string, string> {
+  return {
+    '--ds-color-page': palette.bgBase,
+    '--ds-color-layout': palette.bgLayout,
+    '--ds-color-surface': palette.surface,
+    '--ds-color-surface-raised': mode === 'dark' ? palette.neutralBg : palette.surface,
+    '--ds-color-soft': palette.fillAlter,
+    '--ds-color-border': palette.border,
+    '--ds-color-border-strong': mode === 'dark' ? palette.iconSecondary : palette.border,
+    '--ds-color-heading': palette.textPrimary,
+    '--ds-color-text': palette.textSecondary,
+    '--ds-color-muted': palette.textDisabled,
+    '--ds-color-icon': palette.iconPrimary,
+    '--ds-color-brand': palette.primary,
+    '--ds-color-accent': mode === 'dark' ? palette.primaryAccent : palette.primaryText,
+    '--ds-color-accent-contrast': palette.primaryContrast,
+    '--ds-color-accent-soft': palette.primaryBg,
+    '--ds-color-focus': mode === 'dark' ? palette.primary : palette.primaryAccent,
+    '--ds-color-info': palette.info,
+    '--ds-color-info-soft': palette.infoBg,
+    '--ds-color-warning': palette.warning,
+    '--ds-color-warning-soft': palette.warningBg,
+    '--ds-color-success': palette.success,
+    '--ds-color-success-soft': palette.successBg,
+    '--ds-color-danger': palette.danger,
+    '--ds-color-danger-soft': palette.dangerBg,
+    '--ds-color-overlay': mode === 'dark' ? 'rgba(0,0,0,0.64)' : 'rgba(15,15,17,0.42)',
+    '--ds-shadow-xs': mode === 'dark' ? '0 1px 2px rgba(0,0,0,0.24)' : '0 1px 2px rgba(51,51,51,0.06)',
+    '--ds-shadow-card': mode === 'dark' ? '0 18px 44px -32px rgba(0,0,0,0.52)' : '0 18px 44px -32px rgba(15,23,42,0.35)',
+    '--ds-shadow-overlay': mode === 'dark'
+      ? '0 18px 48px -18px rgba(0,0,0,0.64), 0 4px 12px rgba(0,0,0,0.24)'
+      : '0 18px 48px -18px rgba(15,23,42,0.30), 0 4px 12px rgba(15,23,42,0.06)',
+    '--ds-shadow-dialog': mode === 'dark' ? '0 24px 72px -24px rgba(0,0,0,0.72)' : '0 24px 72px -24px rgba(15,23,42,0.38)',
+  };
+}
+
 function appVars(palette: ThemePalette, mode: ThemeMode): Record<string, string> {
   return {
+    ...designSystemSemanticVars(palette, mode),
+    '--app-page-padding': 'var(--ds-layout-page-padding)',
+    '--app-section-gap': 'var(--ds-layout-module-gap)',
+    '--app-card-radius': 'var(--ds-radius-card)',
+    '--app-inner-radius': 'var(--ds-radius-inner)',
+    '--app-control-radius': 'var(--ds-radius-control)',
     '--app-bg': palette.bgBase,
     '--app-layout': palette.bgLayout,
     '--app-surface': palette.surface,
@@ -131,6 +173,12 @@ export const APP_THEME_VARS: Record<ThemeMode, Record<string, string>> = {
 
 function robotVars(palette: ThemePalette, mode: ThemeMode): Record<string, string> {
   return {
+    ...designSystemSemanticVars(palette, mode),
+    '--robot-page-padding': 'var(--ds-layout-page-padding)',
+    '--robot-section-gap': 'var(--ds-layout-module-gap)',
+    '--robot-card-radius': 'var(--ds-radius-card)',
+    '--robot-inner-radius': 'var(--ds-radius-inner)',
+    '--robot-control-radius': 'var(--ds-radius-control)',
     '--robot-page': palette.bgBase,
     '--robot-surface': palette.surface,
     '--robot-surface-raised': mode === 'dark' ? palette.neutralBg : palette.surface,

@@ -40,7 +40,7 @@ const THUMBNAILS: Record<string, React.ReactNode> = {
   ),
 };
 
-function DraggableCard({ def, categoryId }: { def: ComponentDef; categoryId: string }) {
+function DraggableCard({ def, categoryId, compact = false }: { def: ComponentDef; categoryId: string; compact?: boolean }) {
   const [{ isDragging }, drag] = useDrag({
     type: 'COMPONENT',
     item: { defId: def.id, colSpan: def.colSpan, rowSpan: def.rowSpan },
@@ -49,20 +49,20 @@ function DraggableCard({ def, categoryId }: { def: ComponentDef; categoryId: str
   const meta = CATEGORY_META[categoryId];
   return (
     <div ref={drag as unknown as React.Ref<HTMLDivElement>}
-      style={{ background: isDragging ? 'var(--app-accent-soft)' : 'var(--app-surface)', border: '1px solid ' + (isDragging ? 'var(--app-accent)' : 'var(--app-border)'), borderRadius: 16, padding: '12px 14px', cursor: 'grab', opacity: isDragging ? 0.5 : 1, boxShadow: isDragging ? '0 4px 20px var(--app-shadow-color)' : 'none', transition: 'all 0.2s ease', userSelect: 'none' }}>
+      style={{ background: isDragging ? 'var(--app-accent-soft)' : 'var(--app-surface)', border: '1px solid ' + (isDragging ? 'var(--app-accent)' : 'var(--app-border)'), borderRadius: 'var(--app-inner-radius)', padding: compact ? '10px 12px' : '12px 14px', cursor: 'grab', opacity: isDragging ? 0.5 : 1, boxShadow: isDragging ? '0 4px 20px var(--app-shadow-color)' : 'none', transition: 'border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease', userSelect: 'none' }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
         <div style={{ width: 48, height: 48, borderRadius: 10, background: 'var(--app-soft)', border: '1px solid var(--app-border)', padding: 4, flexShrink: 0, overflow: 'hidden' }}>
           {THUMBNAILS[def.id] ?? <div style={{ width: '100%', height: '100%', background: meta.bg, borderRadius: 8 }} />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            <div style={{ color: 'var(--app-heading)', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{def.name}</div>
+            <div style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{def.name}</div>
           </div>
-          <p style={{ color: 'var(--app-text)', fontSize: 12, lineHeight: 1.55, margin: '0 0 8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{def.description}</p>
+          {!compact && <p style={{ color: 'var(--app-text)', fontSize: 12, lineHeight: 1.55, margin: '0 0 8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{def.description}</p>}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {def.scopes.map(s => {
               const sc = SCOPE_STYLE[s] ?? { bg: 'var(--app-soft)', color: 'var(--app-text)', border: 'var(--app-border)' };
-              return <span key={s} style={{ background: sc.bg, color: sc.color, border: '1px solid ' + sc.border, fontSize: 11, fontWeight: 500, padding: '1px 7px', borderRadius: 8, lineHeight: 1.6 }}>{s}</span>;
+              return <span key={s} style={{ background: sc.bg, color: sc.color, border: '1px solid ' + sc.border, fontSize: 12, fontWeight: 500, padding: '1px 7px', borderRadius: 8, lineHeight: 1.6 }}>{s}</span>;
             })}
           </div>
         </div>
@@ -80,8 +80,8 @@ export function ComponentLibrary({ onExit, title = '组件库', showBack = true,
   function toggle(id: string) { setExpanded(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); }
 
   return (
-    <div style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', margin: editorLayout ? '24px 0 24px 24px' : '16px 0 16px 12px', background: 'var(--app-surface)', borderRadius: 16, border: '1px solid var(--app-border)', boxShadow: 'none', overflow: 'hidden' }}>
-      <div style={{ padding: '16px 18px 14px', borderBottom: '1px solid var(--app-border)', flexShrink: 0 }}>
+    <div style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', margin: editorLayout ? 0 : '16px 0 16px 12px', background: 'var(--app-surface)', borderRadius: 'var(--app-card-radius)', border: '1px solid var(--app-border)', boxShadow: editorLayout ? '0 16px 40px -34px var(--app-shadow-color)' : 'none', overflow: 'hidden' }}>
+      <div style={{ padding: editorLayout ? '22px 16px 16px' : '16px 18px 14px', borderBottom: '1px solid var(--app-border)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           {showBack && <ArcoIconButton onClick={onExit} aria-label="返回" title="返回" type="text" size="small" icon={<ArrowLeft size={16} />} />}
           <div><div style={{ color: 'var(--app-heading)', fontSize: 16, fontWeight: 600, lineHeight: 1.2 }}>{title}</div></div>
@@ -90,7 +90,7 @@ export function ComponentLibrary({ onExit, title = '组件库', showBack = true,
           <span style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>搜索组件</span>
           <div style={{ position: 'relative' }}>
             <Search size={15} color="var(--app-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-            <ArcoTextInput value={query} onChange={e => setQuery(e.target.value)} placeholder="搜索组件" style={{ width: '100%', height: 32, borderRadius: 8, padding: '0 12px 0 36px' }} />
+            <ArcoTextInput value={query} onChange={e => setQuery(e.target.value)} placeholder="搜索组件" style={{ width: '100%', height: 40, borderRadius: 'var(--app-control-radius)', padding: '0 12px 0 36px' }} />
           </div>
         </label>
       </div>
@@ -103,15 +103,15 @@ export function ComponentLibrary({ onExit, title = '组件库', showBack = true,
           const isExpanded = expanded.has(cat.id);
           return (
             <div key={cat.id} style={{ marginBottom: 4 }}>
-              <button onClick={() => toggle(cat.id)} aria-expanded={isExpanded} style={{ width: '100%', height: 38, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 8, transition: 'background 0.15s ease' }}>
+              <button onClick={() => toggle(cat.id)} aria-expanded={isExpanded} style={{ width: '100%', height: 40, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 8, transition: 'background 0.15s ease' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ width: 26, height: 26, background: meta.bg, color: meta.color, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid ' + meta.border }}>{meta.icon}</div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--app-heading)' }}>{cat.name}</span>
-                  <span style={{ background: 'var(--app-soft)', color: 'var(--app-muted)', fontSize: 11, fontWeight: 600, minWidth: 22, height: 22, padding: '0 7px', borderRadius: 7, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--app-border)' }}>{items.length}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--app-heading)' }}>{cat.name}</span>
+                  <span style={{ background: 'var(--app-soft)', color: 'var(--app-muted)', fontSize: 12, fontWeight: 600, minWidth: 22, height: 22, padding: '0 7px', borderRadius: 7, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--app-border)' }}>{items.length}</span>
                 </div>
                 {isExpanded ? <ChevronDown size={12} color="var(--app-muted)" /> : <ChevronRight size={12} color="var(--app-muted)" />}
               </button>
-              {isExpanded && <div style={{ padding: '0 12px 10px', display: 'flex', flexDirection: 'column', gap: 10 }}>{items.map(def => <DraggableCard key={def.id} def={def} categoryId={cat.id} />)}</div>}
+              {isExpanded && <div style={{ padding: '0 12px 10px', display: 'flex', flexDirection: 'column', gap: 10 }}>{items.map(def => <DraggableCard key={def.id} def={def} categoryId={cat.id} compact={editorLayout} />)}</div>}
             </div>
           );
         })}

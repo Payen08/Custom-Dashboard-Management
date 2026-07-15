@@ -126,6 +126,8 @@
 
   body {
     @apply bg-background text-foreground;
+    font-size: var(--ds-font-size-14, 14px);
+    line-height: var(--ds-line-height-normal, 1.5);
   }
 
   /**
@@ -162,19 +164,19 @@
   }
 
   label {
-    font-size: var(--text-base);
+    font-size: var(--ds-font-size-14, 14px);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
   }
 
   button {
-    font-size: var(--text-base);
+    font-size: var(--ds-font-size-14, 14px);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
   }
 
   input {
-    font-size: var(--text-base);
+    font-size: var(--ds-font-size-14, 14px);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
   }

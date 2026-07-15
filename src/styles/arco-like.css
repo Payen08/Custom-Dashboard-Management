@@ -2,43 +2,43 @@
   --arcoui-button-bg: var(--arcoui-neutral-soft);
   --arcoui-button-color: var(--arcoui-heading);
   --arcoui-button-border: transparent;
-  height: 32px;
-  padding: 0 14px;
+  height: var(--ds-button-height-md, 40px);
+  padding: 0 var(--ds-control-padding-inline-md, 14px);
   border: 1px solid var(--arcoui-button-border);
-  border-radius: 8px;
+  border-radius: var(--arcoui-button-radius, var(--ds-radius-button, 8px));
   background: var(--arcoui-button-bg);
   color: var(--arcoui-button-color);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--ds-font-size-14, 14px);
+  font-weight: var(--ds-font-weight-semibold, 600);
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
   outline: none;
   box-sizing: border-box;
   box-shadow: none;
-  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+  transition: background var(--ds-duration-normal, 160ms) ease, border-color var(--ds-duration-normal, 160ms) ease, color var(--ds-duration-normal, 160ms) ease, opacity var(--ds-duration-normal, 160ms) ease, box-shadow var(--ds-duration-normal, 160ms) ease, transform var(--ds-duration-normal, 160ms) ease;
 }
 
 .arcoui-button[data-size="mini"] {
-  height: 24px;
-  padding: 0 8px;
-  font-size: 12px;
+  height: var(--ds-button-height-xs, 24px);
+  padding: 0 var(--ds-space-2, 8px);
+  font-size: var(--ds-font-size-12, 12px);
 }
 
 .arcoui-button[data-size="small"] {
-  height: 28px;
-  padding: 0 10px;
-  font-size: 12px;
+  height: var(--ds-button-height-sm, 32px);
+  padding: 0 var(--ds-control-padding-inline-sm, 10px);
+  font-size: var(--ds-font-size-12, 12px);
 }
 
 .arcoui-button[data-size="large"] {
-  height: 36px;
-  padding: 0 16px;
-  font-size: 14px;
+  height: var(--ds-button-height-lg, 40px);
+  padding: 0 var(--ds-space-4, 16px);
+  font-size: var(--ds-font-size-14, 14px);
 }
 
 .arcoui-button[data-long="true"] {
@@ -46,16 +46,16 @@
 }
 
 .arcoui-button[data-icon-only="true"] {
-  width: 32px;
+  width: var(--ds-button-height-md, 40px);
   padding: 0;
 }
 
 .arcoui-button[data-icon-only="true"][data-size="small"] {
-  width: 28px;
+  width: var(--ds-button-height-sm, 32px);
 }
 
 .arcoui-button[data-icon-only="true"][data-size="mini"] {
-  width: 24px;
+  width: var(--ds-button-height-xs, 24px);
 }
 
 .arcoui-button[data-type="primary"] {
@@ -72,7 +72,7 @@
 }
 
 .arcoui-button[data-type="outline"] {
-  --arcoui-button-bg: transparent;
+  --arcoui-button-bg: var(--arcoui-surface);
   --arcoui-button-color: var(--arcoui-text);
   --arcoui-button-border: color-mix(in srgb, var(--arcoui-border-strong) 74%, transparent);
 }
@@ -159,7 +159,7 @@
 }
 
 .arcoui-button:disabled {
-  opacity: 0.45;
+  opacity: var(--ds-opacity-disabled, 0.45);
   cursor: not-allowed;
   box-shadow: none;
   filter: none;
@@ -183,21 +183,21 @@
 .arcoui-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: var(--ds-z-modal, 70);
   background: var(--arcoui-overlay);
   backdrop-filter: blur(6px);
 }
 
 .arcoui-modal-content {
   position: fixed;
-  z-index: 51;
+  z-index: calc(var(--ds-z-modal, 70) + 1);
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
   background: var(--arcoui-surface);
   color: var(--arcoui-text);
   border: 1px solid color-mix(in srgb, var(--arcoui-border) 78%, transparent);
-  border-radius: 16px;
+  border-radius: var(--arcoui-card-radius, var(--ds-radius-card, 16px));
   box-shadow: var(--arcoui-shadow);
   overflow: hidden;
   display: flex;
@@ -205,45 +205,21 @@
   outline: none;
 }
 
-.arcoui-modal-content[data-status="danger"] {
-  border-color: var(--arcoui-danger-border);
-}
-
 .arcoui-modal-header {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 22px 24px 10px;
+  padding:
+    var(--ds-modal-header-padding-top, 22px)
+    var(--ds-modal-header-padding-inline, 24px)
+    var(--ds-modal-header-padding-bottom, 10px);
   border-bottom: none;
   flex-shrink: 0;
-}
-
-.arcoui-modal-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  background: var(--arcoui-accent-soft);
-  color: var(--arcoui-accent-text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.arcoui-modal-content[data-status="danger"] .arcoui-modal-icon {
-  background: var(--arcoui-danger-soft);
-  color: var(--arcoui-danger);
 }
 
 .arcoui-modal-title-area {
   min-width: 0;
   flex: 1;
-}
-
-.arcoui-modal-header-extra {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
 }
 
 .arcoui-modal-title {
@@ -255,10 +231,27 @@
 }
 
 .arcoui-modal-description {
-  color: var(--arcoui-muted);
-  font-size: 12px;
-  line-height: 1.7;
+  max-width: 640px;
   margin: 4px 0 0;
+  overflow: hidden;
+  color: var(--arcoui-muted);
+  font-size: var(--ds-font-size-12, 12px);
+  font-weight: var(--ds-font-weight-regular, 400);
+  line-height: var(--ds-line-height-relaxed, 1.7);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arcoui-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .arcoui-modal-close {
@@ -267,7 +260,10 @@
 }
 
 .arcoui-modal-body {
-  padding: 16px 24px 20px;
+  padding:
+    var(--ds-modal-body-padding-top, 16px)
+    var(--ds-modal-body-padding-inline, 24px)
+    var(--ds-modal-body-padding-bottom, 20px);
   overflow: auto;
   min-height: 0;
 }
@@ -277,9 +273,14 @@
   justify-content: flex-end;
   align-items: center;
   gap: 10px;
-  padding: 0 24px 22px;
+  padding: var(--ds-modal-footer-padding, 0 24px 22px);
   border-top: none;
   flex-shrink: 0;
+}
+
+.arcoui-modal-footer .arcoui-button {
+  min-width: 88px;
+  height: 40px;
 }
 
 .arcoui-field {
@@ -290,29 +291,29 @@
 
 .arcoui-field-label {
   color: var(--arcoui-muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.5;
 }
 
 .arcoui-field-hint {
   color: var(--arcoui-muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
 .arcoui-input {
   width: 100%;
-  height: 36px;
-  border-radius: 8px;
+  height: var(--ds-field-height-md, 36px);
+  border-radius: var(--arcoui-control-radius, var(--ds-radius-control, 10px));
   border: 1px solid transparent;
   background: color-mix(in srgb, var(--arcoui-soft) 88%, var(--arcoui-surface));
   color: var(--arcoui-heading);
-  font-size: 13px;
-  padding: 0 13px;
+  font-size: var(--ds-font-size-14, 13px);
+  padding: 0 var(--ds-space-3, 12px);
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: border-color var(--ds-duration-fast, 120ms) ease, box-shadow var(--ds-duration-fast, 120ms) ease, background var(--ds-duration-fast, 120ms) ease;
 }
 
 .arcoui-input:hover {
@@ -335,12 +336,22 @@
   resize: none;
 }
 
+.arcoui-modal-content .arcoui-input {
+  border-color: var(--arcoui-border);
+  background: var(--arcoui-surface);
+}
+
+.arcoui-modal-content .arcoui-input:hover {
+  border-color: var(--arcoui-border-strong);
+  background: var(--arcoui-surface);
+}
+
 .arcoui-checkbox-row {
   display: flex;
   align-items: center;
   gap: 9px;
   color: var(--arcoui-text);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
 }
@@ -358,7 +369,7 @@
   align-items: center;
   gap: 12px;
   padding: 16px 18px;
-  border-radius: 16px;
+  border-radius: var(--arcoui-inner-radius, 12px);
   border: 1px dashed color-mix(in srgb, var(--arcoui-border-strong) 72%, transparent);
   background: color-mix(in srgb, var(--arcoui-soft) 84%, var(--arcoui-surface));
   cursor: pointer;
@@ -383,7 +394,7 @@
 .arcoui-upload-icon {
   width: 42px;
   height: 42px;
-  border-radius: 14px;
+  border-radius: var(--arcoui-control-radius, 10px);
   background: var(--arcoui-accent-soft);
   color: var(--arcoui-accent-text);
   display: flex;
@@ -400,7 +411,7 @@
 
 .arcoui-upload-title {
   color: var(--arcoui-heading);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 

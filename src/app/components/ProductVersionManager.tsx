@@ -1,15 +1,19 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   Box,
   Cable,
+  Check,
   ChevronDown,
   ChevronRight,
   Cpu,
   Download,
   Edit3,
+  Folder,
   GitBranch,
   Layers,
+  MoreHorizontal,
   Package,
+  Pencil,
   Plus,
   Search,
   ServerCog,
@@ -17,8 +21,14 @@ import {
   Upload,
 } from 'lucide-react';
 import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTextArea, ArcoTextInput } from './ArcoLike';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
-interface ProductPackage {
+export interface ProductPackage {
   id: string;
   name: string;
   version: string;
@@ -30,33 +40,62 @@ interface ProductPackage {
   createdAt: string;
 }
 
-interface ProductVersionGroup {
+export interface ProductVersionGroup {
   version: string;
   packages: ProductPackage[];
 }
 
-interface ProductBrand {
+export interface ProductBrand {
   id: string;
   name: string;
+  identifier?: string;
+  description?: string;
+  relatedSoftwareIds?: string[];
   versions: ProductVersionGroup[];
 }
 
-interface ProductSubcategory {
+export interface ProductSubcategory {
   id: string;
   name: string;
+  identifier?: string;
+  description?: string;
+  relatedSoftwareIds?: string[];
   brands: ProductBrand[];
 }
 
-interface ProductCategory {
+export interface ProductCategory {
   id: string;
   name: string;
+  identifier?: string;
+  description?: string;
   icon: 'controller' | 'external' | 'service';
   subcategories: ProductSubcategory[];
 }
 
 type PackageForm = Pick<ProductPackage, 'name' | 'version' | 'source' | 'description' | 'releaseNotes' | 'architecture' | 'fileSize'>;
+type TaxonomyKind = 'category' | 'subcategory';
+type TaxonomyMode = 'create' | 'edit';
+type ProductFormMode = 'cascade' | 'category-context' | 'subcategory-context' | 'edit';
+type ProductWizardStep = 'category' | 'subcategory' | 'product';
 
-const CARD_SHADOW = '0 18px 44px -32px rgba(15, 23, 42, 0.35)';
+interface TaxonomyFormState {
+  open: boolean;
+  kind: TaxonomyKind;
+  mode: TaxonomyMode;
+  categoryId: string | null;
+  subcategoryId: string | null;
+  name: string;
+  icon: ProductCategory['icon'];
+}
+
+interface TreeDeleteTarget {
+  kind: CategoryTreeNodeAction['kind'];
+  categoryId: string;
+  subcategoryId?: string;
+  brandId?: string;
+}
+
+const CARD_SHADOW = 'var(--ds-shadow-card)';
 
 const emptyForm: PackageForm = {
   name: '',
@@ -68,20 +107,27 @@ const emptyForm: PackageForm = {
   fileSize: '',
 };
 
-function buildInitialData(): ProductCategory[] {
+export function buildInitialData(): ProductCategory[] {
   return [
     {
       id: 'controller',
       name: '控制器类产品',
+      identifier: 'controller-products',
+      description: '控制器、机械臂及运动控制相关软件产品。',
       icon: 'controller',
       subcategories: [
         {
           id: 'controllers',
           name: '控制器',
+          identifier: 'controllers',
+          description: '机器人核心控制器与运行时软件。',
+          relatedSoftwareIds: ['moying'],
           brands: [
             {
               id: 'moying',
               name: '墨影控制器',
+              identifier: 'shadow-controller',
+              description: '墨影机器人核心控制器软件，提供设备接入、运动控制与状态管理能力。',
               versions: [
                 {
                   version: '1.8.0',
@@ -229,7 +275,7 @@ function Badge({
       background: palette.background,
       color: palette.color,
       padding: '0 9px',
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: 600,
       lineHeight: 1,
       whiteSpace: 'nowrap',
@@ -254,6 +300,7 @@ function TextInput({
   value,
   onValueChange,
   placeholder,
+  disabled = false,
 }: {
   label?: string;
   required?: boolean;
@@ -261,6 +308,7 @@ function TextInput({
   value: string;
   onValueChange: (value: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   return (
     <label style={{ display: 'block', minWidth: 0 }}>
@@ -282,11 +330,106 @@ function TextInput({
         <ArcoTextInput
           value={value}
           placeholder={placeholder}
+          disabled={disabled}
           onChange={event => onValueChange(event.target.value)}
-          style={{ height: 38, paddingLeft: startContent ? 36 : 13 }}
+          style={{ height: 40, paddingLeft: startContent ? 36 : 13 }}
         />
       </div>
     </label>
+  );
+}
+
+function EditableCombobox({
+  label,
+  required = false,
+  value,
+  options,
+  placeholder,
+  onValueChange,
+}: {
+  label: string;
+  required?: boolean;
+  value: string;
+  options: { id: string; label: string }[];
+  placeholder: string;
+  onValueChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const keyword = value.trim().toLowerCase();
+  const visibleOptions = options.filter(option => (
+    !keyword || option.label.toLowerCase().includes(keyword)
+  ));
+  const exactMatch = options.some(option => option.label.trim().toLowerCase() === keyword);
+
+  return (
+    <div
+      style={{ position: 'relative', minWidth: 0 }}
+      onBlur={event => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
+      }}
+    >
+      <FieldLabel required={required}>{label}</FieldLabel>
+      <div style={{ position: 'relative' }}>
+        <ArcoTextInput
+          value={value}
+          onFocus={() => setOpen(true)}
+          onChange={event => {
+            onValueChange(event.target.value);
+            setOpen(true);
+          }}
+          placeholder={placeholder}
+          role="combobox"
+          aria-expanded={open}
+          aria-autocomplete="list"
+          style={{ height: 40, paddingRight: 40 }}
+        />
+        <button
+          type="button"
+          aria-label={`${label}展开选项`}
+          onClick={() => setOpen(current => !current)}
+          style={{ position: 'absolute', top: 4, right: 4, width: 32, height: 32, border: 0, borderRadius: 8, background: 'transparent', color: 'var(--app-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+        >
+          <ChevronDown size={16} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 160ms ease' }} />
+        </button>
+      </div>
+
+      {open && (
+        <div role="listbox" style={{ position: 'absolute', zIndex: 30, top: 'calc(100% + 6px)', left: 0, right: 0, maxHeight: 224, overflowY: 'auto', padding: 6, border: '1px solid var(--app-border)', borderRadius: 12, background: 'var(--app-surface)', boxShadow: 'var(--ds-shadow-card)' }}>
+          {visibleOptions.map(option => {
+            const selected = option.label.trim().toLowerCase() === keyword;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onClick={() => {
+                  onValueChange(option.label);
+                  setOpen(false);
+                }}
+                style={{ width: '100%', height: 40, padding: '0 10px', border: 0, borderRadius: 8, background: selected ? 'var(--app-accent-soft)' : 'transparent', color: selected ? 'var(--app-accent)' : 'var(--app-text)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, fontSize: 14, textAlign: 'left', cursor: 'pointer' }}
+              >
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{option.label}</span>
+                {selected && <Check size={15} />}
+              </button>
+            );
+          })}
+          {keyword && !exactMatch && (
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              style={{ width: '100%', minHeight: 40, padding: '7px 10px', border: 0, borderRadius: 8, background: 'var(--app-accent-soft)', color: 'var(--app-accent)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, textAlign: 'left', cursor: 'pointer' }}
+            >
+              <Plus size={15} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>新建“{value.trim()}”</span>
+            </button>
+          )}
+          {!keyword && visibleOptions.length === 0 && (
+            <div style={{ padding: '16px 10px', color: 'var(--app-muted)', fontSize: 14, textAlign: 'center' }}>暂无可选项，可直接输入新名称</div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -295,11 +438,13 @@ function TextAreaField({
   value,
   onValueChange,
   placeholder,
+  disabled = false,
 }: {
   label?: string;
   value: string;
   onValueChange: (value: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   return (
     <label style={{ display: 'block', minWidth: 0 }}>
@@ -307,6 +452,7 @@ function TextAreaField({
       <ArcoTextArea
         value={value}
         placeholder={placeholder}
+        disabled={disabled}
         onChange={event => onValueChange(event.target.value)}
         style={{ minHeight: 86 }}
       />
@@ -314,109 +460,197 @@ function TextAreaField({
   );
 }
 
-function CategoryTree({
+export type CategoryTreeNodeAction = {
+  action: 'add' | 'edit' | 'delete';
+  kind: 'category' | 'subcategory' | 'brand';
+  categoryId: string;
+  subcategoryId?: string;
+  brandId?: string;
+};
+
+export function CategoryTree({
   categories,
   selectedBrandId,
+  expandedCategories,
   expandedSubs,
+  onToggleCategory,
   onToggleSub,
   onSelectBrand,
+  onNodeAction,
 }: {
   categories: ProductCategory[];
   selectedBrandId: string | null;
+  expandedCategories?: Set<string>;
   expandedSubs: Set<string>;
+  onToggleCategory?: (id: string) => void;
   onToggleSub: (id: string) => void;
-  onSelectBrand: (id: string) => void;
+  onSelectBrand?: (id: string) => void;
+  onNodeAction?: (action: CategoryTreeNodeAction) => void;
 }) {
+  const [localExpandedCategories, setLocalExpandedCategories] = useState<Set<string>>(
+    () => new Set(categories.map(category => category.id)),
+  );
+  const visibleExpandedCategories = expandedCategories ?? localExpandedCategories;
+
+  function toggleCategory(categoryId: string) {
+    if (onToggleCategory) {
+      onToggleCategory(categoryId);
+      return;
+    }
+    setLocalExpandedCategories(current => {
+      const next = new Set(current);
+      if (next.has(categoryId)) next.delete(categoryId);
+      else next.add(categoryId);
+      return next;
+    });
+  }
+
+  function nodeMenu(label: string, actionBase: Omit<CategoryTreeNodeAction, 'action'>) {
+    if (!onNodeAction) return null;
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="taxonomy-tree-action"
+            aria-label={`${label} 更多操作`}
+            title="更多操作"
+          >
+            <MoreHorizontal size={15} />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" sideOffset={8} className="heroui-tree-menu">
+          <DropdownMenuItem className="heroui-tree-menu__item" onSelect={() => onNodeAction({ ...actionBase, action: 'add' })}>
+            <Plus size={16} strokeWidth={1.8} />
+            <span data-slot="label">新增</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="heroui-tree-menu__item" onSelect={() => onNodeAction({ ...actionBase, action: 'edit' })}>
+            <Pencil size={16} strokeWidth={1.8} />
+            <span data-slot="label">编辑</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="heroui-tree-menu__item" variant="destructive" onSelect={() => onNodeAction({ ...actionBase, action: 'delete' })}>
+            <Trash2 size={16} strokeWidth={1.8} />
+            <span data-slot="label">删除</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
   return (
-    <div style={{ padding: '10px 12px 14px' }}>
-      {categories.map(category => (
-        <section key={category.id} style={{ marginBottom: 10 }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            color: 'var(--app-heading)',
-            fontSize: 13,
-            fontWeight: 700,
-            padding: '9px 8px',
-          }}>
-            <span style={{
-              width: 28,
-              height: 28,
-              borderRadius: 10,
-              background: 'var(--app-accent-soft)',
-              color: 'var(--app-accent)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              {categoryIcon(category.icon)}
-            </span>
-            <span>{category.name}</span>
+    <div className="taxonomy-tree">
+      {categories.map(category => {
+        const categoryExpanded = visibleExpandedCategories.has(category.id);
+        return (
+        <section key={category.id} className="taxonomy-tree-section">
+          <div className="taxonomy-tree-node taxonomy-tree-category">
+            <button
+              type="button"
+              className="taxonomy-tree-category-main"
+              onClick={() => toggleCategory(category.id)}
+              aria-expanded={categoryExpanded}
+              title={category.name}
+            >
+              <span className="taxonomy-tree-folder">
+                <Folder size={18} strokeWidth={1.8} />
+              </span>
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{category.name}</span>
+              {categoryExpanded
+                ? <ChevronDown className="taxonomy-tree-expand-icon" size={18} />
+                : <ChevronRight className="taxonomy-tree-expand-icon" size={18} />}
+            </button>
+            {nodeMenu(category.name, { kind: 'category', categoryId: category.id })}
           </div>
 
-          {category.subcategories.map(subcategory => {
-            const expanded = expandedSubs.has(subcategory.id);
-            return (
-              <div key={subcategory.id}>
+          {categoryExpanded && (
+            <div className="taxonomy-tree-category-children">
+              {category.subcategories.map(subcategory => {
+                const expanded = expandedSubs.has(subcategory.id);
+                return (
+                  <div key={subcategory.id} className="taxonomy-tree-subcategory-branch">
+                    <div className="taxonomy-tree-node taxonomy-tree-subcategory">
+                      <button
+                        type="button"
+                        className="taxonomy-tree-subcategory-main"
+                        onClick={() => onToggleSub(subcategory.id)}
+                        aria-expanded={expanded}
+                        title={subcategory.name}
+                      >
+                        {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subcategory.name}</span>
+                      </button>
+                      {nodeMenu(subcategory.name, { kind: 'subcategory', categoryId: category.id, subcategoryId: subcategory.id })}
+                    </div>
+
+                    {expanded && (
+                      <div className="taxonomy-tree-brand-list">
+                        {subcategory.brands.map(brand => {
+                          const active = brand.id === selectedBrandId;
+                          const rowStyle: CSSProperties = {
+                            color: active ? 'var(--app-accent)' : 'var(--app-text)',
+                            fontSize: 14,
+                            fontWeight: active ? 600 : 400,
+                            cursor: onSelectBrand ? 'pointer' : 'default',
+                          };
+                          const content = (
+                            <>
+                              <span className="product-tree-dot" aria-hidden="true" />
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{brand.name}</span>
+                            </>
+                          );
+
+                          if (!onSelectBrand) {
+                            return (
+                              <div key={brand.id} className={`taxonomy-tree-node product-tree-item${active ? ' is-active' : ''}`}>
+                                <div className="product-tree-main" style={rowStyle} title={brand.name}>{content}</div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div key={brand.id} className={`taxonomy-tree-node product-tree-item${active ? ' is-active' : ''}`}>
+                              <button
+                                type="button"
+                                className="product-tree-main"
+                                onClick={() => onSelectBrand(brand.id)}
+                                style={rowStyle}
+                                title={brand.name}
+                              >
+                                {content}
+                              </button>
+                              {nodeMenu(brand.name, { kind: 'brand', categoryId: category.id, subcategoryId: subcategory.id, brandId: brand.id })}
+                            </div>
+                          );
+                        })}
+                        {onNodeAction && (
+                          <button
+                            type="button"
+                            className="taxonomy-tree-inline-add"
+                            onClick={() => onNodeAction({ action: 'add', kind: 'brand', categoryId: category.id, subcategoryId: subcategory.id })}
+                          >
+                            <Plus size={16} />
+                            添加产品
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {onNodeAction && (
                 <button
                   type="button"
-                  onClick={() => onToggleSub(subcategory.id)}
-                  style={{
-                    width: '100%',
-                    height: 34,
-                    border: 'none',
-                    borderRadius: 8,
-                    background: 'transparent',
-                    color: 'var(--app-text)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 7,
-                    padding: '0 10px 0 20px',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
+                  className="taxonomy-tree-inline-add taxonomy-tree-add-subcategory"
+                  onClick={() => onNodeAction({ action: 'add', kind: 'category', categoryId: category.id })}
                 >
-                  {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                  <span>{subcategory.name}</span>
-                  <span style={{ marginLeft: 'auto', color: 'var(--app-muted)', fontSize: 11 }}>{subcategory.brands.length}</span>
+                  <Plus size={16} />
+                  添加子品类
                 </button>
-
-                {expanded && subcategory.brands.map(brand => {
-                  const active = brand.id === selectedBrandId;
-                  return (
-                    <button
-                      key={brand.id}
-                      type="button"
-                      onClick={() => onSelectBrand(brand.id)}
-                      style={{
-                        width: '100%',
-                        height: 34,
-                        border: active ? '1px solid var(--app-accent-border)' : '1px solid transparent',
-                        borderRadius: 8,
-                        background: active ? 'var(--app-accent-soft)' : 'transparent',
-                        color: active ? 'var(--app-accent)' : 'var(--app-muted)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '0 10px 0 42px',
-                        fontSize: 12,
-                        fontWeight: active ? 700 : 500,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <Box size={12} />
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{brand.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })}
+              )}
+            </div>
+          )}
         </section>
-      ))}
+      )})}
     </div>
   );
 }
@@ -444,7 +678,7 @@ function VersionAccordion({
 
   return (
     <section style={{
-      borderRadius: 16,
+      borderRadius: 'var(--app-inner-radius)',
       border: '1px solid var(--app-border)',
       background: 'var(--app-surface)',
       overflow: 'hidden',
@@ -550,7 +784,7 @@ function VersionAccordion({
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5, minWidth: 0 }}>
                     <span style={{
                       color: 'var(--app-heading)',
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: 700,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -570,9 +804,9 @@ function VersionAccordion({
                   </div>
                   {(pkg.description || pkg.releaseNotes) && (
                     <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      {pkg.description && <span style={{ color: 'var(--app-text)', fontSize: 11 }}>{pkg.description}</span>}
+                      {pkg.description && <span style={{ color: 'var(--app-text)', fontSize: 12 }}>{pkg.description}</span>}
                       {pkg.description && pkg.releaseNotes && <span style={{ color: 'var(--app-border-strong)' }}>·</span>}
-                      {pkg.releaseNotes && <span style={{ color: 'var(--app-muted)', fontSize: 11, fontStyle: 'italic' }}>{pkg.releaseNotes}</span>}
+                      {pkg.releaseNotes && <span style={{ color: 'var(--app-muted)', fontSize: 12, fontStyle: 'italic' }}>{pkg.releaseNotes}</span>}
                     </div>
                   )}
                 </div>
@@ -601,9 +835,28 @@ function findBrand(categories: ProductCategory[], brandId: string | null) {
   return null;
 }
 
+function findBrandLocation(categories: ProductCategory[], brandId: string | null) {
+  if (!brandId) return null;
+  for (const category of categories) {
+    for (const subcategory of category.subcategories) {
+      const brand = subcategory.brands.find(item => item.id === brandId);
+      if (brand) return { category, subcategory, brand };
+    }
+  }
+  return null;
+}
+
+function firstBrandId(categories: ProductCategory[]) {
+  for (const category of categories) {
+    for (const subcategory of category.subcategories) {
+      if (subcategory.brands[0]) return subcategory.brands[0].id;
+    }
+  }
+  return null;
+}
+
 function SoftwarePackageModal({
   title,
-  icon,
   open,
   onOpenChange,
   form,
@@ -613,7 +866,6 @@ function SoftwarePackageModal({
   submitDisabled,
 }: {
   title: string;
-  icon: ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   form: PackageForm;
@@ -627,8 +879,7 @@ function SoftwarePackageModal({
       open={open}
       onOpenChange={onOpenChange}
       title={title}
-      icon={icon}
-      width={620}
+      size="lg"
       footer={(
         <>
           <ArcoButton onClick={() => onOpenChange(false)}>取消</ArcoButton>
@@ -705,21 +956,234 @@ function SoftwarePackageModal({
   );
 }
 
+function ProductWizardNav({
+  step,
+  categoryLabel,
+  subcategoryLabel,
+  categoryExists,
+  subcategoryExists,
+  productActionLabel = '新增产品',
+  canOpenSubcategory,
+  canOpenProduct,
+  categoryLocked = false,
+  subcategoryLocked = false,
+  onStepChange,
+}: {
+  step: ProductWizardStep;
+  categoryLabel: string;
+  subcategoryLabel: string;
+  categoryExists: boolean;
+  subcategoryExists: boolean;
+  productActionLabel?: string;
+  canOpenSubcategory: boolean;
+  canOpenProduct: boolean;
+  categoryLocked?: boolean;
+  subcategoryLocked?: boolean;
+  onStepChange: (step: ProductWizardStep) => void;
+}) {
+  const item = (
+    target: ProductWizardStep,
+    label: string,
+    clickable: boolean,
+    pending: boolean,
+  ) => {
+    const active = step === target;
+    return (
+      <button
+        type="button"
+        disabled={!clickable}
+        onClick={() => onStepChange(target)}
+        style={{
+          height: 40,
+          maxWidth: 210,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 7,
+          padding: '0 12px',
+          border: 0,
+          borderRadius: 8,
+          background: active ? 'var(--app-surface)' : 'transparent',
+          boxShadow: active ? 'var(--ds-shadow-card)' : 'none',
+          color: active ? 'var(--app-accent)' : pending && !clickable ? 'var(--app-subtle)' : 'var(--app-text)',
+          fontSize: 14,
+          fontWeight: active ? 600 : 500,
+          cursor: clickable ? 'pointer' : 'default',
+          opacity: pending && !clickable ? 0.62 : 1,
+        }}
+      >
+        {pending && <Plus size={15} />}
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+      </button>
+    );
+  };
+
+  const separator = <ChevronRight size={18} color="var(--app-subtle)" style={{ flexShrink: 0 }} />;
+  const categoryItem = step === 'category'
+    ? item('category', categoryExists ? categoryLabel : '新增产品类型', true, !categoryExists)
+    : item('category', categoryLabel || '产品类型', !categoryLocked, false);
+  const subcategoryItem = step === 'subcategory'
+    ? item('subcategory', subcategoryExists ? subcategoryLabel : '新增子品类', true, !subcategoryExists)
+    : item('subcategory', subcategoryLabel || '新增子品类', step === 'category' ? canOpenSubcategory : !subcategoryLocked, step === 'category');
+  const productItem = step === 'product'
+    ? item('product', productActionLabel, true, productActionLabel.startsWith('新增'))
+    : item('product', '新增产品', canOpenProduct, true);
+
+  return (
+    <div aria-label="产品层级步骤" style={{ padding: '14px 16px 16px', borderRadius: 12, background: 'var(--app-soft)' }}>
+      <div style={{ marginBottom: 10, color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>所属目录</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto' }}>
+        {categoryItem}
+        {separator}
+        {subcategoryItem}
+        {step !== 'category' && <>{separator}{productItem}</>}
+      </div>
+    </div>
+  );
+}
+
+function RelatedSoftwarePicker({
+  options,
+  selectedIds,
+  query,
+  onQueryChange,
+  onToggle,
+  disabled = false,
+}: {
+  options: { id: string; name: string; path: string }[];
+  selectedIds: string[];
+  query: string;
+  onQueryChange: (value: string) => void;
+  onToggle: (id: string) => void;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const keyword = query.trim().toLowerCase();
+  const visibleOptions = options.filter(option => (
+    !keyword || option.name.toLowerCase().includes(keyword) || option.path.toLowerCase().includes(keyword)
+  ));
+
+  const selectedOptions = options.filter(option => selectedIds.includes(option.id));
+
+  return (
+    <div
+      style={{ position: 'relative' }}
+      onBlur={event => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
+      }}
+    >
+      <FieldLabel>关联软件</FieldLabel>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen(current => !current)}
+        style={{ width: '100%', height: 40, padding: '0 12px', border: '1px solid var(--app-border)', borderRadius: 8, background: 'var(--app-surface)', color: selectedOptions.length ? 'var(--app-text)' : 'var(--app-muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, fontSize: 14, cursor: disabled ? 'default' : 'pointer' }}
+      >
+        <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {selectedOptions.length === 0
+            ? '请选择'
+            : selectedOptions.length <= 2
+              ? selectedOptions.map(option => option.name).join('、')
+              : `${selectedOptions[0].name}等 ${selectedOptions.length} 项`}
+        </span>
+        <ChevronDown size={16} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 160ms ease' }} />
+      </button>
+
+      {open && !disabled && (
+        <div style={{ position: 'absolute', zIndex: 30, top: 'calc(100% + 6px)', left: 0, right: 0, border: '1px solid var(--app-border)', borderRadius: 12, background: 'var(--app-surface)', boxShadow: 'var(--ds-shadow-card)', overflow: 'hidden' }}>
+          <div style={{ position: 'relative', padding: 8, borderBottom: '1px solid var(--app-border)' }}>
+            <Search size={16} color="var(--app-muted)" style={{ position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            <ArcoTextInput
+              value={query}
+              onChange={event => onQueryChange(event.target.value)}
+              placeholder="搜索软件"
+              style={{ height: 40, paddingLeft: 36, background: 'var(--app-soft)' }}
+            />
+          </div>
+          <div style={{ maxHeight: 200, overflowY: 'auto', padding: 6 }}>
+          {visibleOptions.length === 0 ? (
+            <div style={{ padding: '20px 12px', textAlign: 'center', color: 'var(--app-muted)', fontSize: 14 }}>没有匹配的软件</div>
+          ) : visibleOptions.map(option => {
+            const selected = selectedIds.includes(option.id);
+            return (
+              <button
+                key={option.id}
+                type="button"
+                disabled={disabled}
+                onClick={() => onToggle(option.id)}
+                style={{
+                  width: '100%',
+                  minHeight: 44,
+                  display: 'grid',
+                  gridTemplateColumns: '24px minmax(0, 1fr)',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 10px',
+                  border: 0,
+                  borderRadius: 8,
+                  background: selected ? 'var(--app-accent-soft)' : 'transparent',
+                  color: selected ? 'var(--app-accent)' : 'var(--app-text)',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                }}
+              >
+                <span style={{ width: 18, height: 18, borderRadius: 5, border: `1px solid ${selected ? 'var(--app-accent)' : 'var(--app-border-strong)'}`, background: selected ? 'var(--app-accent)' : 'var(--app-surface)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {selected && <Check size={12} strokeWidth={2.5} />}
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 14, fontWeight: selected ? 600 : 500 }}>{option.name}</span>
+                  <span style={{ display: 'block', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--app-muted)', fontSize: 12 }}>{option.path}</span>
+                </span>
+              </button>
+            );
+          })}
+          </div>
+          <div style={{ minHeight: 36, display: 'flex', alignItems: 'center', padding: '0 12px', borderTop: '1px solid var(--app-border)', color: 'var(--app-muted)', fontSize: 12 }}>
+            已选 {selectedIds.length} 项
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ProductVersionManager() {
   const [categories, setCategories] = useState<ProductCategory[]>(buildInitialData);
   const [revision, setRevision] = useState(0);
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>('moying');
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    () => new Set(['controller']),
+  );
   const [expandedSubs, setExpandedSubs] = useState<Set<string>>(new Set(['controllers', 'arms']));
   const [query, setQuery] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [addBrandOpen, setAddBrandOpen] = useState(false);
   const [createProductOpen, setCreateProductOpen] = useState(false);
+  const [productFormMode, setProductFormMode] = useState<ProductFormMode>('cascade');
+  const [productWizardStep, setProductWizardStep] = useState<ProductWizardStep>('category');
+  const [editingBrandId, setEditingBrandId] = useState<string | null>(null);
+  const [taxonomyForm, setTaxonomyForm] = useState<TaxonomyFormState>({
+    open: false,
+    kind: 'category',
+    mode: 'create',
+    categoryId: null,
+    subcategoryId: null,
+    name: '',
+    icon: 'controller',
+  });
+  const [treeDeleteTarget, setTreeDeleteTarget] = useState<TreeDeleteTarget | null>(null);
   const [newBrandCatId, setNewBrandCatId] = useState('');
+  const [newCategoryIdentifier, setNewCategoryIdentifier] = useState('');
+  const [newCategoryDescription, setNewCategoryDescription] = useState('');
   const [newBrandSubId, setNewBrandSubId] = useState('');
+  const [newSubcategoryIdentifier, setNewSubcategoryIdentifier] = useState('');
+  const [newSubcategoryDescription, setNewSubcategoryDescription] = useState('');
+  const [newSubcategorySoftwareIds, setNewSubcategorySoftwareIds] = useState<string[]>([]);
+  const [softwareLinkQuery, setSoftwareLinkQuery] = useState('');
   const [newBrandName, setNewBrandName] = useState('');
-  const [newBrandSoftware, setNewBrandSoftware] = useState('');
+  const [newBrandIdentifier, setNewBrandIdentifier] = useState('');
+  const [newBrandDescription, setNewBrandDescription] = useState('');
+  const [newBrandSoftwareIds, setNewBrandSoftwareIds] = useState<string[]>([]);
   // Batch publish
   const [batchOpen, setBatchOpen] = useState(false);
   const [batchVersion, setBatchVersion] = useState('');
@@ -731,7 +1195,11 @@ export function ProductVersionManager() {
   const [deleteTarget, setDeleteTarget] = useState<ProductPackage | null>(null);
   const [selectedPkgIds, setSelectedPkgIds] = useState<Set<string>>(new Set());
 
-  const brand = useMemo(() => findBrand(categories, selectedBrandId), [categories, selectedBrandId, revision]);
+  const activeBrandLocation = useMemo(
+    () => findBrandLocation(categories, selectedBrandId),
+    [categories, selectedBrandId, revision],
+  );
+  const brand = activeBrandLocation?.brand ?? null;
   const versions = useMemo(() => {
     if (!brand) return [];
     const keyword = query.trim().toLowerCase();
@@ -750,64 +1218,366 @@ export function ProductVersionManager() {
   }, [brand, query, revision]);
 
   const totalPackages = versions.reduce((sum, versionGroup) => sum + versionGroup.packages.length, 0);
+  const softwareOptions = useMemo(() => categories.flatMap(category => (
+    category.subcategories.flatMap(subcategory => subcategory.brands.map(item => ({
+      id: item.id,
+      name: item.name,
+      path: `${category.name} / ${subcategory.name}`,
+    })))
+  )), [categories]);
 
-  // Derived: resolve category from name or id
-  const resolvedCatId = categories.find(c => c.id === newBrandCatId || c.name === newBrandCatId)?.id;
-  const createBrandCat = categories.find(c => c.id === resolvedCatId) ?? categories[0];
-  const createBrandSub = createBrandCat?.subcategories.find(s => s.name === newBrandSubId || s.id === newBrandSubId);
+  const categoryInput = newBrandCatId.trim();
+  const subcategoryInput = newBrandSubId.trim();
+  const productNameInput = newBrandName.trim();
+  const productIdentifierInput = newBrandIdentifier.trim();
+  const productDescriptionInput = newBrandDescription.trim();
+  const createBrandCat = categories.find(category => (
+    category.id === categoryInput || category.name.trim().toLowerCase() === categoryInput.toLowerCase()
+  ));
+  const createBrandSub = createBrandCat?.subcategories.find(subcategory => (
+    subcategory.id === subcategoryInput || subcategory.name.trim().toLowerCase() === subcategoryInput.toLowerCase()
+  ));
+  const categoryIdentifierInput = (createBrandCat?.identifier ?? createBrandCat?.id ?? newCategoryIdentifier).trim();
+  const categoryDescriptionInput = createBrandCat?.description ?? newCategoryDescription.trim();
+  const subcategoryIdentifierInput = (createBrandSub?.identifier ?? createBrandSub?.id ?? newSubcategoryIdentifier).trim();
+  const subcategoryDescriptionInput = createBrandSub?.description ?? newSubcategoryDescription.trim();
+  const relatedSoftwareIds = createBrandSub?.relatedSoftwareIds ?? newSubcategorySoftwareIds;
+  const duplicateCategoryIdentifier = Boolean(!createBrandCat && categoryIdentifierInput && categories.some(category => (
+    (category.identifier ?? category.id).trim().toLowerCase() === categoryIdentifierInput.toLowerCase()
+  )));
+  const duplicateSubcategoryIdentifier = Boolean(!createBrandSub && subcategoryIdentifierInput && categories.some(category => (
+    category.subcategories.some(subcategory => (
+      (subcategory.identifier ?? subcategory.id).trim().toLowerCase() === subcategoryIdentifierInput.toLowerCase()
+    ))
+  )));
+  const editingBrandLocation = findBrandLocation(categories, editingBrandId);
+  const duplicateBrand = createBrandSub?.brands.some(item => (
+    item.id !== editingBrandId && item.name.trim().toLowerCase() === productNameInput.toLowerCase()
+  ));
+  const duplicateIdentifier = Boolean(productIdentifierInput && categories.some(category => (
+    category.subcategories.some(subcategory => (
+      subcategory.brands.some(item => (
+        item.id !== editingBrandId
+        && (item.identifier ?? item.id).trim().toLowerCase() === productIdentifierInput.toLowerCase()
+      ))
+    ))
+  )));
+  const categoryLocked = productFormMode !== 'cascade';
+  const fixedProductContext = productFormMode === 'subcategory-context' || productFormMode === 'edit';
+  const subcategoryLocked = fixedProductContext;
+  const categoryStepValid = Boolean(categoryInput && categoryIdentifierInput && !duplicateCategoryIdentifier);
+  const subcategoryStepValid = Boolean(
+    categoryStepValid
+    && subcategoryInput
+    && subcategoryIdentifierInput
+    && !duplicateSubcategoryIdentifier,
+  );
+  const productStepValid = Boolean(
+    subcategoryStepValid
+    && productNameInput
+    && productIdentifierInput
+    && !duplicateBrand
+    && !duplicateIdentifier,
+  );
+  const productFormValid = editingBrandId
+    ? Boolean(createBrandCat && createBrandSub && productNameInput && productIdentifierInput && !duplicateBrand && !duplicateIdentifier)
+    : fixedProductContext
+      ? Boolean(createBrandCat && createBrandSub && productNameInput && productIdentifierInput && !duplicateBrand && !duplicateIdentifier)
+      : productWizardStep === 'category'
+        ? categoryStepValid
+        : productWizardStep === 'subcategory'
+          ? subcategoryStepValid
+          : productStepValid;
+  const currentLayerExists = productWizardStep === 'category'
+    ? Boolean(createBrandCat)
+    : productWizardStep === 'subcategory'
+      ? Boolean(createBrandSub)
+      : false;
+  const taxonomyDuplicate = taxonomyForm.kind === 'category'
+    ? categories.some(category => category.id !== taxonomyForm.categoryId && category.name.trim().toLowerCase() === taxonomyForm.name.trim().toLowerCase())
+    : categories
+      .find(category => category.id === taxonomyForm.categoryId)
+      ?.subcategories.some(subcategory => subcategory.id !== taxonomyForm.subcategoryId && subcategory.name.trim().toLowerCase() === taxonomyForm.name.trim().toLowerCase());
+  const taxonomyFormValid = Boolean(taxonomyForm.name.trim() && !taxonomyDuplicate && (
+    taxonomyForm.kind === 'category' || taxonomyForm.categoryId
+  ));
+  const treeDeleteInfo = (() => {
+    if (!treeDeleteTarget) return null;
+    const category = categories.find(item => item.id === treeDeleteTarget.categoryId);
+    if (!category) return null;
+    const subcategory = treeDeleteTarget.subcategoryId
+      ? category.subcategories.find(item => item.id === treeDeleteTarget.subcategoryId)
+      : null;
+    const targetBrands = treeDeleteTarget.kind === 'category'
+      ? category.subcategories.flatMap(item => item.brands)
+      : treeDeleteTarget.kind === 'subcategory'
+        ? subcategory?.brands ?? []
+        : subcategory?.brands.filter(item => item.id === treeDeleteTarget.brandId) ?? [];
+    const versionCount = targetBrands.reduce((sum, item) => sum + item.versions.length, 0);
+    const packageCount = targetBrands.reduce((sum, item) => (
+      sum + item.versions.reduce((versionSum, version) => versionSum + version.packages.length, 0)
+    ), 0);
+    if (treeDeleteTarget.kind === 'category') {
+      return {
+        title: '删除大类',
+        label: category.name,
+        description: '此操作会同时移除大类下的所有子品类、产品、版本和安装包。',
+        impact: `${category.subcategories.length} 个子品类、${targetBrands.length} 个产品、${versionCount} 个版本、${packageCount} 个安装包`,
+      };
+    }
+    if (treeDeleteTarget.kind === 'subcategory') {
+      return {
+        title: '删除子品类',
+        label: subcategory?.name ?? '',
+        description: '此操作会同时移除子品类下的所有产品、版本和安装包。',
+        impact: `${targetBrands.length} 个产品、${versionCount} 个版本、${packageCount} 个安装包`,
+      };
+    }
+    return {
+      title: '删除产品',
+      label: targetBrands[0]?.name ?? '',
+      description: '此操作会同时移除该产品下的版本和安装包。',
+      impact: `${versionCount} 个版本、${packageCount} 个安装包`,
+    };
+  })();
 
   function handleCreateProduct() {
-    const catName = categories.find(c => c.id === newBrandCatId)?.name ?? newBrandCatId;
-    if (!catName.trim()) return;
+    if (!productFormValid) return;
+    const currentBrand = editingBrandLocation?.brand;
+    const stamp = Date.now().toString(36);
+    const next = categories.map(category => ({
+      ...category,
+      subcategories: category.subcategories.map(subcategory => ({
+        ...subcategory,
+        brands: subcategory.brands.filter(item => item.id !== editingBrandId),
+      })),
+    }));
 
-    const next = categories.map(c => ({ ...c, subcategories: c.subcategories.map(s => ({ ...s, brands: [...s.brands] })) }));
+    let targetCategory = next.find(category => (
+      category.id === categoryInput || category.name.trim().toLowerCase() === categoryInput.toLowerCase()
+    ));
+    if (!targetCategory) {
+      targetCategory = {
+        id: `category-${stamp}`,
+        name: categoryInput,
+        identifier: categoryIdentifierInput,
+        description: categoryDescriptionInput,
+        icon: 'controller',
+        subcategories: [],
+      };
+      next.push(targetCategory);
+    }
+    setExpandedCategories(current => new Set(current).add(targetCategory.id));
 
-    // Find or create category
-    let cat = next.find(c => c.id === newBrandCatId || c.name === newBrandCatId);
-    if (!cat) {
-      cat = { id: catName.trim().toLowerCase().replace(/\s+/g, '-'), name: catName.trim(), icon: 'controller', subcategories: [] };
-      next.push(cat);
+    if (!fixedProductContext && productWizardStep === 'category') {
+      setCategories(next);
+      setCreateProductOpen(false);
+      return;
     }
 
-    // Find or create subcategory
-    const subName = newBrandSubId.trim();
-    let sub: ProductSubcategory | undefined;
-    if (subName) {
-      sub = cat.subcategories.find(s => s.name === subName || s.id === subName);
-      if (!sub) {
-        sub = { id: subName.toLowerCase().replace(/\s+/g, '-'), name: subName, brands: [] };
-        cat.subcategories.push(sub);
-      }
-    } else {
-      sub = cat.subcategories[0];
-      if (!sub) {
-        sub = { id: 'default', name: '默认', brands: [] };
-        cat.subcategories.push(sub);
-      }
+    let targetSubcategory = targetCategory.subcategories.find(subcategory => (
+      subcategory.id === subcategoryInput || subcategory.name.trim().toLowerCase() === subcategoryInput.toLowerCase()
+    ));
+    if (!targetSubcategory) {
+      targetSubcategory = {
+        id: `subcategory-${stamp}`,
+        name: subcategoryInput,
+        identifier: subcategoryIdentifierInput,
+        description: subcategoryDescriptionInput,
+        relatedSoftwareIds,
+        brands: [],
+      };
+      targetCategory.subcategories.push(targetSubcategory);
+    }
+    setExpandedSubs(current => new Set(current).add(targetSubcategory.id));
+
+    if (!fixedProductContext && productWizardStep === 'subcategory') {
+      setCategories(next);
+      setCreateProductOpen(false);
+      return;
     }
 
-    // Create brand if name provided
-    const name = newBrandName.trim();
-    if (name) {
-      sub.brands.push({
-        id: name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36),
-        name,
-        versions: [],
-      });
-    }
-
+    const brandId = currentBrand?.id ?? `product-${stamp}`;
+    targetSubcategory.brands.push({
+      id: brandId,
+      name: productNameInput,
+      identifier: productIdentifierInput,
+      description: productDescriptionInput,
+      relatedSoftwareIds: newBrandSoftwareIds,
+      versions: currentBrand?.versions ?? [],
+    });
     setCategories(next);
+    setSelectedBrandId(brandId);
     setNewBrandName('');
-    setNewBrandSoftware('');
+    setNewBrandIdentifier('');
+    setNewBrandDescription('');
+    setNewBrandSoftwareIds([]);
+    setEditingBrandId(null);
     setCreateProductOpen(false);
   }
 
-  function openCreateProduct() {
-    setNewBrandCatId(categories[0]?.id ?? '');
-    setNewBrandSubId('');
+  function handleWizardNext() {
+    if (fixedProductContext || productWizardStep === 'product') return;
+    if (productWizardStep === 'category') {
+      if (!categoryStepValid) return;
+      setProductWizardStep('subcategory');
+    } else {
+      if (!subcategoryStepValid) return;
+      setProductWizardStep('product');
+    }
+    setSoftwareLinkQuery('');
+  }
+
+  function openCreateProduct(categoryId = '', subcategoryId = '') {
+    const categoryContext = Boolean(categoryId);
+    const subcategoryContext = Boolean(categoryId && subcategoryId);
+    const initialCategoryId = categoryContext ? categoryId : '';
+    const initialCategory = categories.find(category => category.id === initialCategoryId);
+    const initialSubcategory = initialCategory?.subcategories.find(subcategory => subcategory.id === subcategoryId);
+    setProductFormMode(subcategoryContext ? 'subcategory-context' : categoryContext ? 'category-context' : 'cascade');
+    setProductWizardStep(subcategoryContext ? 'product' : categoryContext ? 'subcategory' : 'category');
+    setEditingBrandId(null);
+    setNewBrandCatId(initialCategoryId);
+    setNewCategoryIdentifier(initialCategory?.identifier ?? '');
+    setNewCategoryDescription(initialCategory?.description ?? '');
+    setNewBrandSubId(subcategoryContext ? subcategoryId : '');
+    setNewSubcategoryIdentifier(initialSubcategory?.identifier ?? '');
+    setNewSubcategoryDescription(initialSubcategory?.description ?? '');
+    setNewSubcategorySoftwareIds(initialSubcategory?.relatedSoftwareIds ?? []);
+    setSoftwareLinkQuery('');
     setNewBrandName('');
-    setNewBrandSoftware('');
+    setNewBrandIdentifier('');
+    setNewBrandDescription('');
+    setNewBrandSoftwareIds([]);
     setCreateProductOpen(true);
+  }
+
+  function openEditProduct(brandId: string) {
+    const location = findBrandLocation(categories, brandId);
+    if (!location) return;
+    setProductFormMode('edit');
+    setProductWizardStep('product');
+    setEditingBrandId(brandId);
+    setNewBrandCatId(location.category.id);
+    setNewBrandSubId(location.subcategory.id);
+    setNewBrandName(location.brand.name);
+    setNewBrandIdentifier(location.brand.identifier ?? location.brand.id);
+    setNewBrandDescription(location.brand.description ?? '');
+    setNewBrandSoftwareIds(location.brand.relatedSoftwareIds ?? []);
+    setCreateProductOpen(true);
+  }
+
+  function openEditCategory(categoryId: string) {
+    const category = categories.find(item => item.id === categoryId);
+    if (!category) return;
+    setTaxonomyForm({
+      open: true,
+      kind: 'category',
+      mode: 'edit',
+      categoryId,
+      subcategoryId: null,
+      name: category.name,
+      icon: category.icon,
+    });
+  }
+
+  function openEditSubcategory(categoryId: string, subcategoryId: string) {
+    const subcategory = categories
+      .find(category => category.id === categoryId)
+      ?.subcategories.find(item => item.id === subcategoryId);
+    if (!subcategory) return;
+    setTaxonomyForm({
+      open: true,
+      kind: 'subcategory',
+      mode: 'edit',
+      categoryId,
+      subcategoryId,
+      name: subcategory.name,
+      icon: 'controller',
+    });
+  }
+
+  function handleSaveTaxonomy() {
+    if (!taxonomyFormValid) return;
+    const name = taxonomyForm.name.trim();
+    if (taxonomyForm.kind === 'category') {
+      if (taxonomyForm.mode === 'create') {
+        setCategories(current => [...current, {
+          id: `category-${Date.now().toString(36)}`,
+          name,
+          icon: taxonomyForm.icon,
+          subcategories: [],
+        }]);
+      } else {
+        setCategories(current => current.map(category => category.id === taxonomyForm.categoryId
+          ? { ...category, name, icon: taxonomyForm.icon }
+          : category));
+      }
+    } else if (taxonomyForm.categoryId) {
+      const newSubcategoryId = `subcategory-${Date.now().toString(36)}`;
+      setCategories(current => current.map(category => {
+        if (category.id !== taxonomyForm.categoryId) return category;
+        if (taxonomyForm.mode === 'create') {
+          return { ...category, subcategories: [...category.subcategories, { id: newSubcategoryId, name, brands: [] }] };
+        }
+        return {
+          ...category,
+          subcategories: category.subcategories.map(subcategory => subcategory.id === taxonomyForm.subcategoryId
+            ? { ...subcategory, name }
+            : subcategory),
+        };
+      }));
+      if (taxonomyForm.mode === 'create') setExpandedSubs(current => new Set(current).add(newSubcategoryId));
+    }
+    setTaxonomyForm(current => ({ ...current, open: false }));
+  }
+
+  function handleTreeNodeAction(nodeAction: CategoryTreeNodeAction) {
+    if (nodeAction.action === 'delete') {
+      setTreeDeleteTarget(nodeAction);
+      return;
+    }
+    if (nodeAction.kind === 'category') {
+      if (nodeAction.action === 'add') openCreateProduct(nodeAction.categoryId);
+      else openEditCategory(nodeAction.categoryId);
+      return;
+    }
+    if (nodeAction.kind === 'subcategory' && nodeAction.subcategoryId) {
+      if (nodeAction.action === 'add') openCreateProduct(nodeAction.categoryId);
+      else openEditSubcategory(nodeAction.categoryId, nodeAction.subcategoryId);
+      return;
+    }
+    if (nodeAction.kind === 'brand') {
+      if (nodeAction.action === 'add' && nodeAction.subcategoryId) {
+        openCreateProduct(nodeAction.categoryId, nodeAction.subcategoryId);
+      } else if (nodeAction.action === 'edit' && nodeAction.brandId) {
+        openEditProduct(nodeAction.brandId);
+      }
+    }
+  }
+
+  function handleDeleteTreeNode() {
+    if (!treeDeleteTarget) return;
+    let next = categories;
+    if (treeDeleteTarget.kind === 'category') {
+      next = categories.filter(category => category.id !== treeDeleteTarget.categoryId);
+    } else if (treeDeleteTarget.kind === 'subcategory') {
+      next = categories.map(category => category.id === treeDeleteTarget.categoryId
+        ? { ...category, subcategories: category.subcategories.filter(subcategory => subcategory.id !== treeDeleteTarget.subcategoryId) }
+        : category);
+    } else {
+      next = categories.map(category => ({
+        ...category,
+        subcategories: category.subcategories.map(subcategory => ({
+          ...subcategory,
+          brands: subcategory.brands.filter(item => item.id !== treeDeleteTarget.brandId),
+        })),
+      }));
+    }
+    setCategories(next);
+    if (!findBrand(next, selectedBrandId)) setSelectedBrandId(firstBrandId(next));
+    setSelectedPkgIds(new Set());
+    setTreeDeleteTarget(null);
   }
 
   function openBatchPublish() {
@@ -889,6 +1659,24 @@ export function ProductVersionManager() {
       else next.add(id);
       return next;
     });
+  }
+
+  function toggleCategory(id: string) {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function selectBrand(brandId: string) {
+    const location = findBrandLocation(categories, brandId);
+    if (location) {
+      setExpandedCategories(current => new Set(current).add(location.category.id));
+      setExpandedSubs(current => new Set(current).add(location.subcategory.id));
+    }
+    setSelectedBrandId(brandId);
   }
 
   function togglePkgSelect(pkgId: string) {
@@ -997,8 +1785,8 @@ export function ProductVersionManager() {
       height: '100%',
       minHeight: 0,
       display: 'flex',
-      gap: 16,
-      padding: 16,
+      gap: 'var(--app-section-gap)',
+      padding: 'var(--app-page-padding)',
       background: 'var(--app-bg)',
       overflow: 'hidden',
       boxSizing: 'border-box',
@@ -1009,35 +1797,38 @@ export function ProductVersionManager() {
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
-        borderRadius: 16,
+        borderRadius: 'var(--app-card-radius)',
         background: 'var(--app-surface)',
         border: '1px solid var(--app-border)',
         boxShadow: CARD_SHADOW,
         overflow: 'hidden',
       }}>
-        <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--app-border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ color: 'var(--app-heading)', fontSize: 18, fontWeight: 700 }}>产品分类</div>
-              <div style={{ color: 'var(--app-muted)', fontSize: 12, marginTop: 3 }}>按产品线管理软件包版本</div>
-            </div>
-            <ArcoIconButton
-              size="small"
-              icon={<Plus size={16} />}
-              aria-label="创建产品"
-              title="创建产品"
-              onClick={openCreateProduct}
-            />
-          </div>
+        <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid var(--app-border)' }}>
+          <div style={{ color: 'var(--app-heading)', fontSize: 18, fontWeight: 700 }}>产品目录</div>
         </div>
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
           <CategoryTree
             categories={categories}
             selectedBrandId={selectedBrandId}
+            expandedCategories={expandedCategories}
             expandedSubs={expandedSubs}
+            onToggleCategory={toggleCategory}
             onToggleSub={toggleSubcategory}
-            onSelectBrand={setSelectedBrandId}
+            onSelectBrand={selectBrand}
+            onNodeAction={handleTreeNodeAction}
           />
+        </div>
+        <div style={{ flexShrink: 0, padding: 12, borderTop: '1px solid var(--app-border)' }}>
+          <ArcoButton
+            type="outline"
+            size="large"
+            long
+            icon={<Plus size={16} />}
+            onClick={() => openCreateProduct()}
+            style={{ borderStyle: 'dashed', borderColor: 'var(--app-accent-border)', background: 'var(--app-accent-soft)', color: 'var(--app-accent)' }}
+          >
+            新增产品
+          </ArcoButton>
         </div>
       </aside>
 
@@ -1047,7 +1838,7 @@ export function ProductVersionManager() {
         minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: 16,
+        borderRadius: 'var(--app-card-radius)',
         background: 'var(--app-surface)',
         border: '1px solid var(--app-border)',
         boxShadow: CARD_SHADOW,
@@ -1056,36 +1847,40 @@ export function ProductVersionManager() {
         <header style={{
           flexShrink: 0,
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 18,
-          padding: '20px 22px 16px',
+          gap: 24,
+          padding: '18px 22px',
           borderBottom: '1px solid var(--app-border)',
         }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-              <span style={{
-                width: 34,
-                height: 34,
-                borderRadius: 12,
-                background: 'var(--app-accent-soft)',
-                color: 'var(--app-accent)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <Layers size={17} />
-              </span>
-              <h1 style={{ color: 'var(--app-heading)', fontSize: 20, fontWeight: 700, margin: 0, lineHeight: 1.25 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, whiteSpace: 'nowrap' }}>
+              {activeBrandLocation && (
+                <>
+                  <span title={activeBrandLocation.category.name} style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--app-muted)', fontSize: 12 }}>
+                    {activeBrandLocation.category.name}
+                  </span>
+                  <ChevronRight size={14} color="var(--app-subtle)" style={{ flexShrink: 0 }} />
+                  <span title={activeBrandLocation.subcategory.name} style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--app-muted)', fontSize: 12 }}>
+                    {activeBrandLocation.subcategory.name}
+                  </span>
+                  <ChevronRight size={14} color="var(--app-subtle)" style={{ flexShrink: 0 }} />
+                </>
+              )}
+              <h1 title={brand?.name} style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--app-heading)', fontSize: 20, fontWeight: 700, margin: 0, lineHeight: 1.25 }}>
                 {brand ? brand.name : '产品包/版本管理'}
               </h1>
-              {brand && <Badge tone="accent">{totalPackages} 个包</Badge>}
+              {brand && <span style={{ flexShrink: 0 }}><Badge tone="accent">{brand.identifier ?? brand.id}</Badge></span>}
             </div>
             {brand && (
-              <div style={{ color: 'var(--app-muted)', fontSize: 12, marginTop: 6 }}>
-                {brand.versions.length} 个版本 · 最近更新 {brand.versions[0]?.packages[0]?.createdAt ?? '-'}
-              </div>
+              <>
+                <p style={{ maxWidth: 640, margin: '6px 0 0', color: 'var(--app-text)', fontSize: 14, lineHeight: 1.5 }}>
+                  {brand.description || '管理该产品的软件版本、安装包与发布记录。'}
+                </p>
+                <div style={{ color: 'var(--app-muted)', fontSize: 12, marginTop: 6 }}>
+                  {brand.versions.length} 个版本 · {totalPackages} 个安装包 · 最近更新 {brand.versions[0]?.packages[0]?.createdAt ?? '-'}
+                </div>
+              </>
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
@@ -1099,7 +1894,7 @@ export function ProductVersionManager() {
             </div>
             {brand && (
               <>
-                <ArcoButton type="primary" icon={<Layers size={14} />} onClick={openBatchPublish}>
+                <ArcoButton type="primary" size="large" icon={<Layers size={14} />} onClick={openBatchPublish}>
                   一键发版
                 </ArcoButton>
               </>
@@ -1109,12 +1904,12 @@ export function ProductVersionManager() {
 
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 18, background: 'var(--app-soft)' }}>
           {!brand ? (
-            <div style={{ textAlign: 'center', padding: '72px 0', color: 'var(--app-muted)', fontSize: 13 }}>
+            <div style={{ textAlign: 'center', padding: '72px 0', color: 'var(--app-muted)', fontSize: 14 }}>
               <Layers size={40} style={{ margin: '0 auto 12px', color: 'var(--app-subtle)' }} />
               <p style={{ margin: 0 }}>请从左侧选择一个品牌/型号</p>
             </div>
           ) : versions.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '72px 0', color: 'var(--app-muted)', fontSize: 13 }}>
+            <div style={{ textAlign: 'center', padding: '72px 0', color: 'var(--app-muted)', fontSize: 14 }}>
               <Search size={40} style={{ margin: '0 auto 12px', color: 'var(--app-subtle)' }} />
               <p style={{ margin: 0 }}>{query ? '没有匹配的包' : '暂无版本包，点击“发布新版本”开始'}</p>
             </div>
@@ -1137,7 +1932,6 @@ export function ProductVersionManager() {
 
       <SoftwarePackageModal
         title="发布新版本"
-        icon={<Upload size={17} />}
         open={createOpen}
         onOpenChange={setCreateOpen}
         form={form}
@@ -1149,7 +1943,6 @@ export function ProductVersionManager() {
 
       <SoftwarePackageModal
         title="编辑包信息"
-        icon={<Edit3 size={17} />}
         open={editOpen}
         onOpenChange={setEditOpen}
         form={form}
@@ -1164,8 +1957,7 @@ export function ProductVersionManager() {
         onOpenChange={setDeleteOpen}
         title="删除安装包"
         status="danger"
-        icon={<Trash2 size={17} />}
-        width={420}
+        size="sm"
         footer={(
           <>
             <ArcoButton onClick={() => setDeleteOpen(false)}>取消</ArcoButton>
@@ -1173,103 +1965,276 @@ export function ProductVersionManager() {
           </>
         )}
       >
-        <p style={{ color: 'var(--app-muted)', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
+        <p style={{ color: 'var(--app-muted)', fontSize: 14, lineHeight: 1.7, margin: 0 }}>
           确认删除「{deleteTarget?.name ?? ''}」吗？删除后将无法恢复。
         </p>
       </ArcoModal>
 
-      {/* ── Create Product Model ── */}
       <ArcoModal
-        open={createProductOpen}
-        onOpenChange={setCreateProductOpen}
-        title="创建产品型号"
-        width={640}
+        open={taxonomyForm.open}
+        onOpenChange={open => setTaxonomyForm(current => ({ ...current, open }))}
+        title={`${taxonomyForm.mode === 'create' ? '新增' : '编辑'}${taxonomyForm.kind === 'category' ? '大类' : '子品类'}`}
+        size="md"
         footer={(
           <>
-            <ArcoButton onClick={() => setCreateProductOpen(false)}>取消</ArcoButton>
-            <ArcoButton type="primary" onClick={handleCreateProduct}>创建产品型号</ArcoButton>
+            <ArcoButton onClick={() => setTaxonomyForm(current => ({ ...current, open: false }))}>取消</ArcoButton>
+            <ArcoButton type="primary" onClick={handleSaveTaxonomy} disabled={!taxonomyFormValid}>
+              {taxonomyForm.mode === 'create' ? '确认新增' : '保存修改'}
+            </ArcoButton>
           </>
         )}
       >
-        <div style={{ display: 'grid', gap: 18 }}>
-          {/* 产品路径 — 横向联级 */}
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--app-text)', marginBottom: 8 }}>
-              产品路径 <span style={{ color: 'var(--app-danger)' }}>*</span>
+        <div style={{ display: 'grid', gap: 14 }}>
+          <TextInput
+            label={taxonomyForm.kind === 'category' ? '大类名称' : '子品类名称'}
+            required
+            value={taxonomyForm.name}
+            onValueChange={name => setTaxonomyForm(current => ({ ...current, name }))}
+            placeholder={taxonomyForm.kind === 'category' ? '例如：控制器类产品' : '例如：控制器'}
+          />
+          {taxonomyForm.kind === 'category' && (
+            <label style={{ display: 'block' }}>
+              <FieldLabel required>大类图标</FieldLabel>
+              <select
+                value={taxonomyForm.icon}
+                onChange={event => setTaxonomyForm(current => ({ ...current, icon: event.target.value as ProductCategory['icon'] }))}
+                style={{ width: '100%', height: 40, borderRadius: 9, border: '1px solid var(--app-border)', background: 'var(--app-soft)', color: 'var(--app-heading)', padding: '0 11px', outline: 'none' }}
+              >
+                <option value="controller">控制器</option>
+                <option value="external">外接设备</option>
+                <option value="service">服务</option>
+              </select>
             </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: 'var(--app-soft)', borderRadius: 12, border: '1px solid var(--app-border)', overflow: 'hidden' }}>
-              <input
-                list="cat-list"
-                value={categories.find(c => c.id === newBrandCatId)?.name ?? newBrandCatId}
-                onChange={e => {
-                  const v = e.target.value;
-                  const m = categories.find(c => c.name === v);
-                  setNewBrandCatId(m ? m.id : v);
-                  setNewBrandSubId('');
-                }}
-                placeholder="产品类型"
-                style={{ flex: '1 1 0', minWidth: 0, height: 46, padding: '0 16px', border: 'none', background: 'transparent', color: 'var(--app-heading)', fontSize: 14, fontWeight: 500, outline: 'none', borderRight: '1px solid var(--app-border)' }}
-              />
-              <datalist id="cat-list">
-                {categories.map(c => <option key={c.id} value={c.name} />)}
-              </datalist>
-              <span style={{ color: 'var(--app-muted)', padding: '0 4px', fontSize: 14, flexShrink: 0 }}>/</span>
-              <input
-                list="sub-list"
-                value={newBrandSubId}
-                onChange={e => setNewBrandSubId(e.target.value)}
-                placeholder="子品类"
-                style={{ flex: '1 1 0', minWidth: 0, height: 46, padding: '0 16px', border: 'none', background: 'transparent', color: 'var(--app-text)', fontSize: 14, outline: 'none', borderRight: '1px solid var(--app-border)' }}
-              />
-              <datalist id="sub-list">
-                {createBrandCat?.subcategories.map(s => <option key={s.id} value={s.name} />)}
-              </datalist>
-              <span style={{ color: 'var(--app-muted)', padding: '0 4px', fontSize: 14, flexShrink: 0 }}>/</span>
-              <input
-                value={newBrandName}
-                onChange={e => setNewBrandName(e.target.value)}
-                placeholder="产品型号"
-                style={{ flex: '1 1 0', minWidth: 0, height: 46, padding: '0 16px', border: 'none', background: 'transparent', color: 'var(--app-text)', fontSize: 14, outline: 'none' }}
-              />
-            </div>
-          </div>
-
-          {/* 关联软件 — 条件显示 */}
-          {newBrandSubId.trim() !== '' && (
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--app-text)', marginBottom: 6 }}>关联软件</label>
-              <ArcoTextInput
-                value={newBrandSoftware}
-                onChange={e => setNewBrandSoftware(e.target.value)}
-                placeholder="输入关联软件包名，逗号分隔"
-                style={{ width: '100%', height: 44 }}
-              />
+          )}
+          {taxonomyDuplicate && (
+            <div role="alert" style={{ color: 'var(--app-danger)', fontSize: 12 }}>
+              当前层级下已存在同名项，请修改名称。
             </div>
           )}
+        </div>
+      </ArcoModal>
 
-          {/* 路径预览 */}
-          <div style={{ background: 'var(--app-accent-soft)', borderRadius: 12, padding: '14px 18px', border: '1px solid var(--app-accent-border)' }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--app-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>路径预览</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <span style={{ color: 'var(--app-heading)', fontSize: 13, fontWeight: 600 }}>
-                {(categories.find(c => c.id === newBrandCatId)?.name ?? newBrandCatId) || '未选择'}
-              </span>
-              {newBrandSubId.trim() && (
-                <>
-                  <ChevronRight size={13} color="var(--app-muted)" />
-                  <span style={{ color: 'var(--app-text)', fontSize: 13 }}>{newBrandSubId.trim()}</span>
-                </>
+      {/* ── Create / edit product ── */}
+      <ArcoModal
+        open={createProductOpen}
+        onOpenChange={open => {
+          setCreateProductOpen(open);
+          if (!open) setEditingBrandId(null);
+        }}
+        title={editingBrandId ? '编辑产品' : '新增产品'}
+        size={fixedProductContext ? 'md' : 'lg'}
+        footer={(
+          <>
+            <ArcoButton onClick={() => setCreateProductOpen(false)}>取消</ArcoButton>
+            {!fixedProductContext && productWizardStep !== 'product' ? (
+              <>
+                {!currentLayerExists && (
+                  <ArcoButton onClick={handleCreateProduct} disabled={!productFormValid}>
+                    保存
+                  </ArcoButton>
+                )}
+                <ArcoButton type="primary" onClick={handleWizardNext} disabled={!productFormValid}>
+                  下一步
+                  <ChevronRight size={15} />
+                </ArcoButton>
+              </>
+            ) : (
+              <ArcoButton type="primary" onClick={handleCreateProduct} disabled={!productFormValid}>
+                {editingBrandId ? '保存修改' : '保存'}
+              </ArcoButton>
+            )}
+          </>
+        )}
+      >
+        <div style={{ display: 'grid', gap: 16 }}>
+          <ProductWizardNav
+            step={productWizardStep}
+            categoryLabel={createBrandCat?.name ?? categoryInput}
+            subcategoryLabel={createBrandSub?.name ?? subcategoryInput}
+            categoryExists={Boolean(createBrandCat)}
+            subcategoryExists={Boolean(createBrandSub)}
+            productActionLabel={editingBrandId ? '编辑产品' : '新增产品'}
+            canOpenSubcategory={categoryStepValid}
+            canOpenProduct={subcategoryStepValid}
+            categoryLocked={categoryLocked}
+            subcategoryLocked={subcategoryLocked}
+            onStepChange={step => {
+              setProductWizardStep(step);
+              setSoftwareLinkQuery('');
+            }}
+          />
+
+          {!fixedProductContext && productWizardStep === 'category' && (
+            <>
+              <EditableCombobox
+                label="产品类型名称"
+                required
+                value={createBrandCat?.name ?? newBrandCatId}
+                options={categories.map(category => ({ id: category.id, label: category.name }))}
+                onValueChange={value => {
+                  const match = categories.find(category => category.name === value);
+                  setNewBrandCatId(match?.id ?? value);
+                  setNewCategoryIdentifier(match?.identifier ?? match?.id ?? '');
+                  setNewCategoryDescription(match?.description ?? '');
+                  setNewBrandSubId('');
+                  setNewSubcategoryIdentifier('');
+                  setNewSubcategoryDescription('');
+                  setNewSubcategorySoftwareIds([]);
+                  setNewBrandName('');
+                  setNewBrandIdentifier('');
+                  setNewBrandDescription('');
+                  setNewBrandSoftwareIds([]);
+                }}
+                placeholder="选择已有类型或输入新名称"
+              />
+              <TextInput
+                label="标识符"
+                required
+                value={categoryIdentifierInput}
+                onValueChange={setNewCategoryIdentifier}
+                placeholder="例如：controller-products"
+                disabled={Boolean(createBrandCat)}
+              />
+              {duplicateCategoryIdentifier && (
+                <div role="alert" style={{ color: 'var(--app-danger)', fontSize: 12, marginTop: -10 }}>
+                  产品类型标识符已存在，请使用唯一标识符。
+                </div>
               )}
-              {newBrandName.trim() && (
-                <>
-                  <ChevronRight size={13} color="var(--app-muted)" />
-                  <span style={{ color: 'var(--app-accent)', fontSize: 13, fontWeight: 600 }}>{newBrandName.trim()}</span>
-                </>
+              <TextAreaField
+                label="描述"
+                value={categoryDescriptionInput}
+                onValueChange={setNewCategoryDescription}
+                placeholder="请输入该类型的业务范围"
+                disabled={Boolean(createBrandCat)}
+              />
+            </>
+          )}
+
+          {!fixedProductContext && productWizardStep === 'subcategory' && (
+            <>
+              <EditableCombobox
+                label="子品类名称"
+                required
+                value={createBrandSub?.name ?? newBrandSubId}
+                options={(createBrandCat?.subcategories ?? []).map(subcategory => ({ id: subcategory.id, label: subcategory.name }))}
+                onValueChange={value => {
+                  const match = createBrandCat?.subcategories.find(subcategory => subcategory.name === value);
+                  setNewBrandSubId(match?.id ?? value);
+                  setNewSubcategoryIdentifier(match?.identifier ?? match?.id ?? '');
+                  setNewSubcategoryDescription(match?.description ?? '');
+                  setNewSubcategorySoftwareIds(match?.relatedSoftwareIds ?? []);
+                  setNewBrandName('');
+                  setNewBrandIdentifier('');
+                  setNewBrandDescription('');
+                  setNewBrandSoftwareIds([]);
+                }}
+                placeholder="选择已有子品类或输入新名称"
+              />
+              <TextInput
+                label="标识符"
+                required
+                value={subcategoryIdentifierInput}
+                onValueChange={setNewSubcategoryIdentifier}
+                placeholder="例如：controllers"
+                disabled={Boolean(createBrandSub)}
+              />
+              {duplicateSubcategoryIdentifier && (
+                <div role="alert" style={{ color: 'var(--app-danger)', fontSize: 12, marginTop: -10 }}>
+                  子品类标识符已存在，请使用唯一标识符。
+                </div>
               )}
-              {!newBrandName.trim() && !newBrandSubId.trim() && (
-                <span style={{ color: 'var(--app-muted)', fontSize: 12 }}>—</span>
+              <TextAreaField
+                label="描述"
+                value={subcategoryDescriptionInput}
+                onValueChange={setNewSubcategoryDescription}
+                placeholder="请输入该子品类的用途或适配范围"
+                disabled={Boolean(createBrandSub)}
+              />
+              <RelatedSoftwarePicker
+                options={softwareOptions}
+                selectedIds={relatedSoftwareIds}
+                query={softwareLinkQuery}
+                onQueryChange={setSoftwareLinkQuery}
+                disabled={Boolean(createBrandSub)}
+                onToggle={id => setNewSubcategorySoftwareIds(current => (
+                  current.includes(id) ? current.filter(item => item !== id) : [...current, id]
+                ))}
+              />
+            </>
+          )}
+
+          {(fixedProductContext || productWizardStep === 'product') && (
+            <>
+              <TextInput
+                label="产品名称"
+                required
+                value={newBrandName}
+                onValueChange={setNewBrandName}
+                placeholder="请输入产品名称"
+              />
+              <TextInput
+                label="产品标识符"
+                required
+                value={newBrandIdentifier}
+                onValueChange={setNewBrandIdentifier}
+                placeholder="例如：shadow-controller"
+              />
+              {productNameInput && !productIdentifierInput && (
+                <div role="alert" style={{ color: 'var(--app-danger)', fontSize: 12, marginTop: -10 }}>
+                  请填写唯一的产品标识符后再添加。
+                </div>
               )}
+              <RelatedSoftwarePicker
+                options={softwareOptions.filter(option => option.id !== editingBrandId)}
+                selectedIds={newBrandSoftwareIds}
+                query={softwareLinkQuery}
+                onQueryChange={setSoftwareLinkQuery}
+                onToggle={id => setNewBrandSoftwareIds(current => (
+                  current.includes(id) ? current.filter(item => item !== id) : [...current, id]
+                ))}
+              />
+              <TextAreaField
+                label="产品描述"
+                value={newBrandDescription}
+                onValueChange={setNewBrandDescription}
+                placeholder="请输入产品能力、用途或适配范围"
+              />
+            </>
+          )}
+
+          {duplicateBrand && (
+            <div role="alert" style={{ color: 'var(--app-danger)', fontSize: 12, marginTop: -8 }}>
+              当前分类下已存在同名产品，请修改产品名称。
             </div>
+          )}
+          {duplicateIdentifier && (
+            <div role="alert" style={{ color: 'var(--app-danger)', fontSize: 12, marginTop: -8 }}>
+              产品标识符已存在，请使用唯一标识符。
+            </div>
+          )}
+        </div>
+      </ArcoModal>
+
+      <ArcoModal
+        open={Boolean(treeDeleteTarget)}
+        onOpenChange={open => { if (!open) setTreeDeleteTarget(null); }}
+        title={treeDeleteInfo?.title ?? '删除'}
+        status="danger"
+        size="sm"
+        footer={(
+          <>
+            <ArcoButton onClick={() => setTreeDeleteTarget(null)}>取消</ArcoButton>
+            <ArcoButton type="primary" status="danger" onClick={handleDeleteTreeNode}>确认删除</ArcoButton>
+          </>
+        )}
+      >
+        <div style={{ display: 'grid', gap: 12 }}>
+          <p style={{ color: 'var(--app-text)', fontSize: 14, lineHeight: 1.7, margin: 0 }}>
+            确认删除「{treeDeleteInfo?.label ?? ''}」吗？删除后无法恢复。
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 12px', borderRadius: 9, background: 'var(--app-danger-soft)', color: 'var(--app-danger)', fontSize: 12 }}>
+            <Trash2 size={14} />
+            将删除 {treeDeleteInfo?.impact ?? '相关数据'}
           </div>
         </div>
       </ArcoModal>
@@ -1282,7 +2247,7 @@ export function ProductVersionManager() {
         open={batchOpen}
         onOpenChange={setBatchOpen}
         title="一键发版"
-        width={720}
+        size="lg"
         footer={(
           <>
             <ArcoButton onClick={() => setBatchOpen(false)}>关闭</ArcoButton>
@@ -1295,7 +2260,7 @@ export function ProductVersionManager() {
         <div style={{ display: 'grid', gridTemplateColumns: '160px 160px 1fr 170px', gap: 1, background: 'var(--app-border)', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--app-border)' }}>
           {/* Col 1: 产品分组 — 多选 */}
           <div style={{ background: 'var(--app-surface)', padding: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>产品分组</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>产品分组</div>
             {categories.map(cat => {
               const checked = batchCatIds.has(cat.id);
               return (
@@ -1310,7 +2275,7 @@ export function ProductVersionManager() {
 
           {/* Col 2: 子产品 — 多选（基于选中产品分组的所有子产品） */}
           <div style={{ background: 'var(--app-surface)', padding: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>子产品</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>子产品</div>
             {(() => {
               const subs: { id: string; name: string }[] = [];
               const seen = new Set<string>();
@@ -1331,12 +2296,12 @@ export function ProductVersionManager() {
                 );
               });
             })()}
-            {batchCatIds.size === 0 && <div style={{ color: 'var(--app-muted)', fontSize: 11, padding: 12, textAlign: 'center' }}>请先选择产品分组</div>}
+            {batchCatIds.size === 0 && <div style={{ color: 'var(--app-muted)', fontSize: 12, padding: 12, textAlign: 'center' }}>请先选择产品分组</div>}
           </div>
 
           {/* Col 3: 品牌 — 多选 */}
           <div style={{ background: 'var(--app-surface)', padding: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>产品（勾选发布）</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>产品（勾选发布）</div>
             <div style={{ maxHeight: 260, overflow: 'auto' }}>
               {batchBrands.length > 0 ? batchBrands.map(({ brand: br }) => {
                 const checked = batchSelection.has(br.id);
@@ -1347,13 +2312,13 @@ export function ProductVersionManager() {
                     <span style={{ color: checked ? 'var(--app-accent)' : 'var(--app-text)', fontSize: 12, fontWeight: checked ? 600 : 400 }}>{br.name}</span>
                   </label>
                 );
-              }) : <div style={{ color: 'var(--app-muted)', fontSize: 11, padding: 12, textAlign: 'center' }}>暂无产品</div>}
+              }) : <div style={{ color: 'var(--app-muted)', fontSize: 12, padding: 12, textAlign: 'center' }}>暂无产品</div>}
             </div>
           </div>
 
           {/* Col 4: 共同版本 */}
           <div style={{ background: 'var(--app-surface)', padding: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>共同版本</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--app-muted)', padding: '4px 8px', marginBottom: 4 }}>共同版本</div>
             <div style={{ maxHeight: 260, overflow: 'auto' }}>
               {allBatchVersions.map(ver => {
                 const active = batchVersion === ver;
@@ -1362,7 +2327,7 @@ export function ProductVersionManager() {
                     background: active ? 'var(--app-accent-soft)' : 'transparent', marginBottom: 2 }}>
                     <input type="radio" name="batchVersion" checked={active} onChange={() => setBatchVersion(ver)} style={{ accentColor: 'var(--app-accent)', width: 14, height: 14, flexShrink: 0 }} />
                     <div>
-                      <span style={{ color: active ? 'var(--app-accent)' : 'var(--app-text)', fontSize: 13, fontWeight: active ? 600 : 400 }}>{ver}</span>
+                      <span style={{ color: active ? 'var(--app-accent)' : 'var(--app-text)', fontSize: 14, fontWeight: active ? 600 : 400 }}>{ver}</span>
                       <span style={{ color: 'var(--app-muted)', fontSize: 10, display: 'block' }}>正式版本</span>
                     </div>
                   </label>
@@ -1391,8 +2356,8 @@ export function ProductVersionManager() {
                 {preview.map((p, i) => (
                   <div key={i} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: 'var(--app-surface)', border: '1px solid var(--app-border)' }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--app-accent)' }}>{p.brandName}</span>
-                    <code style={{ fontSize: 11, color: 'var(--app-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.pkg.name}</code>
-                    <span style={{ fontSize: 11, color: 'var(--app-muted)', whiteSpace: 'nowrap' }}>{p.fromVer} → <span style={{ color: 'var(--app-accent)', fontWeight: 600 }}>{batchVersion}</span></span>
+                    <code style={{ fontSize: 12, color: 'var(--app-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.pkg.name}</code>
+                    <span style={{ fontSize: 12, color: 'var(--app-muted)', whiteSpace: 'nowrap' }}>{p.fromVer} → <span style={{ color: 'var(--app-accent)', fontWeight: 600 }}>{batchVersion}</span></span>
                   </div>
                 ))}
               </div>

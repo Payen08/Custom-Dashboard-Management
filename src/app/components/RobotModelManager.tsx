@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDrag, useDrop } from 'react-dnd';
 import {
-  Box, CheckCircle2, ChevronRight, FileCode2, FileJson, GitBranch,
-  Pencil, Plus, RefreshCw, Save, Search, SlidersHorizontal, Trash2, X,
+  ArrowLeft, Box, CheckCircle2, ChevronDown, ChevronRight, FileCode2, FileJson, GitBranch, LayoutGrid,
+  MoreHorizontal, Pencil, Plus, RefreshCw, Save, Search, SlidersHorizontal, Trash2, X,
 } from 'lucide-react';
 import {
   ArcoButton,
@@ -13,10 +14,20 @@ import {
   ArcoTextArea,
   ArcoTextInput,
 } from './ArcoLike';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 import { ROBOT_THEME_VARS, type ThemeMode } from '../theme';
+import { INITIAL_SCHEMES, type HomepageScheme } from '../shared';
+import type { SoftwareProduct } from '../softwareProducts';
+import { CategoryTree, buildInitialData as buildProductVersionData, type ProductCategory } from './ProductVersionManager';
 
 type PublishStatus = 'published' | 'draft';
 type TopologyKind = 'link' | 'joint';
+type TopologyDropPosition = 'before' | 'inside' | 'after';
 type SoftwarePackageSlot = 'controller' | 'armDriver' | 'endEffector' | 'powerDriver' | 'perception';
 type JointType = 'fixed' | 'revolute' | 'continuous' | 'prismatic';
 
@@ -56,6 +67,12 @@ interface TopologyNode {
   children?: TopologyNode[];
 }
 
+interface TopologyDragItem {
+  type: 'TOPOLOGY_NODE';
+  nodeId: string;
+  kind: TopologyKind;
+}
+
 interface SoftwarePackageOption {
   vendor: string;
   packageName: string;
@@ -89,6 +106,7 @@ interface SoftwareVersionGroup {
 interface SoftwareVersionCategory {
   id: string;
   label: string;
+  icon: ProductCategory['icon'];
   totalCount: number;
   groups: SoftwareVersionGroup[];
 }
@@ -97,6 +115,7 @@ interface RobotModel {
   id: string;
   name: string;
   type: string;
+  description: string;
   ownerAccount: string;
   status: PublishStatus;
   version: string;
@@ -107,17 +126,20 @@ interface RobotModel {
   topology: TopologyNode[];
   softwareSelectionIds: string[];
   softwarePackages: Record<SoftwarePackageSlot, SoftwarePackageConfig>;
+  homepageSchemeId?: string;
 }
 
 interface RobotDraft {
   id?: string;
   name: string;
   type: string;
+  description: string;
   ownerAccount: string;
   status: PublishStatus;
   version: string;
   componentCount: number;
   peripheralsText: string;
+  homepageSchemeId?: string;
 }
 
 const ROBOT_TYPES = ['复合机器人', '人形双足机器人', 'AGV搬运机器人', '巡检机器人'];
@@ -141,6 +163,55 @@ function initialThemeMode(): ThemeMode {
 
 function robotThemeVars(mode: ThemeMode): React.CSSProperties {
   return ROBOT_THEME_VARS[mode] as React.CSSProperties;
+}
+
+function HeroButton({
+  children,
+  variant = 'secondary',
+  size = 'md',
+  fullWidth = false,
+  isIconOnly = false,
+  disabled = false,
+  onPress,
+  ariaLabel,
+  title,
+}: {
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'danger';
+  size?: 'sm' | 'md';
+  fullWidth?: boolean;
+  isIconOnly?: boolean;
+  disabled?: boolean;
+  onPress?: () => void;
+  ariaLabel?: string;
+  title?: string;
+}) {
+  return (
+    <button
+      type="button"
+      className="hero-detail-button"
+      data-variant={variant}
+      data-size={size}
+      data-icon-only={isIconOnly ? 'true' : 'false'}
+      aria-label={ariaLabel}
+      title={title}
+      disabled={disabled}
+      onClick={onPress}
+      style={{ width: fullWidth ? '100%' : undefined }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function HeroChip({
+  children,
+  tone = 'default',
+}: {
+  children: React.ReactNode;
+  tone?: 'default' | 'accent' | 'success' | 'danger';
+}) {
+  return <span className="hero-detail-chip" data-tone={tone}>{children}</span>;
 }
 
 const SOFTWARE_PACKAGE_SLOTS: SoftwarePackageSlot[] = ['controller', 'armDriver', 'endEffector', 'powerDriver', 'perception'];
@@ -202,6 +273,7 @@ const SOFTWARE_VERSION_CATALOG: SoftwareVersionCategory[] = [
   {
     id: 'controller-products',
     label: '控制器类产品',
+    icon: 'controller',
     totalCount: 10,
     groups: [
       {
@@ -233,6 +305,7 @@ const SOFTWARE_VERSION_CATALOG: SoftwareVersionCategory[] = [
   {
     id: 'external-devices',
     label: '外接设备类产品',
+    icon: 'external',
     totalCount: 32,
     groups: [
       {
@@ -277,6 +350,7 @@ const SOFTWARE_VERSION_CATALOG: SoftwareVersionCategory[] = [
   {
     id: 'service-products',
     label: '服务类产品',
+    icon: 'service',
     totalCount: 12,
     groups: [
       {
@@ -302,6 +376,7 @@ const SOFTWARE_VERSION_CATALOG: SoftwareVersionCategory[] = [
   {
     id: 'other-products',
     label: '其他类产品',
+    icon: 'controller',
     totalCount: 15,
     groups: [
       {
@@ -327,6 +402,7 @@ const SOFTWARE_VERSION_CATALOG: SoftwareVersionCategory[] = [
   {
     id: 'algorithm-products',
     label: '算法类产品',
+    icon: 'controller',
     totalCount: 1,
     groups: [
       {
@@ -340,6 +416,40 @@ const SOFTWARE_VERSION_CATALOG: SoftwareVersionCategory[] = [
     ],
   },
 ];
+
+function slotForProductGroup(groupId: string): SoftwarePackageSlot {
+  if (groupId === 'arms') return 'armDriver';
+  if (groupId === 'grippers') return 'endEffector';
+  if (groupId === 'sensors') return 'perception';
+  return 'controller';
+}
+
+function buildSoftwareVersionCatalog(): SoftwareVersionCategory[] {
+  return buildProductVersionData().map(category => ({
+    id: category.id,
+    label: category.name,
+    icon: category.icon,
+    totalCount: category.subcategories.reduce((total, group) => total + group.brands.length, 0),
+    groups: category.subcategories.map(group => ({
+      id: group.id,
+      label: group.name,
+      totalCount: group.brands.length,
+      items: group.brands.map(brand => {
+        const latestVersion = brand.versions[0];
+        const latestPackage = latestVersion?.packages[0];
+        return {
+          id: brand.id,
+          label: brand.name,
+          slot: slotForProductGroup(group.id),
+          vendor: brand.name,
+          packageName: latestPackage?.name ?? brand.name,
+          version: latestVersion?.version ?? '-',
+          versionCount: brand.versions.length,
+        };
+      }),
+    })),
+  }));
+}
 
 function mcrTopology(): TopologyNode[] {
   return [
@@ -393,7 +503,16 @@ function mcrTopology(): TopologyNode[] {
                     },
                   ],
                 },
-                { id: 'camera_mount_link', label: 'camera_mount_link', kind: 'link', origin: { x: 0.2, y: 0.08, z: 0.62, rx: 0, ry: 0, rz: 12 } },
+                {
+                  id: 'camera_mount_joint',
+                  label: 'camera_mount_joint',
+                  kind: 'joint',
+                  jointType: 'fixed',
+                  origin: { x: 0.2, y: 0.08, z: 0.62, rx: 0, ry: 0, rz: 12 },
+                  axis: { x: 0, y: 0, z: 1 },
+                  limit: { lower: 0, upper: 0, effort: 0, velocity: 0 },
+                  children: [{ id: 'camera_mount_link', label: 'camera_mount_link', kind: 'link', origin: { x: 0.2, y: 0.08, z: 0.62, rx: 0, ry: 0, rz: 12 } }],
+                },
               ],
             },
           ],
@@ -462,27 +581,17 @@ function defaultSoftwarePackages(type: string): Record<SoftwarePackageSlot, Soft
   };
 }
 
-function softwareCatalogItems() {
-  return SOFTWARE_VERSION_CATALOG.flatMap(category => category.groups.flatMap(group => group.items));
+function softwareCatalogItems(catalog: SoftwareVersionCategory[]) {
+  return catalog.flatMap(category => category.groups.flatMap(group => group.items));
 }
 
-function findSoftwareCatalogItem(id: string) {
-  return softwareCatalogItems().find(item => item.id === id);
-}
-
-function selectedSoftwareCatalogItems(ids: string[]) {
+function selectedSoftwareCatalogItems(ids: string[], catalog: SoftwareVersionCategory[]) {
   const selected = new Set(ids);
-  return softwareCatalogItems().filter(item => selected.has(item.id));
+  return softwareCatalogItems(catalog).filter(item => selected.has(item.id));
 }
 
-function defaultSoftwareSelectionIds(type: string) {
-  if (type.includes('人形')) {
-    return ['controller-src', 'arm-agile', 'gripper-adaptive', 'motor-servo', 'sensor-vision-lidar', 'service-health'];
-  }
-  if (type.includes('AGV')) {
-    return ['controller-src', 'motor-stepper', 'sensor-distance', 'io-digital', 'service-device-manager', 'algo-navigation'];
-  }
-  return ['controller-src', 'arm-jaka', 'gripper-electric', 'motor-servo', 'sensor-vision-lidar', 'io-digital'];
+function defaultSoftwareSelectionIds() {
+  return ['moying', 'src', 'jaka'];
 }
 
 function packageFromSoftwareItem(item: SoftwareVersionItem): SoftwarePackageConfig {
@@ -497,8 +606,9 @@ function packageFromSoftwareItem(item: SoftwareVersionItem): SoftwarePackageConf
 function packagesFromSoftwareSelections(
   ids: string[],
   fallback: Record<SoftwarePackageSlot, SoftwarePackageConfig>,
+  catalog: SoftwareVersionCategory[],
 ) {
-  return selectedSoftwareCatalogItems(ids).reduce<Record<SoftwarePackageSlot, SoftwarePackageConfig>>((next, item) => ({
+  return selectedSoftwareCatalogItems(ids, catalog).reduce<Record<SoftwarePackageSlot, SoftwarePackageConfig>>((next, item) => ({
     ...next,
     [item.slot]: packageFromSoftwareItem(item),
   }), { ...fallback });
@@ -509,6 +619,7 @@ const INITIAL_ROBOT_MODELS: RobotModel[] = [
     id: 'robot-mcr',
     name: 'MCR复合机器人',
     type: '复合机器人',
+    description: '模块化复合协作机器人平台，集成移动底盘与多关节机械臂，适用于柔性制造、仓储分拣及实验室自动化场景。',
     ownerAccount: 'robot-admin',
     status: 'published',
     version: 'R1.4',
@@ -517,7 +628,7 @@ const INITIAL_ROBOT_MODELS: RobotModel[] = [
     peripherals: ['视觉相机', '激光雷达', 'I/O模块', '夹爪'],
     pose: { rotation: 28, height: 64, reach: 72 },
     topology: mcrTopology(),
-    softwareSelectionIds: defaultSoftwareSelectionIds('复合机器人'),
+    softwareSelectionIds: defaultSoftwareSelectionIds(),
     softwarePackages: {
       ...defaultSoftwarePackages('复合机器人'),
       controller: packageConfig('controller', 0, 0),
@@ -526,11 +637,13 @@ const INITIAL_ROBOT_MODELS: RobotModel[] = [
       powerDriver: packageConfig('powerDriver', 0, 0),
       perception: packageConfig('perception', 2, 0),
     },
+    homepageSchemeId: 's1',
   },
   {
     id: 'robot-humanoid',
     name: '人形双足机器人',
     type: '人形双足机器人',
+    description: '双足人形机器人原型机，具备全身运动控制与多模态感知能力，面向科研与服务场景。',
     ownerAccount: 'biped-lab',
     status: 'draft',
     version: 'R0.9',
@@ -539,7 +652,7 @@ const INITIAL_ROBOT_MODELS: RobotModel[] = [
     peripherals: ['IMU', '深度相机', '足底力传感器'],
     pose: { rotation: -12, height: 78, reach: 55 },
     topology: humanoidTopology(),
-    softwareSelectionIds: defaultSoftwareSelectionIds('人形双足机器人'),
+    softwareSelectionIds: defaultSoftwareSelectionIds(),
     softwarePackages: {
       ...defaultSoftwarePackages('人形双足机器人'),
       armDriver: packageConfig('armDriver', 1, 0),
@@ -551,6 +664,7 @@ const INITIAL_ROBOT_MODELS: RobotModel[] = [
     id: 'robot-agv',
     name: 'AGV搬运机器人',
     type: 'AGV搬运机器人',
+    description: '自主导航搬运平台，支持激光 SLAM 定位与多机调度，适用于工厂物流与仓储搬运。',
     ownerAccount: 'factory-ops',
     status: 'published',
     version: 'R2.1',
@@ -559,7 +673,7 @@ const INITIAL_ROBOT_MODELS: RobotModel[] = [
     peripherals: ['激光雷达', '电池模组', '导航控制器'],
     pose: { rotation: 18, height: 42, reach: 46 },
     topology: mcrTopology(),
-    softwareSelectionIds: defaultSoftwareSelectionIds('AGV搬运机器人'),
+    softwareSelectionIds: defaultSoftwareSelectionIds(),
     softwarePackages: {
       ...defaultSoftwarePackages('AGV搬运机器人'),
       controller: packageConfig('controller', 0, 1),
@@ -567,6 +681,7 @@ const INITIAL_ROBOT_MODELS: RobotModel[] = [
       powerDriver: packageConfig('powerDriver', 1, 0),
       perception: packageConfig('perception', 0, 0),
     },
+    homepageSchemeId: 's2',
   },
 ];
 
@@ -882,6 +997,149 @@ function renameTopologyNode(nodes: TopologyNode[], targetId: string, newLabel: s
   });
 }
 
+interface TopologyLocation {
+  node: TopologyNode;
+  parentId?: string;
+  index: number;
+}
+
+function findTopologyLocation(nodes: TopologyNode[], targetId: string, parentId?: string): TopologyLocation | null {
+  for (let index = 0; index < nodes.length; index += 1) {
+    const node = nodes[index];
+    if (node.id === targetId) return { node, parentId, index };
+    const child = findTopologyLocation(node.children ?? [], targetId, node.id);
+    if (child) return child;
+  }
+  return null;
+}
+
+function topologyContains(node: TopologyNode, targetId: string): boolean {
+  if (node.id === targetId) return true;
+  return (node.children ?? []).some(child => topologyContains(child, targetId));
+}
+
+function canMoveTopologyNode(
+  nodes: TopologyNode[],
+  draggedId: string,
+  targetId: string,
+  _position: TopologyDropPosition,
+): boolean {
+  if (draggedId === targetId) return false;
+  const dragged = findTopologyLocation(nodes, draggedId);
+  const target = findTopologyLocation(nodes, targetId);
+  if (!dragged || !target || dragged.parentId === undefined) return false;
+  return true;
+}
+
+function replaceTopologyNode(
+  nodes: TopologyNode[],
+  targetId: string,
+  replacements: TopologyNode[],
+): TopologyNode[] {
+  const targetIndex = nodes.findIndex(node => node.id === targetId);
+  if (targetIndex >= 0) {
+    const nextNodes = [...nodes];
+    nextNodes.splice(targetIndex, 1, ...replacements);
+    return nextNodes;
+  }
+
+  return nodes.map(node => {
+    if (!node.children?.length) return node;
+    return { ...node, children: replaceTopologyNode(node.children, targetId, replacements) };
+  });
+}
+
+function extractTopologyNode(nodes: TopologyNode[], targetId: string): { nodes: TopologyNode[]; extracted: TopologyNode | null } {
+  let extracted: TopologyNode | null = null;
+  const nextNodes: TopologyNode[] = [];
+
+  for (const node of nodes) {
+    if (node.id === targetId) {
+      extracted = node;
+      continue;
+    }
+    if (node.children?.length) {
+      const childResult = extractTopologyNode(node.children, targetId);
+      if (childResult.extracted) {
+        extracted = childResult.extracted;
+        nextNodes.push({ ...node, children: childResult.nodes });
+        continue;
+      }
+    }
+    nextNodes.push(node);
+  }
+
+  return { nodes: nextNodes, extracted };
+}
+
+function insertTopologyNode(
+  nodes: TopologyNode[],
+  targetId: string,
+  position: TopologyDropPosition,
+  nodeToInsert: TopologyNode,
+): TopologyNode[] {
+  if (position === 'inside') {
+    return nodes.map(node => {
+      if (node.id === targetId) return { ...node, children: [...(node.children ?? []), nodeToInsert] };
+      if (!node.children?.length) return node;
+      return { ...node, children: insertTopologyNode(node.children, targetId, position, nodeToInsert) };
+    });
+  }
+
+  const targetIndex = nodes.findIndex(node => node.id === targetId);
+  if (targetIndex >= 0) {
+    const nextNodes = [...nodes];
+    nextNodes.splice(position === 'before' ? targetIndex : targetIndex + 1, 0, nodeToInsert);
+    return nextNodes;
+  }
+
+  return nodes.map(node => {
+    if (!node.children?.length) return node;
+    return { ...node, children: insertTopologyNode(node.children, targetId, position, nodeToInsert) };
+  });
+}
+
+function moveTopologyNode(
+  nodes: TopologyNode[],
+  draggedId: string,
+  targetId: string,
+  position: TopologyDropPosition,
+): TopologyNode[] {
+  if (!canMoveTopologyNode(nodes, draggedId, targetId, position)) return nodes;
+  const dragged = findTopologyLocation(nodes, draggedId);
+  if (!dragged) return nodes;
+
+  // Moving a parent onto one of its descendants needs a tree rotation. Detach
+  // the target first, promote it to the parent's old slot, then place the
+  // cleaned parent at the requested position. This keeps the tree acyclic and
+  // lets users repair temporarily incorrect model hierarchies in one action.
+  if (topologyContains(dragged.node, targetId)) {
+    const { nodes: cleanedDraggedNodes, extracted: descendantTarget } = extractTopologyNode([dragged.node], targetId);
+    const cleanedDragged = cleanedDraggedNodes[0];
+    if (!descendantTarget || !cleanedDragged) return nodes;
+
+    if (position === 'inside') {
+      const promotedTarget = {
+        ...descendantTarget,
+        children: [...(descendantTarget.children ?? []), cleanedDragged],
+      };
+      return replaceTopologyNode(nodes, draggedId, [promotedTarget]);
+    }
+
+    return replaceTopologyNode(
+      nodes,
+      draggedId,
+      position === 'before'
+        ? [cleanedDragged, descendantTarget]
+        : [descendantTarget, cleanedDragged],
+    );
+  }
+
+  const { nodes: remainingNodes, extracted } = extractTopologyNode(nodes, draggedId);
+  if (!extracted) return nodes;
+  return insertTopologyNode(remainingNodes, targetId, position, extracted);
+}
+
 function inputStyle(): React.CSSProperties {
   return {
     width: '100%',
@@ -890,12 +1148,74 @@ function inputStyle(): React.CSSProperties {
     border: '1px solid var(--robot-border-strong)',
     background: 'var(--robot-surface)',
     color: 'var(--robot-heading)',
-    fontSize: 13,
+    fontSize: 14,
     padding: '0 12px',
     outline: 'none',
     boxSizing: 'border-box',
     transition: 'border-color 0.15s ease',
   };
+}
+
+function RobotCardPreview({ model }: { model: RobotModel }) {
+  const isHumanoid = model.type.includes('人形');
+  const safeId = model.id.replace(/[^a-zA-Z0-9_-]/g, '');
+  const gradientId = `model-card-gradient-${safeId}`;
+  const glowId = `model-card-glow-${safeId}`;
+  const reach = model.pose.reach;
+  const baseY = 132 - model.pose.height * 0.14;
+
+  return (
+    <div className="model-card-preview" aria-hidden="true">
+      <svg viewBox="0 0 420 230" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--robot-scene-top)" />
+            <stop offset="100%" stopColor="var(--robot-scene-bottom)" />
+          </linearGradient>
+          <filter id={glowId}>
+            <feGaussianBlur stdDeviation="2.4" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <rect width="420" height="230" fill={`url(#${gradientId})`} />
+        {Array.from({ length: 8 }).map((_, index) => {
+          const y = 104 + index * 16;
+          const spread = index * 19;
+          return <line key={`card-h-${index}`} x1={104 - spread} y1={y} x2={316 + spread} y2={y} stroke="var(--robot-scene-muted)" strokeWidth="1" />;
+        })}
+        {Array.from({ length: 9 }).map((_, index) => {
+          const x = 50 + index * 40;
+          return <line key={`card-v-${index}`} x1="210" y1="94" x2={x} y2="230" stroke="var(--robot-scene-muted)" strokeWidth="1" />;
+        })}
+
+        <g transform={`translate(210 ${baseY}) scale(0.62) rotate(${model.pose.rotation})`} filter={`url(#${glowId})`}>
+          <ellipse cx="0" cy="116" rx="92" ry="18" fill="var(--robot-accent)" fillOpacity="0.13" stroke="var(--robot-accent)" opacity="0.7" />
+          {isHumanoid ? (
+            <>
+              <rect x="-26" y="-18" width="52" height="92" rx="18" fill="var(--robot-accent)" stroke="var(--robot-accent-border)" strokeWidth="2" />
+              <circle cx="0" cy="-42" r="24" fill="var(--robot-accent)" stroke="var(--robot-accent-soft)" strokeWidth="4" />
+              <line x1="-22" y1="74" x2="-50" y2="132" stroke="var(--robot-accent)" strokeWidth="18" strokeLinecap="round" />
+              <line x1="22" y1="74" x2="50" y2="132" stroke="var(--robot-accent)" strokeWidth="18" strokeLinecap="round" />
+              <line x1="-28" y1="8" x2={-42 - reach * 0.28} y2="54" stroke="var(--robot-accent-text)" strokeWidth="14" strokeLinecap="round" />
+              <line x1="28" y1="8" x2={42 + reach * 0.28} y2="54" stroke="var(--robot-accent-text)" strokeWidth="14" strokeLinecap="round" />
+            </>
+          ) : (
+            <>
+              <rect x="-58" y="52" width="116" height="58" rx="14" fill="var(--robot-soft)" stroke="var(--robot-accent-border)" strokeWidth="3" />
+              <rect x="-16" y="-4" width="32" height="76" rx="10" fill="var(--robot-accent)" stroke="var(--robot-accent-border)" strokeWidth="2" />
+              <line x1="0" y1="0" x2={reach * 0.45} y2="-70" stroke="var(--robot-accent)" strokeWidth="18" strokeLinecap="round" />
+              <line x1={reach * 0.45} y1="-70" x2={reach * 0.72} y2="-122" stroke="var(--robot-accent-text)" strokeWidth="16" strokeLinecap="round" />
+              <circle cx={reach * 0.72} cy="-122" r="15" fill="var(--robot-accent-border)" stroke="var(--robot-accent-soft)" strokeWidth="4" />
+            </>
+          )}
+        </g>
+      </svg>
+      <span className="model-card-preview-label">3D 预览</span>
+    </div>
+  );
 }
 
 function RobotScene({
@@ -914,33 +1234,21 @@ function RobotScene({
   const reach = model.pose.reach;
 
   return (
-    <div style={{
-      height: '100%',
-      minHeight: 0,
-      flex: '1 1 auto',
-      display: 'flex',
-      flexDirection: 'column',
-      background: 'var(--robot-surface)',
-      border: '1px solid var(--robot-border)',
-      borderRadius: 16,
-      overflow: 'hidden',
-      boxShadow: 'var(--robot-shadow)',
-    }}>
-      <div style={{ padding: '15px 18px', borderBottom: '1px solid var(--robot-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div>
-          <div style={{ color: 'var(--robot-heading)', fontSize: 15, fontWeight: 600 }}>3D模型可视化</div>
-        </div>
-        <ArcoButton
-          scope="robot"
+    <section className="hero-detail-card hero-scene-card">
+      <header className="hero-detail-card-header">
+        <h3 className="hero-detail-card-title">3D 模型可视化</h3>
+        <button
+          type="button"
+          className="hero-detail-tool-button"
+          data-active={editing ? 'true' : 'false'}
           onClick={onToggleEditing}
-          type={editing ? 'primary' : 'default'}
-          icon={<SlidersHorizontal size={14} />}
         >
+          <SlidersHorizontal size={16} />
           {editing ? '结束编辑' : '开始编辑'}
-        </ArcoButton>
-      </div>
+        </button>
+      </header>
 
-      <div style={{ position: 'relative', flex: 1, minHeight: 360, background: 'var(--robot-scene-bg)', overflow: 'hidden' }}>
+      <div className="hero-scene-content" style={{ background: 'var(--robot-scene-bg)' }}>
         <svg viewBox="0 0 720 430" style={{ width: '100%', height: '100%', display: 'block' }}>
           <defs>
             <linearGradient id="robot-space-bg" x1="0" y1="0" x2="0" y2="1">
@@ -1020,31 +1328,27 @@ function RobotScene({
 
         <div style={{
           position: 'absolute',
-          left: 18,
-          top: 18,
+          left: 16,
+          top: 16,
           display: 'flex',
           gap: 8,
           alignItems: 'center',
           flexWrap: 'wrap',
         }}>
-          <span style={{ color: 'var(--robot-accent-text)', background: 'var(--robot-accent-soft)', border: '1px solid var(--robot-accent-border)', borderRadius: 999, padding: '5px 10px', fontSize: 12, fontWeight: 500 }}>
-            {model.type}
-          </span>
-          <span style={{ color: 'var(--robot-success)', background: 'var(--robot-success-soft)', border: '1px solid var(--robot-success-border)', borderRadius: 999, padding: '5px 10px', fontSize: 12, fontWeight: 500 }}>
-            {model.componentCount} 组件
-          </span>
+          <HeroChip tone="accent">{model.type}</HeroChip>
+          <HeroChip tone="success">{model.componentCount} 组件</HeroChip>
         </div>
 
         {editing && (
           <div style={{
             position: 'absolute',
-            right: 18,
-            top: 18,
+            right: 16,
+            top: 16,
             width: 220,
-            borderRadius: 8,
+            borderRadius: 16,
             background: 'var(--robot-hud-bg)',
             border: '1px solid var(--robot-hud-border)',
-            padding: 14,
+            padding: 16,
             color: 'var(--robot-hud-text)',
           }}>
             {[
@@ -1053,7 +1357,7 @@ function RobotScene({
               ['臂展/步幅', 'reach', 30, 90],
             ].map(([label, key, min, max]) => (
               <label key={String(key)} style={{ display: 'block', marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--robot-muted)', fontSize: 11, fontWeight: 500, marginBottom: 7 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--robot-muted)', fontSize: 12, fontWeight: 500, marginBottom: 7 }}>
                   <span>{label}</span>
                   <span>{model.pose[key as keyof RobotPose]}</span>
                 </div>
@@ -1070,6 +1374,204 @@ function RobotScene({
           </div>
         )}
       </div>
+    </section>
+  );
+}
+
+function TopologyTreeRow({
+  node,
+  depth,
+  selected,
+  isEditing,
+  editValue,
+  expanded,
+  deleteDisabled,
+  rootNodes,
+  onSelect,
+  onToggle,
+  onStartEdit,
+  onEditValueChange,
+  onCommitEdit,
+  onCancelEdit,
+  onAddChild,
+  onDelete,
+  onMove,
+}: {
+  node: TopologyNode;
+  depth: number;
+  selected: boolean;
+  isEditing: boolean;
+  editValue: string;
+  expanded: boolean;
+  deleteDisabled: boolean;
+  rootNodes: TopologyNode[];
+  onSelect: (id: string) => void;
+  onToggle: () => void;
+  onStartEdit: () => void;
+  onEditValueChange: (value: string) => void;
+  onCommitEdit: () => void;
+  onCancelEdit: () => void;
+  onAddChild?: (parentId: string, kind: TopologyKind) => void;
+  onDelete?: (id: string) => void;
+  onMove?: (draggedId: string, targetId: string, position: TopologyDropPosition) => void;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [dropPreview, setDropPreview] = useState<{ position: TopologyDropPosition; valid: boolean } | null>(null);
+  const dropPreviewRef = useRef<{ position: TopologyDropPosition; valid: boolean } | null>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const hasChildren = Boolean(node.children?.length);
+  const isRoot = depth === 0;
+  const nextKind: TopologyKind = node.kind === 'link' ? 'joint' : 'link';
+  const nextKindLabel = nextKind === 'link' ? '连杆' : '关节';
+
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'TOPOLOGY_NODE',
+    item: { type: 'TOPOLOGY_NODE', nodeId: node.id, kind: node.kind } satisfies TopologyDragItem,
+    canDrag: !isRoot && !isEditing,
+    collect: monitor => ({ isDragging: monitor.isDragging() }),
+  }), [node.id, node.kind, isRoot, isEditing]);
+
+  const [{ isOver }, drop] = useDrop<TopologyDragItem, void, { isOver: boolean }>(() => ({
+    accept: 'TOPOLOGY_NODE',
+    hover: (item, monitor) => {
+      const element = rowRef.current;
+      const pointer = monitor.getClientOffset();
+      if (!element || !pointer) return;
+      const bounds = element.getBoundingClientRect();
+      const ratio = (pointer.y - bounds.top) / Math.max(bounds.height, 1);
+      const position: TopologyDropPosition = ratio < 0.28 ? 'before' : ratio > 0.72 ? 'after' : 'inside';
+      const valid = canMoveTopologyNode(rootNodes, item.nodeId, node.id, position);
+      dropPreviewRef.current = { position, valid };
+      setDropPreview(current => current?.position === position && current.valid === valid ? current : { position, valid });
+    },
+    drop: item => {
+      const preview = dropPreviewRef.current;
+      if (preview?.valid) {
+        if (preview.position === 'inside' && !expanded) onToggle();
+        onMove?.(item.nodeId, node.id, preview.position);
+      }
+      dropPreviewRef.current = null;
+      setDropPreview(null);
+    },
+    collect: monitor => ({ isOver: monitor.isOver({ shallow: true }) }),
+  }), [rootNodes, node.id, expanded, onToggle, onMove]);
+
+  drag(drop(rowRef));
+  useEffect(() => {
+    if (!isOver) {
+      dropPreviewRef.current = null;
+      setDropPreview(null);
+    }
+  }, [isOver]);
+
+  const dropColor = dropPreview?.valid ? 'var(--robot-accent)' : 'var(--robot-danger)';
+  const dropBackground = dropPreview?.valid ? 'var(--robot-accent-soft)' : 'var(--robot-danger-soft)';
+  const dropBoxShadow = isOver && dropPreview
+    ? dropPreview.position === 'before'
+      ? `inset 0 2px 0 ${dropColor}`
+      : dropPreview.position === 'after'
+        ? `inset 0 -2px 0 ${dropColor}`
+        : `inset 0 0 0 1px ${dropColor}`
+    : 'none';
+
+  return (
+    <div
+      ref={rowRef}
+      title={!isRoot && !isEditing ? '拖动节点可调整层级、顺序或父级' : undefined}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        minHeight: 34,
+        marginLeft: depth * 14,
+        padding: '0 4px 0 4px',
+        borderRadius: 8,
+        border: selected ? '1px solid var(--robot-accent-border)' : '1px solid transparent',
+        background: isOver && dropPreview?.position === 'inside'
+          ? dropBackground
+          : selected
+            ? 'var(--robot-accent-soft)'
+            : isHovered
+              ? 'var(--robot-soft)'
+              : 'transparent',
+        boxShadow: dropBoxShadow,
+        opacity: isDragging ? 0.42 : 1,
+        cursor: isOver && dropPreview && !dropPreview.valid
+          ? 'not-allowed'
+          : !isRoot && !isEditing
+            ? isDragging ? 'grabbing' : 'grab'
+            : 'default',
+        transition: 'background 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease',
+      }}
+    >
+      {hasChildren ? (
+        <button
+          type="button"
+          aria-label={expanded ? `收起 ${node.label}` : `展开 ${node.label}`}
+          title={expanded ? '收起下级节点' : '展开下级节点'}
+          onClick={event => { event.stopPropagation(); onToggle(); }}
+          style={{ width: 20, height: 24, padding: 0, border: 'none', background: 'transparent', color: 'var(--robot-subtle)', display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0 }}
+        >
+          {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+        </button>
+      ) : (
+        <span style={{ width: 20, flexShrink: 0 }} />
+      )}
+
+      {isEditing ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+          <span style={{ width: 8, height: 8, borderRadius: 99, background: node.kind === 'link' ? 'var(--robot-accent)' : 'var(--robot-success)', flexShrink: 0 }} />
+          <input
+            value={editValue}
+            onChange={event => onEditValueChange(event.target.value)}
+            onBlur={onCommitEdit}
+            onKeyDown={event => {
+              if (event.key === 'Enter') onCommitEdit();
+              if (event.key === 'Escape') onCancelEdit();
+            }}
+            autoFocus
+            style={{ flex: 1, minWidth: 0, height: 26, borderRadius: 8, border: '1px solid var(--robot-accent-border)', background: 'var(--robot-surface)', color: 'var(--robot-heading)', fontSize: 12, fontWeight: 500, padding: '0 6px', outline: 'none' }}
+          />
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onSelect(node.id)}
+          onDoubleClick={event => { event.stopPropagation(); onStartEdit(); }}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, background: 'none', border: 'none', padding: 0, color: 'var(--robot-text)', cursor: 'pointer', textAlign: 'left' }}
+        >
+          <span style={{ width: 8, height: 8, borderRadius: 99, background: node.kind === 'link' ? 'var(--robot-accent)' : 'var(--robot-success)', flexShrink: 0 }} />
+          <span style={{ fontSize: 12, fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title="双击重命名">{node.label}</span>
+        </button>
+      )}
+
+      <span style={{ borderRadius: 999, background: node.kind === 'link' ? 'var(--robot-accent-soft)' : 'var(--robot-success-soft)', color: node.kind === 'link' ? 'var(--robot-accent-text)' : 'var(--robot-success)', fontSize: 10, fontWeight: 500, padding: '2px 7px', flexShrink: 0 }}>
+        {node.kind === 'link' ? '连杆' : '关节'}
+      </span>
+
+      <div style={{ width: 28, height: 28, flexShrink: 0, marginLeft: 2 }}>
+        {!isDragging && <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" aria-label={`${node.label} 节点操作`} title="节点操作" onClick={event => event.stopPropagation()} style={{ width: 32, height: 32, padding: 0, border: 'none', borderRadius: 8, background: 'transparent', color: 'var(--robot-muted)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
+              <MoreHorizontal size={15} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="hero-detail-menu">
+            <DropdownMenuItem onSelect={() => onAddChild?.(node.id, nextKind)}><Plus size={15} />新增子{nextKindLabel}</DropdownMenuItem>
+            <DropdownMenuItem onSelect={onStartEdit}><Pencil size={15} />重命名</DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" disabled={deleteDisabled} onSelect={() => onDelete?.(node.id)}><Trash2 size={15} />删除节点</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>}
+      </div>
+
+      {isOver && dropPreview && (
+        <span aria-live="polite" style={{ position: 'absolute', right: 6, bottom: -18, zIndex: 5, padding: '2px 6px', borderRadius: 999, background: dropPreview.valid ? 'var(--robot-accent-soft)' : 'var(--robot-danger-soft)', color: dropPreview.valid ? 'var(--robot-accent-text)' : 'var(--robot-danger)', fontSize: 10, fontWeight: 600, pointerEvents: 'none' }}>
+          {dropPreview.valid ? (dropPreview.position === 'inside' ? '移动到节点下' : '调整顺序') : '此处不可放置'}
+        </span>
+      )}
     </div>
   );
 }
@@ -1081,7 +1583,9 @@ function TopologyTree({
   onRename,
   onAddChild,
   onDelete,
+  onMove,
   depth = 0,
+  rootNodes,
 }: {
   nodes: TopologyNode[];
   selectedId: string;
@@ -1089,11 +1593,15 @@ function TopologyTree({
   onRename?: (id: string, label: string) => void;
   onAddChild?: (parentId: string, kind: TopologyKind) => void;
   onDelete?: (id: string) => void;
+  onMove?: (draggedId: string, targetId: string, position: TopologyDropPosition) => void;
   depth?: number;
+  rootNodes?: TopologyNode[];
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const fullTree = rootNodes ?? nodes;
+  const isOnlyRoot = depth === 0 && nodes.length === 1;
 
   function startEdit(id: string, currentLabel: string) {
     setEditingId(id);
@@ -1101,145 +1609,42 @@ function TopologyTree({
   }
 
   function commitEdit() {
-    if (editingId && editValue.trim() && onRename) {
-      onRename(editingId, editValue.trim());
-    }
+    if (editingId && editValue.trim() && onRename) onRename(editingId, editValue.trim());
     setEditingId(null);
     setEditValue('');
   }
 
-  const isOnlyRoot = depth === 0 && nodes.length === 1;
-
   return (
     <div>
       {nodes.map(node => {
-        const selected = node.id === selectedId;
-        const isEditing = node.id === editingId;
-        const isHovered = node.id === hoveredId;
+        const hasChildren = Boolean(node.children?.length);
+        const expanded = hasChildren && !collapsedIds.has(node.id);
         return (
           <div key={node.id}>
-            <div
-              onDoubleClick={() => startEdit(node.id, node.label)}
-              onMouseEnter={() => setHoveredId(node.id)}
-              onMouseLeave={() => setHoveredId(null)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                minHeight: 34,
-                marginLeft: depth * 14,
-                padding: '0 4px 0 8px',
-                borderRadius: 8,
-                border: selected ? '1px solid var(--robot-accent-border)' : '1px solid transparent',
-                background: selected ? 'var(--robot-accent-soft)' : isHovered ? 'var(--robot-soft)' : 'transparent',
-                cursor: 'pointer',
-                transition: 'background 0.15s ease',
-              }}
-            >
-              <button
-                onClick={() => onSelect(node.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  flex: 1,
-                  minWidth: 0,
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  color: 'var(--robot-text)',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-              >
-                <ChevronRight size={13} color="var(--robot-subtle)" />
-                <span style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 99,
-                  background: node.kind === 'link' ? 'var(--robot-accent)' : 'var(--robot-success)',
-                  flexShrink: 0,
-                }} />
-                {isEditing ? (
-                  <input
-                    value={editValue}
-                    onChange={e => setEditValue(e.target.value)}
-                    onBlur={commitEdit}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') commitEdit();
-                      if (e.key === 'Escape') { setEditingId(null); setEditValue(''); }
-                    }}
-                    autoFocus
-                    onClick={e => e.stopPropagation()}
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      height: 26,
-                      borderRadius: 8,
-                      border: '1px solid var(--robot-accent-border)',
-                      background: 'var(--robot-surface)',
-                      color: 'var(--robot-heading)',
-                      fontSize: 12,
-                      fontWeight: 500,
-                      padding: '0 6px',
-                      outline: 'none',
-                    }}
-                  />
-                ) : (
-                  <span
-                    style={{ fontSize: 12, fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                    title="双击重命名"
-                  >
-                    {node.label}
-                  </span>
-                )}
-              </button>
-              <span style={{
-                borderRadius: 999,
-                background: node.kind === 'link' ? 'var(--robot-accent-soft)' : 'var(--robot-success-soft)',
-                color: node.kind === 'link' ? 'var(--robot-accent-text)' : 'var(--robot-success)',
-                fontSize: 10,
-                fontWeight: 500,
-                padding: '2px 7px',
-                flexShrink: 0,
-              }}>
-                {node.kind === 'link' ? '连杆' : '关节'}
-              </span>
-
-              {/* Hover action buttons */}
-              {isHovered && (
-                <div style={{ display: 'flex', gap: 2, flexShrink: 0, marginLeft: 2 }}>
-                  <ArcoIconButton
-                    scope="robot"
-                    title="添加子连杆"
-                    aria-label="添加子连杆"
-                    onClick={(e) => { e.stopPropagation(); onAddChild?.(node.id, 'link'); }}
-                    size="mini"
-                    type="secondary"
-                    icon={<Plus size={11} />}
-                  />
-                  <ArcoIconButton
-                    scope="robot"
-                    title="添加子关节"
-                    aria-label="添加子关节"
-                    onClick={(e) => { e.stopPropagation(); onAddChild?.(node.id, 'joint'); }}
-                    size="mini"
-                    icon={<Plus size={11} />}
-                  />
-                  <ArcoIconButton
-                    scope="robot"
-                    title="删除节点"
-                    aria-label="删除节点"
-                    disabled={isOnlyRoot && node.id === nodes[0]?.id}
-                    onClick={(e) => { e.stopPropagation(); onDelete?.(node.id); }}
-                    size="mini"
-                    status="danger"
-                    icon={<X size={12} />}
-                  />
-                </div>
-              )}
-            </div>
-            {node.children && (
+            <TopologyTreeRow
+              node={node}
+              depth={depth}
+              selected={node.id === selectedId}
+              isEditing={node.id === editingId}
+              editValue={editValue}
+              expanded={expanded}
+              deleteDisabled={isOnlyRoot && node.id === nodes[0]?.id}
+              rootNodes={fullTree}
+              onSelect={onSelect}
+              onToggle={() => setCollapsedIds(current => {
+                const next = new Set(current);
+                if (next.has(node.id)) next.delete(node.id); else next.add(node.id);
+                return next;
+              })}
+              onStartEdit={() => startEdit(node.id, node.label)}
+              onEditValueChange={setEditValue}
+              onCommitEdit={commitEdit}
+              onCancelEdit={() => { setEditingId(null); setEditValue(''); }}
+              onAddChild={onAddChild}
+              onDelete={onDelete}
+              onMove={onMove}
+            />
+            {expanded && node.children && (
               <TopologyTree
                 nodes={node.children}
                 selectedId={selectedId}
@@ -1247,7 +1652,9 @@ function TopologyTree({
                 onRename={onRename}
                 onAddChild={onAddChild}
                 onDelete={onDelete}
+                onMove={onMove}
                 depth={depth + 1}
+                rootNodes={fullTree}
               />
             )}
           </div>
@@ -1285,10 +1692,10 @@ function TopologyParamPanel({
   }
 
   return (
-    <section style={{ background: 'var(--robot-surface)', border: '1px solid var(--robot-border)', borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--robot-shadow)', flexShrink: 0, height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+    <section className="hero-topology-param-panel" style={{ background: 'var(--robot-surface)', border: '1px solid var(--robot-border)', borderRadius: 'var(--robot-card-radius)', overflow: 'hidden', boxShadow: 'var(--robot-shadow)', flexShrink: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid var(--robot-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ color: 'var(--robot-heading)', fontSize: 15, fontWeight: 600 }}>节点参数</div>
+          <div style={{ color: 'var(--robot-heading)', fontSize: 16, fontWeight: 600 }}>节点参数</div>
         </div>
         <span style={{
           borderRadius: 999,
@@ -1303,9 +1710,9 @@ function TopologyParamPanel({
         </span>
       </div>
 
-      <div style={{ padding: 12, display: 'grid', gap: 12 }}>
+      <div className="hero-topology-param-body" style={{ padding: 12, display: 'grid', gap: 12 }}>
         <div>
-          <div style={{ color: 'var(--robot-muted)', fontSize: 11, fontWeight: 600, marginBottom: 7 }}>位置 xyz</div>
+          <div style={{ color: 'var(--robot-muted)', fontSize: 12, fontWeight: 600, marginBottom: 7 }}>位置 xyz</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
             {(['x', 'y', 'z'] as const).map(key => (
               <label key={key}>
@@ -1317,7 +1724,7 @@ function TopologyParamPanel({
         </div>
 
         <div>
-          <div style={{ color: 'var(--robot-muted)', fontSize: 11, fontWeight: 600, marginBottom: 7 }}>旋转 xyz</div>
+          <div style={{ color: 'var(--robot-muted)', fontSize: 12, fontWeight: 600, marginBottom: 7 }}>旋转 xyz</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
             {(['rx', 'ry', 'rz'] as const).map((key, index) => (
               <label key={key}>
@@ -1332,19 +1739,19 @@ function TopologyParamPanel({
           <>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <label>
-                <span style={{ color: 'var(--robot-muted)', fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 5 }}>关节类型</span>
+                <span style={{ color: 'var(--robot-muted)', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 5 }}>关节类型</span>
                 <ArcoSelect scope="robot" value={node.jointType ?? 'revolute'} onChange={event => onChange({ jointType: event.target.value as JointType })} style={axisInputStyle()}>
                   {JOINT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
                 </ArcoSelect>
               </label>
               <label>
-                <span style={{ color: 'var(--robot-muted)', fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 5 }}>速度</span>
+                <span style={{ color: 'var(--robot-muted)', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 5 }}>速度</span>
                 <ArcoTextInput scope="robot" type="number" step="0.1" value={limit.velocity} onChange={event => updateLimit('velocity', event.target.value)} style={axisInputStyle()} />
               </label>
             </div>
 
             <div>
-              <div style={{ color: 'var(--robot-muted)', fontSize: 11, fontWeight: 600, marginBottom: 7 }}>旋转轴 axis</div>
+              <div style={{ color: 'var(--robot-muted)', fontSize: 12, fontWeight: 600, marginBottom: 7 }}>旋转轴 axis</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
                 {(['x', 'y', 'z'] as const).map(key => (
                   <label key={key}>
@@ -1362,7 +1769,7 @@ function TopologyParamPanel({
                 ['effort', '力矩'],
               ] as const).map(([key, label]) => (
                 <label key={key}>
-                  <span style={{ color: 'var(--robot-muted)', fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 5 }}>{label}</span>
+                  <span style={{ color: 'var(--robot-muted)', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 5 }}>{label}</span>
                   <ArcoTextInput scope="robot" type="number" step="1" value={limit[key]} onChange={event => updateLimit(key, event.target.value)} style={axisInputStyle()} />
                 </label>
               ))}
@@ -1375,107 +1782,117 @@ function TopologyParamPanel({
 }
 
 function SoftwareVersionPanel({
+  catalog,
   selectionIds,
   onConfigure,
 }: {
+  catalog: SoftwareVersionCategory[];
   selectionIds: string[];
   onConfigure: () => void;
 }) {
-  const selectedSet = new Set(selectionIds);
+  const treeCategories = useMemo<ProductCategory[]>(() => {
+    const selectedSet = new Set(selectionIds);
+    return catalog
+      .map(category => ({
+        id: category.id,
+        name: category.label,
+        icon: category.icon,
+        subcategories: category.groups
+          .map(group => ({
+            id: group.id,
+            name: group.label,
+            brands: group.items
+              .filter(item => selectedSet.has(item.id))
+              .map(item => ({ id: item.id, name: item.label, versions: [] })),
+          }))
+          .filter(group => group.brands.length > 0),
+      }))
+      .filter(category => category.subcategories.length > 0);
+  }, [catalog, selectionIds]);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    () => new Set(catalog.flatMap(category => category.groups.map(group => group.id))),
+  );
+
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups(current => {
+      const next = new Set(current);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      return next;
+    });
+  };
 
   return (
-    <section style={{ background: 'var(--robot-surface)', border: '1px solid var(--robot-border)', borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--robot-shadow)', flexShrink: 0 }}>
-      <div style={{ padding: '14px 16px 8px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <div>
-          <div style={{ color: 'var(--robot-heading)', fontSize: 14, fontWeight: 600, marginBottom: 10 }}>软件版本</div>
-          <div style={{ color: 'var(--robot-success)', fontSize: 13, fontWeight: 600 }}>已发布</div>
-        </div>
-        <ArcoButton scope="robot" onClick={onConfigure} type="secondary" size="small">
-          配置
-        </ArcoButton>
+    <section style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--robot-surface)', overflow: 'hidden' }}>
+      <div style={{ minHeight: 48, padding: '8px 14px 6px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexShrink: 0 }}>
+        <div style={{ color: 'var(--robot-heading)', fontSize: 16, lineHeight: '22px', fontWeight: 700 }}>软件配置</div>
+        <button
+          type="button"
+          className="software-config-edit"
+          onClick={onConfigure}
+          aria-label="编辑软件配置"
+          title="编辑软件配置"
+        >
+          <Pencil size={14} />
+        </button>
       </div>
 
-      <div style={{ padding: '6px 16px 16px', flex: 1, minHeight: 0, overflowY: 'auto' }}>
-        {SOFTWARE_VERSION_CATALOG.map(category => (
-          <div key={category.id} style={{ marginTop: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 26 }}>
-              <ChevronRight size={13} color="var(--robot-muted)" style={{ transform: 'rotate(90deg)' }} />
-              <span style={{ color: 'var(--robot-heading)', fontSize: 13, fontWeight: 600 }}>{category.label}</span>
-            </div>
-
-            <div style={{ marginLeft: 17, borderLeft: '1px solid var(--robot-border-strong)', paddingLeft: 14 }}>
-              {category.groups.map(group => (
-                <div key={group.id} style={{ marginBottom: 6 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 26 }}>
-                    <ChevronRight size={12} color="var(--robot-subtle)" style={{ transform: 'rotate(90deg)' }} />
-                    <span style={{ color: 'var(--robot-text)', fontSize: 13, fontWeight: 500 }}>{group.label}</span>
-                  </div>
-
-                  <div style={{ marginLeft: 15, borderLeft: '1px solid var(--robot-border-strong)', paddingLeft: 20 }}>
-                    {group.items.map(item => {
-                      const selected = selectedSet.has(item.id);
-                      return (
-                        <div
-                          key={item.id}
-                          title={`${item.packageName} ${item.version}`}
-                          style={{
-                            minHeight: 28,
-                            display: 'flex',
-                            alignItems: 'center',
-                            color: selected ? 'var(--robot-text)' : 'var(--robot-muted)',
-                            fontSize: 13,
-                            fontWeight: selected ? 700 : 500,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                        >
-                          {item.label}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        {treeCategories.length === 0 && (
+          <div style={{ height: '100%', minHeight: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: 'var(--robot-muted)', padding: 20 }}>
+            <Box size={24} style={{ marginBottom: 10, color: 'var(--robot-subtle)' }} />
+            <div style={{ color: 'var(--robot-text)', fontSize: 14, fontWeight: 600 }}>尚未配置软件产品</div>
+            <div style={{ fontSize: 12, marginTop: 5 }}>点击右上角编辑图标进行配置</div>
           </div>
-        ))}
+        )}
+        {treeCategories.length > 0 && (
+          <CategoryTree
+            categories={treeCategories}
+            selectedBrandId={null}
+            expandedSubs={expandedGroups}
+            onToggleSub={toggleGroup}
+          />
+        )}
       </div>
     </section>
   );
 }
 
 function SoftwareVersionDialog({
+  catalog,
   open,
   selectionIds,
   onOpenChange,
   onSave,
 }: {
+  catalog: SoftwareVersionCategory[];
   open: boolean;
   selectionIds: string[];
   onOpenChange: (open: boolean) => void;
   onSave: (ids: string[]) => void;
 }) {
   const [draftIds, setDraftIds] = useState<string[]>(selectionIds);
-  const [activeCategoryId, setActiveCategoryId] = useState(SOFTWARE_VERSION_CATALOG[0].id);
-  const [activeGroupId, setActiveGroupId] = useState(SOFTWARE_VERSION_CATALOG[0].groups[0].id);
+  const [activeCategoryId, setActiveCategoryId] = useState(catalog[0]?.id ?? '');
+  const [activeGroupId, setActiveGroupId] = useState(catalog[0]?.groups[0]?.id ?? '');
   const [query, setQuery] = useState('');
   const [synced, setSynced] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setDraftIds(selectionIds);
+    setActiveCategoryId(catalog[0]?.id ?? '');
+    setActiveGroupId(catalog[0]?.groups[0]?.id ?? '');
     setQuery('');
     setSynced(false);
-  }, [open, selectionIds]);
+  }, [catalog, open, selectionIds]);
 
-  const activeCategory = SOFTWARE_VERSION_CATALOG.find(category => category.id === activeCategoryId) ?? SOFTWARE_VERSION_CATALOG[0];
-  const activeGroup = activeCategory.groups.find(group => group.id === activeGroupId) ?? activeCategory.groups[0];
+  const activeCategory = catalog.find(category => category.id === activeCategoryId) ?? catalog[0];
+  const activeGroup = activeCategory?.groups.find(group => group.id === activeGroupId) ?? activeCategory?.groups[0];
   const selectedSet = new Set(draftIds);
-  const filteredItems = activeGroup.items.filter(item => item.label.toLowerCase().includes(query.trim().toLowerCase()));
-  const currentGroupSelectedCount = activeGroup.items.filter(item => selectedSet.has(item.id)).length;
-  const allCurrentGroupSelected = activeGroup.items.every(item => selectedSet.has(item.id));
-  const catalogTotal = SOFTWARE_VERSION_CATALOG.reduce((total, category) => total + category.totalCount, 0);
+  const filteredItems = activeGroup?.items.filter(item => item.label.toLowerCase().includes(query.trim().toLowerCase())) ?? [];
+  const currentGroupSelectedCount = activeGroup?.items.filter(item => selectedSet.has(item.id)).length ?? 0;
+  const allCurrentGroupSelected = activeGroup?.items.length ? activeGroup.items.every(item => selectedSet.has(item.id)) : false;
+  const catalogTotal = catalog.reduce((total, category) => total + category.totalCount, 0);
 
   function selectCategory(category: SoftwareVersionCategory) {
     setActiveCategoryId(category.id);
@@ -1495,7 +1912,7 @@ function SoftwareVersionDialog({
   function toggleActiveGroup(checked: boolean) {
     setDraftIds(prev => {
       const next = new Set(prev);
-      activeGroup.items.forEach(item => {
+      activeGroup?.items.forEach(item => {
         if (checked) next.add(item.id);
         else next.delete(item.id);
       });
@@ -1509,29 +1926,9 @@ function SoftwareVersionDialog({
       onOpenChange={onOpenChange}
       scope="robot"
       title="软件版本"
-      description={(
-        <>
-          <span>打开时自动从墨影工作台同步目录；勾选类型后点击保存写入型号配置。</span>
-          <br />
-          <span>已选 {draftIds.length} 个类型 · 目录 {catalogTotal} 个类型</span>
-        </>
-      )}
-      icon={<Box size={17} />}
-      width="min(940px, calc(100vw - 56px))"
-      maxWidth="calc(100vw - 56px)"
-      maxHeight="calc(100vh - 56px)"
-      contentStyle={{ height: 'min(720px, calc(100vh - 56px))' }}
+      size="xl"
+      contentStyle={{ height: 'min(720px, var(--ds-modal-max-height))' }}
       bodyStyle={{ padding: 0, flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}
-      headerExtra={(
-        <ArcoButton
-          scope="robot"
-          size="small"
-          icon={<RefreshCw size={13} />}
-          onClick={() => setSynced(true)}
-        >
-          {synced ? '已刷新' : '刷新目录'}
-        </ArcoButton>
-      )}
       footer={(
         <>
           <ArcoButton scope="robot" onClick={() => onOpenChange(false)}>关闭</ArcoButton>
@@ -1539,10 +1936,17 @@ function SoftwareVersionDialog({
         </>
       )}
     >
+      <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ minHeight: 48, padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderBottom: '1px solid var(--robot-border)' }}>
+          <span style={{ color: 'var(--robot-muted)', fontSize: 12 }}>已选 {draftIds.length} 个类型 · 目录 {catalogTotal} 个类型</span>
+          <ArcoButton scope="robot" size="small" icon={<RefreshCw size={13} />} onClick={() => setSynced(true)}>
+            {synced ? '已刷新' : '刷新目录'}
+          </ArcoButton>
+        </div>
           <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '160px 160px minmax(0, 1fr)' }}>
             <div style={{ borderRight: '1px solid var(--robot-border)', padding: '14px 10px', overflowY: 'auto' }}>
-              <div style={{ color: 'var(--robot-subtle)', fontSize: 11, fontWeight: 600, margin: '0 0 10px 2px' }}>产品</div>
-              {SOFTWARE_VERSION_CATALOG.map(category => {
+              <div style={{ color: 'var(--robot-subtle)', fontSize: 12, fontWeight: 600, margin: '0 0 10px 2px' }}>产品</div>
+              {catalog.map(category => {
                 const selectedCount = category.groups.flatMap(group => group.items).filter(item => selectedSet.has(item.id)).length;
                 const active = category.id === activeCategory.id;
                 return (
@@ -1563,12 +1967,12 @@ function SoftwareVersionDialog({
                       gap: 8,
                       padding: '0 8px',
                       marginBottom: 6,
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: 600,
                     }}
                   >
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{category.label}</span>
-                    <span style={{ borderRadius: 999, background: active ? 'var(--robot-accent-soft)' : 'var(--robot-soft)', color: active ? 'var(--robot-accent-text)' : 'var(--robot-subtle)', fontSize: 11, padding: '3px 7px', flexShrink: 0 }}>
+                    <span style={{ borderRadius: 999, background: active ? 'var(--robot-accent-soft)' : 'var(--robot-soft)', color: active ? 'var(--robot-accent-text)' : 'var(--robot-subtle)', fontSize: 12, padding: '3px 7px', flexShrink: 0 }}>
                       {selectedCount || category.totalCount}
                     </span>
                   </button>
@@ -1577,8 +1981,8 @@ function SoftwareVersionDialog({
             </div>
 
             <div style={{ borderRight: '1px solid var(--robot-border)', padding: '14px 10px', overflowY: 'auto' }}>
-              <div style={{ color: 'var(--robot-subtle)', fontSize: 11, fontWeight: 600, margin: '0 0 10px 2px' }}>子产品</div>
-              {activeCategory.groups.map(group => {
+              <div style={{ color: 'var(--robot-subtle)', fontSize: 12, fontWeight: 600, margin: '0 0 10px 2px' }}>子产品</div>
+              {activeCategory?.groups.map(group => {
                 const selectedCount = group.items.filter(item => selectedSet.has(item.id)).length;
                 const active = group.id === activeGroup.id;
                 return (
@@ -1599,12 +2003,12 @@ function SoftwareVersionDialog({
                       gap: 8,
                       padding: '0 8px',
                       marginBottom: 6,
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: 600,
                     }}
                   >
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.label}</span>
-                    <span style={{ borderRadius: 999, background: active ? 'var(--robot-accent-soft)' : 'var(--robot-soft)', color: active ? 'var(--robot-accent-text)' : 'var(--robot-subtle)', fontSize: 11, padding: '3px 7px', flexShrink: 0 }}>
+                    <span style={{ borderRadius: 999, background: active ? 'var(--robot-accent-soft)' : 'var(--robot-soft)', color: active ? 'var(--robot-accent-text)' : 'var(--robot-subtle)', fontSize: 12, padding: '3px 7px', flexShrink: 0 }}>
                       {selectedCount || group.totalCount}
                     </span>
                   </button>
@@ -1614,11 +2018,11 @@ function SoftwareVersionDialog({
 
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--robot-border)' }}>
-                <div style={{ color: 'var(--robot-heading)', fontSize: 15, fontWeight: 600, marginBottom: 7 }}>{activeGroup.label}</div>
+                <div style={{ color: 'var(--robot-heading)', fontSize: 16, fontWeight: 600, marginBottom: 7 }}>{activeGroup?.label ?? '产品列表'}</div>
                 <div style={{ color: 'var(--robot-muted)', fontSize: 12, lineHeight: 1.6, marginBottom: 10 }}>
                   勾选需要推送到引擎装机的软件类型，已发布包也可勾选。
                 </div>
-                <div style={{ color: 'var(--robot-muted)', fontSize: 12, marginBottom: 12 }}>已选 {currentGroupSelectedCount} / {activeGroup.totalCount}</div>
+                <div style={{ color: 'var(--robot-muted)', fontSize: 12, marginBottom: 12 }}>已选 {currentGroupSelectedCount} / {activeGroup?.totalCount ?? 0}</div>
                 <div style={{ position: 'relative' }}>
                   <Search size={15} color="var(--robot-subtle)" style={{ position: 'absolute', left: 12, top: 10 }} />
                   <ArcoTextInput
@@ -1646,6 +2050,7 @@ function SoftwareVersionDialog({
                       key={item.id}
                       style={{
                         minHeight: 44,
+                        border: selectedSet.has(item.id) ? '1px solid var(--robot-accent-border)' : '1px solid transparent',
                         borderRadius: 8,
                         display: 'grid',
                         gridTemplateColumns: '24px minmax(0, 1fr) 80px',
@@ -1653,7 +2058,8 @@ function SoftwareVersionDialog({
                         gap: 8,
                         padding: '0 10px',
                         cursor: 'pointer',
-                        background: selectedSet.has(item.id) ? 'var(--robot-soft)' : 'transparent',
+                        background: selectedSet.has(item.id) ? 'var(--robot-accent-soft)' : 'transparent',
+                        transition: 'background-color 180ms ease, border-color 180ms ease',
                       }}
                     >
                       <ArcoCheckbox
@@ -1662,14 +2068,15 @@ function SoftwareVersionDialog({
                         onChange={event => toggleItem(item.id, event.target.checked)}
                         style={{ width: 16, height: 16, gap: 0 }}
                       />
-                      <span style={{ color: 'var(--robot-heading)', fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
-                      <span style={{ color: 'var(--robot-subtle)', fontSize: 11, textAlign: 'right' }}>{item.versionCount} 个版本</span>
+                      <span style={{ color: 'var(--robot-heading)', fontSize: 14, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
+                      <span style={{ color: 'var(--robot-subtle)', fontSize: 12, textAlign: 'right' }}>{item.versionCount} 个版本</span>
                     </label>
                   ))}
                 </div>
               </div>
             </div>
           </div>
+      </div>
 
     </ArcoModal>
   );
@@ -1679,37 +2086,50 @@ export function RobotModelManager({
   themeMode: controlledThemeMode,
 }: {
   themeMode?: ThemeMode;
+  softwareProducts?: SoftwareProduct[];
 } = {}) {
   const [models, setModels] = useState<RobotModel[]>(INITIAL_ROBOT_MODELS);
-  const [activeId, setActiveId] = useState<string | null>(INITIAL_ROBOT_MODELS[0]?.id ?? null);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [editingScene, setEditingScene] = useState(false);
   const [modelDialogOpen, setModelDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [softwareDialogOpen, setSoftwareDialogOpen] = useState(false);
   const [selectedTopologyId, setSelectedTopologyId] = useState('base_link');
   const [internalThemeMode] = useState<ThemeMode>(initialThemeMode);
   const [draft, setDraft] = useState<RobotDraft | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Topology CRUD state
   const [addNodeDialogOpen, setAddNodeDialogOpen] = useState(false);
   const [addTargetId, setAddTargetId] = useState<string>('base_link');
   const [newNodeKind, setNewNodeKind] = useState<TopologyKind>('link');
   const [newNodeLabel, setNewNodeLabel] = useState('');
+  const [deleteTopologyTargetId, setDeleteTopologyTargetId] = useState<string | null>(null);
   const [urdfImportError, setUrdfImportError] = useState<string | null>(null);
 
   const themeMode = controlledThemeMode ?? internalThemeMode;
+  const softwareCatalog = useMemo(() => buildSoftwareVersionCatalog(), []);
   const activeModel = activeId ? (models.find(model => model.id === activeId) ?? null) : null;
-  const flatTopology = useMemo(() => activeModel ? flattenTopology(activeModel.topology) : [], [activeModel]);
   const selectedTopologyNode = useMemo(
     () => activeModel ? (findTopologyNode(activeModel.topology, selectedTopologyId) ?? activeModel.topology[0]) : null,
     [activeModel, selectedTopologyId],
   );
 
-  // Keep a valid active model after hot reloads, deletions, or restored local state.
+  // Auto-fix activeId only when it points to a deleted/missing model (not when user is on table view)
   useEffect(() => {
-    if (activeId && models.some(model => model.id === activeId)) return;
-    setActiveId(models[0]?.id ?? null);
+    if (activeId === null) return; // user is on table view, don't override
+    if (models.some(model => model.id === activeId)) return; // activeId is still valid
+    setActiveId(models[0]?.id ?? null); // model was deleted, fallback to first
   }, [activeId, models]);
+
+  useEffect(() => {
+    const availableIds = new Set(softwareCatalogItems(softwareCatalog).map(product => product.id));
+    setModels(prev => prev.map(model => ({
+      ...model,
+      softwareSelectionIds: model.softwareSelectionIds.filter(id => availableIds.has(id)),
+    })));
+  }, [softwareCatalog]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -1720,21 +2140,254 @@ export function RobotModelManager({
     window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
   }, [themeMode]);
 
+  const deleteModal = (
+    <ArcoModal
+      open={deleteDialogOpen}
+      onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setDeleteTargetId(null); }}
+      scope="robot"
+      status="danger"
+      title="删除机器人型号"
+      size="sm"
+      footer={(
+        <>
+          <ArcoButton scope="robot" onClick={() => { setDeleteDialogOpen(false); setDeleteTargetId(null); }}>取消</ArcoButton>
+          <ArcoButton scope="robot" type="primary" status="danger" onClick={confirmDelete}>删除</ArcoButton>
+        </>
+      )}
+    >
+      <p style={{ color: 'var(--robot-muted)', fontSize: 14, lineHeight: 1.7, margin: '0 0 18px' }}>
+        确认删除「{(deleteTargetId ? models.find(m => m.id === deleteTargetId) : activeModel)?.name ?? '此型号'}」吗？删除后该型号的拓扑结构、外设配置与导出配置会一并移除。
+      </p>
+    </ArcoModal>
+  );
+
+  const filteredModels = models.filter(model => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.trim().toLowerCase();
+    return model.name.toLowerCase().includes(query)
+      || model.type.toLowerCase().includes(query)
+      || model.version.toLowerCase().includes(query);
+  });
+
   if (!activeModel) {
     return (
-      <div style={{
-        ...robotThemeVars(themeMode),
-        flex: 1,
-        minWidth: 0,
-        height: '100%',
-        display: 'grid',
-        placeItems: 'center',
-        background: 'var(--robot-page)',
-        color: 'var(--robot-muted)',
-        fontSize: 13,
-      }}>
-        正在恢复当前机器人型号…
-      </div>
+      <>
+        <div style={{
+          ...robotThemeVars(themeMode),
+          flex: 1,
+          minWidth: 0,
+          height: '100%',
+          padding: 'var(--robot-page-padding)',
+          display: 'flex',
+          flexDirection: 'column',
+          background: 'var(--robot-page)',
+          color: 'var(--robot-text)',
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+          transition: 'background 0.22s ease, color 0.22s ease',
+        }}>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--robot-section-gap)', flexShrink: 0, gap: 'var(--robot-section-gap)' }}>
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{ color: 'var(--robot-heading)', fontSize: 20, fontWeight: 600, margin: 0 }}>型号库</h1>
+              <p style={{ color: 'var(--robot-muted)', fontSize: 14, margin: '4px 0 0' }}>
+                管理所有机器人型号，点击进入查看与编辑详情。
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <ArcoTextInput
+                scope="robot"
+                placeholder="搜索型号名称、类型…"
+                icon={<Search size={14} />}
+                value={searchQuery}
+                onChange={e => setSearchQuery((e.target as HTMLInputElement).value)}
+                style={{ width: 260 }}
+              />
+              <HeroButton variant="primary" onPress={openCreateDialog}>
+                <Plus size={14} />新建型号
+              </HeroButton>
+            </div>
+          </div>
+
+          <style>{`
+            .hero-detail-button {
+              min-height: 40px;
+              padding: 0 14px;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              gap: 7px;
+              border: 1px solid transparent;
+              border-radius: var(--robot-control-radius);
+              background: var(--robot-soft);
+              color: var(--robot-heading);
+              font: inherit;
+              font-size: 14px;
+              font-weight: 600;
+              white-space: nowrap;
+              cursor: pointer;
+              transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, opacity 180ms ease;
+            }
+            .hero-detail-button[data-size="sm"] { min-height: 32px; padding: 0 12px; border-radius: var(--ds-radius-button); font-size: 14px; }
+            .hero-detail-button[data-icon-only="true"] { width: 40px !important; padding: 0; }
+            .hero-detail-button[data-icon-only="true"][data-size="sm"] { width: 32px !important; padding: 0; }
+            .hero-detail-button[data-variant="primary"] { background: var(--robot-brand); color: var(--robot-accent-contrast); }
+            .hero-detail-button[data-variant="secondary"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+            .hero-detail-button[data-variant="tertiary"] { border-color: var(--robot-border-strong); background: var(--robot-surface); }
+            .hero-detail-button[data-variant="ghost"] { background: transparent; color: var(--robot-text); }
+            .hero-detail-button[data-variant="danger"] { background: var(--robot-danger-soft); color: var(--robot-danger); }
+            .hero-detail-button:hover { opacity: 0.86; }
+            .hero-detail-button:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
+            .hero-detail-chip {
+              max-width: 100%;
+              min-height: 24px;
+              padding: 2px 9px;
+              display: inline-flex;
+              align-items: center;
+              gap: 4px;
+              border-radius: 999px;
+              background: var(--robot-soft);
+              color: var(--robot-text);
+              font-size: 12px;
+              line-height: 16px;
+              font-weight: 600;
+              white-space: nowrap;
+            }
+            .hero-detail-chip[data-tone="accent"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+            .hero-detail-chip[data-tone="success"] { background: var(--robot-success-soft); color: var(--robot-success); }
+            .hero-detail-chip[data-tone="danger"] { background: var(--robot-danger-soft); color: var(--robot-danger); }
+            .model-library-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 2px 20px; }
+            .model-library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); align-content: start; gap: 16px; }
+            .model-library-card {
+              min-width: 0;
+              overflow: hidden;
+              border: 1px solid var(--robot-border);
+              border-radius: var(--robot-card-radius);
+              background: var(--robot-surface);
+              box-shadow: var(--robot-shadow-soft);
+              transition: border-color 180ms ease, box-shadow 180ms ease;
+            }
+            .model-library-card:hover {
+              border-color: var(--robot-accent-border);
+              box-shadow: var(--robot-shadow);
+            }
+            .model-card-main { width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+            .model-card-main:active { opacity: 0.9; }
+            .model-card-main:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: -3px; }
+            .model-card-preview { position: relative; height: 190px; overflow: hidden; background: var(--robot-scene-bg); }
+            .model-card-preview svg { width: 100%; height: 100%; display: block; }
+            .model-card-preview-label {
+              position: absolute;
+              top: 12px;
+              left: 12px;
+              min-height: 24px;
+              padding: 0 9px;
+              display: inline-flex;
+              align-items: center;
+              border: 1px solid var(--robot-hud-border);
+              border-radius: 999px;
+              background: var(--robot-hud-bg);
+              color: var(--robot-hud-text);
+              font-size: 12px;
+              font-weight: 600;
+            }
+            .model-card-content { padding: 16px; }
+            .model-card-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+            .model-card-title { min-width: 0; margin: 0; overflow: hidden; color: var(--robot-heading); font-size: 16px; line-height: 24px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+            .model-card-type { margin: 3px 0 0; overflow: hidden; color: var(--robot-muted); font-size: 12px; line-height: 18px; text-overflow: ellipsis; white-space: nowrap; }
+            .model-card-stats { margin-top: 14px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+            .model-card-stat { min-width: 0; padding: 10px 11px; border-radius: var(--robot-inner-radius); background: var(--robot-soft); }
+            .model-card-stat span { display: block; color: var(--robot-muted); font-size: 10px; line-height: 15px; }
+            .model-card-stat strong { display: block; margin-top: 2px; overflow: hidden; color: var(--robot-heading); font-size: 14px; line-height: 18px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+            .model-card-footer { min-height: 52px; padding: 8px 12px 8px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--robot-border); }
+            .model-card-updated { overflow: hidden; color: var(--robot-subtle); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+            .model-card-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+            .model-library-empty { min-height: 240px; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--robot-border-strong); border-radius: var(--robot-card-radius); color: var(--robot-muted); background: var(--robot-surface); font-size: 14px; text-align: center; padding: 32px; }
+            @media (max-width: 760px) {
+              .model-library-grid { grid-template-columns: minmax(0, 1fr); }
+              .model-card-preview { height: 176px; }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .model-library-card, .hero-detail-button { transition: none; }
+            }
+          `}</style>
+
+          <div className="model-library-scroll">
+            {filteredModels.length > 0 ? (
+              <div className="model-library-grid">
+                {filteredModels.map(model => {
+                  const status = STATUS_META[model.status];
+                  return (
+                    <article key={model.id} className="model-library-card">
+                      <button
+                        type="button"
+                        className="model-card-main"
+                        aria-label={`查看${model.name}详情`}
+                        onClick={() => { setActiveId(model.id); setEditingScene(false); setSelectedTopologyId('base_link'); }}
+                      >
+                        <RobotCardPreview model={model} />
+                        <div className="model-card-content">
+                          <div className="model-card-title-row">
+                            <div style={{ minWidth: 0 }}>
+                              <h2 className="model-card-title">{model.name}</h2>
+                              <p className="model-card-type">{model.type}</p>
+                            </div>
+                            <HeroChip tone={model.status === 'published' ? 'success' : 'default'}>{status.label}</HeroChip>
+                          </div>
+                          <div className="model-card-stats">
+                            <div className="model-card-stat"><span>版本</span><strong>{model.version}</strong></div>
+                            <div className="model-card-stat"><span>组件</span><strong>{model.componentCount}</strong></div>
+                            <div className="model-card-stat"><span>外设</span><strong>{model.peripherals.length}</strong></div>
+                          </div>
+                        </div>
+                      </button>
+                      <footer className="model-card-footer">
+                        <span className="model-card-updated">更新于 {model.updatedAt}</span>
+                        <div className="model-card-actions">
+                          <HeroButton
+                            variant="ghost"
+                            size="sm"
+                            isIconOnly
+                            ariaLabel={`编辑${model.name}`}
+                            title="编辑"
+                            onPress={() => {
+                              setActiveId(model.id);
+                              setEditingScene(false);
+                              setSelectedTopologyId('base_link');
+                            }}
+                          >
+                            <Pencil size={14} />
+                          </HeroButton>
+                          <HeroButton
+                            variant="danger"
+                            size="sm"
+                            isIconOnly
+                            ariaLabel={`删除${model.name}`}
+                            title="删除"
+                            onPress={() => {
+                              setDeleteTargetId(model.id);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </HeroButton>
+                        </div>
+                      </footer>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="model-library-empty">
+                {models.length === 0
+                  ? '暂无型号，点击「新建型号」创建第一个机器人型号。'
+                  : `没有匹配「${searchQuery}」的型号。`}
+              </div>
+            )}
+          </div>
+        </div>
+        {deleteModal}
+      </>
     );
   }
 
@@ -1743,9 +2396,11 @@ export function RobotModelManager({
   }
 
   function saveSoftwareSelections(ids: string[]) {
+    const availableIds = new Set(softwareCatalogItems(softwareCatalog).map(product => product.id));
+    const selectionIds = ids.filter(id => availableIds.has(id));
     updateActive({
-      softwareSelectionIds: ids,
-      softwarePackages: packagesFromSoftwareSelections(ids, activeModel.softwarePackages),
+      softwareSelectionIds: selectionIds,
+      softwarePackages: packagesFromSoftwareSelections(selectionIds, activeModel.softwarePackages, softwareCatalog),
     });
   }
 
@@ -1753,12 +2408,15 @@ export function RobotModelManager({
 
   function handleAddTopologyNode() {
     if (!newNodeLabel.trim()) return;
+    const targetNode = findTopologyNode(activeModel.topology, addTargetId);
+    if (!targetNode) return;
+    const childKind: TopologyKind = targetNode.kind === 'link' ? 'joint' : 'link';
     const child: TopologyNode = {
       id: topoUid(),
       label: newNodeLabel.trim(),
-      kind: newNodeKind,
+      kind: childKind,
       origin: { ...DEFAULT_ORIGIN },
-      ...(newNodeKind === 'joint' ? { jointType: 'revolute' as JointType, axis: { ...DEFAULT_AXIS }, limit: { ...DEFAULT_LIMIT } } : {}),
+      ...(childKind === 'joint' ? { jointType: 'revolute' as JointType, axis: { ...DEFAULT_AXIS }, limit: { ...DEFAULT_LIMIT } } : {}),
       children: [],
     };
     updateActive({ topology: addTopologyChild(activeModel.topology, addTargetId, child) });
@@ -1769,13 +2427,20 @@ export function RobotModelManager({
 
   function handleDeleteTopologyNode(targetId: string) {
     const targetNode = findTopologyNode(activeModel.topology, targetId);
-    if (!targetNode || activeModel.topology.length <= 1) return;
+    if (!targetNode) return;
     // Prevent deleting the only root
     const roots = activeModel.topology;
     if (roots.length === 1 && roots[0].id === targetId) return;
     const newTopology = removeTopologyNode(activeModel.topology, targetId);
     updateActive({ topology: newTopology });
     setSelectedTopologyId(newTopology[0]?.id ?? 'base_link');
+  }
+
+  function handleMoveTopologyNode(draggedId: string, targetId: string, position: TopologyDropPosition) {
+    const nextTopology = moveTopologyNode(activeModel.topology, draggedId, targetId, position);
+    if (nextTopology === activeModel.topology) return;
+    updateActive({ topology: nextTopology });
+    setSelectedTopologyId(draggedId);
   }
 
   function handleUrdfImport(event: React.ChangeEvent<HTMLInputElement>) {
@@ -1815,6 +2480,8 @@ export function RobotModelManager({
     setDraft({
       name: '新建机器人型号',
       type: '复合机器人',
+      description: '',
+      homepageSchemeId: undefined,
       ownerAccount: 'robot-admin',
       status: 'draft',
       version: 'R1.0',
@@ -1829,6 +2496,8 @@ export function RobotModelManager({
       id: activeModel.id,
       name: activeModel.name,
       type: activeModel.type,
+      description: activeModel.description,
+      homepageSchemeId: activeModel.homepageSchemeId,
       ownerAccount: activeModel.ownerAccount,
       status: activeModel.status,
       version: activeModel.version,
@@ -1840,11 +2509,12 @@ export function RobotModelManager({
 
   function saveDraft() {
     if (!draft || !draft.name.trim()) return;
-    const nextSoftwareSelectionIds = draft.id ? activeModel.softwareSelectionIds : defaultSoftwareSelectionIds(draft.type);
+    const nextSoftwareSelectionIds = draft.id ? activeModel.softwareSelectionIds : defaultSoftwareSelectionIds();
     const nextModel: RobotModel = {
       id: draft.id ?? `robot-${Date.now()}`,
       name: draft.name.trim(),
       type: draft.type,
+      description: (draft.description || '').trim(),
       ownerAccount: draft.ownerAccount.trim() || 'robot-admin',
       status: draft.status,
       version: draft.version.trim() || 'R1.0',
@@ -1854,7 +2524,8 @@ export function RobotModelManager({
       pose: activeModel?.pose ?? { rotation: 0, height: 58, reach: 58 },
       topology: draft.id ? activeModel.topology : defaultTopology(draft.type),
       softwareSelectionIds: nextSoftwareSelectionIds,
-      softwarePackages: draft.id ? activeModel.softwarePackages : packagesFromSoftwareSelections(nextSoftwareSelectionIds, defaultSoftwarePackages(draft.type)),
+      softwarePackages: draft.id ? activeModel.softwarePackages : packagesFromSoftwareSelections(nextSoftwareSelectionIds, defaultSoftwarePackages(draft.type), softwareCatalog),
+      homepageSchemeId: draft.homepageSchemeId,
     };
 
     setModels(prev => {
@@ -1872,13 +2543,19 @@ export function RobotModelManager({
   }
 
   function confirmDelete() {
-    if (models.length <= 1) return;
-    const currentIndex = models.findIndex(model => model.id === activeModel.id);
-    const next = models.filter(model => model.id !== activeModel.id);
+    const targetId = deleteTargetId || activeModel?.id;
+    if (!targetId || models.length <= 1) return;
+    const targetModel = models.find(m => m.id === targetId);
+    const currentIndex = models.findIndex(model => model.id === targetId);
+    const next = models.filter(model => model.id !== targetId);
     setModels(next);
-    setActiveId(next[Math.max(0, currentIndex - 1)]?.id ?? next[0].id);
+    // If deleting the currently active model, navigate to another
+    if (activeModel && activeModel.id === targetId) {
+      setActiveId(next[Math.max(0, currentIndex - 1)]?.id ?? next[0]?.id ?? null);
+    }
     setSelectedTopologyId('base_link');
     setDeleteDialogOpen(false);
+    setDeleteTargetId(null);
   }
 
   function exportJson() {
@@ -1901,194 +2578,380 @@ export function RobotModelManager({
       flex: 1,
       minWidth: 0,
       height: '100%',
-      padding: '24px 12px',
+      padding: 'var(--robot-page-padding)',
       display: 'flex',
-      gap: 16,
+      flexDirection: 'column',
       background: 'var(--robot-page)',
       color: 'var(--robot-text)',
       boxSizing: 'border-box',
       overflow: 'hidden',
       transition: 'background 0.22s ease, color 0.22s ease',
     }}>
-      <aside style={{
-        width: 280,
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'var(--robot-surface)',
-        border: '1px solid var(--robot-border)',
-        borderRadius: 16,
-        boxShadow: 'var(--robot-shadow)',
-        overflow: 'hidden',
-      }}>
-        <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid var(--robot-border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <h1 style={{ color: 'var(--robot-heading)', fontSize: 16, fontWeight: 600, margin: 0 }}>型号库</h1>
-            <ArcoButton scope="robot" type="primary" icon={<Plus size={14} />} onClick={openCreateDialog}>
-              新建型号
-            </ArcoButton>
-          </div>
-        </div>
-
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px' }}>
-          {models.map(model => {
-            const active = model.id === activeModel.id;
-            const status = STATUS_META[model.status];
-            return (
-              <button
-                key={model.id}
-                onClick={() => { setActiveId(model.id); setEditingScene(false); setSelectedTopologyId('base_link'); }}
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  borderRadius: 16,
-                  border: `1px solid ${active ? 'var(--robot-accent)' : 'var(--robot-border)'}`,
-                  background: active ? 'var(--robot-accent-soft)' : 'var(--robot-soft)',
-                  padding: 12,
-                  marginBottom: 8,
-                  cursor: 'pointer',
-                  boxShadow: 'none',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
-                  <span style={{ color: active ? 'var(--robot-accent-text)' : 'var(--robot-heading)', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {model.name}
-                  </span>
-                  <span style={{ borderRadius: 999, background: status.bg, color: status.color, border: `1px solid ${status.border}`, fontSize: 10, fontWeight: 600, padding: '2px 8px', flexShrink: 0 }}>
-                    {status.label}
-                  </span>
-                </div>
-                <div style={{ color: active ? 'var(--robot-text)' : 'var(--robot-muted)', fontSize: 11, lineHeight: 1.6 }}>
-                  {model.type} · {model.version}<br />
-                  {model.componentCount} 组件 · {model.peripherals.length} 外设
-                </div>
+      <style>{`
+        .hero-detail-card {
+          width: 100%;
+          height: 100%;
+          min-width: 0;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border: 1px solid var(--robot-border);
+          border-radius: var(--robot-card-radius);
+          background: var(--robot-surface);
+          box-shadow: var(--robot-shadow-soft);
+        }
+        .hero-detail-card-header {
+          min-height: 68px;
+          padding: 12px 16px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+          border-bottom: 1px solid var(--robot-border);
+        }
+        .hero-detail-card-title {
+          flex: 1;
+          margin: 0;
+          color: var(--robot-heading);
+          font-size: 16px;
+          line-height: 24px;
+          font-weight: 600;
+        }
+        .hero-detail-button {
+          min-height: 40px;
+          padding: 0 16px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          border: 1px solid transparent;
+          border-radius: var(--robot-control-radius);
+          color: var(--robot-heading);
+          background: var(--robot-soft);
+          font: inherit;
+          font-size: 14px;
+          font-weight: 500;
+          white-space: nowrap;
+          cursor: pointer;
+          transition: background 150ms ease, border-color 150ms ease, opacity 150ms ease;
+        }
+        .hero-detail-button:hover { background: var(--robot-neutral-soft); }
+        .hero-detail-button:active { opacity: 0.88; }
+        .hero-detail-button:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
+        .hero-detail-button[data-variant="primary"] { background: var(--robot-brand); color: var(--robot-accent-contrast); }
+        .hero-detail-button[data-variant="primary"]:hover { background: var(--robot-accent); }
+        .hero-detail-button[data-variant="secondary"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+        .hero-detail-button[data-variant="tertiary"] { border-color: var(--robot-border); background: transparent; }
+        .hero-detail-button[data-variant="ghost"] { background: transparent; }
+        .hero-detail-button[data-variant="danger"] { background: var(--robot-danger-soft); color: var(--robot-danger); }
+        .hero-detail-button[data-icon-only="true"] { width: 40px !important; padding: 0; }
+        .hero-detail-button:disabled { cursor: not-allowed; opacity: 0.45; }
+        .software-config-edit {
+          width: 32px;
+          height: 32px;
+          padding: 0;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 0;
+          border-radius: var(--robot-control-radius);
+          background: transparent;
+          color: var(--robot-muted);
+          cursor: pointer;
+          transition: color 180ms ease, background-color 180ms ease;
+        }
+        .software-config-edit:hover { color: var(--robot-accent-text); background: var(--robot-accent-soft); }
+        .software-config-edit:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
+        .hero-detail-chip {
+          max-width: 100%;
+          min-height: 24px;
+          padding: 2px 10px;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          border-radius: 999px;
+          background: var(--robot-soft);
+          color: var(--robot-text);
+          font-size: 12px;
+          line-height: 18px;
+          font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .hero-detail-chip[data-tone="accent"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+        .hero-detail-chip[data-tone="success"] { background: var(--robot-success-soft); color: var(--robot-heading); }
+        .hero-detail-chip[data-tone="danger"] { background: var(--robot-danger-soft); color: var(--robot-heading); }
+        .hero-info-card { display: flex; flex-direction: column; }
+        .hero-info-header {
+          padding: 16px 16px 0;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-shrink: 0;
+        }
+        .hero-model-back {
+          width: 44px;
+          height: 44px;
+          display: grid;
+          place-items: center;
+          flex-shrink: 0;
+          padding: 0;
+          border: 1px solid transparent;
+          border-radius: var(--robot-inner-radius);
+          background: var(--robot-accent-soft);
+          color: var(--robot-accent-text);
+          cursor: pointer;
+          transition: background-color 180ms ease, border-color 180ms ease;
+        }
+        .hero-model-back:hover { border-color: var(--robot-accent-border); background: var(--robot-neutral-soft); }
+        .hero-model-back:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
+        .hero-model-heading { min-width: 0; flex: 1; }
+        .hero-model-heading h2 {
+          margin: 0;
+          overflow: hidden;
+          color: var(--robot-heading);
+          font-size: 16px;
+          line-height: 24px;
+          font-weight: 600;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .hero-model-heading p {
+          margin: 0;
+          overflow: hidden;
+          color: var(--robot-muted);
+          font-size: 12px;
+          line-height: 18px;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .hero-info-content {
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          flex-shrink: 0;
+        }
+        .hero-model-description {
+          display: -webkit-box;
+          margin: 0;
+          overflow: hidden;
+          color: var(--robot-muted);
+          font-size: 12px;
+          line-height: 18px;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+        }
+        .hero-homepage-row { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--robot-muted); font-size: 12px; }
+        .hero-homepage-row > span:first-child { flex-shrink: 0; }
+        .hero-model-actions { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
+        .hero-updated-at { color: var(--robot-subtle); font-size: 10px; line-height: 14px; }
+        .hero-detail-divider { height: 1px; flex-shrink: 0; background: var(--robot-border); }
+        .hero-software-section { min-height: 0; flex: 1; overflow: hidden; }
+        .hero-scene-card { min-height: 0; }
+        .hero-scene-content { position: relative; min-height: 360px; flex: 1; overflow: hidden; }
+        .hero-topology-card { min-height: 0; }
+        .hero-topology-content { min-height: 0; padding: 12px 16px 16px; display: flex; flex: 1; flex-direction: column; gap: 16px; overflow: hidden; }
+        .hero-topology-tree-scroll {
+          min-height: 132px;
+          flex: 1 1 0;
+          overflow-y: auto;
+          overflow-x: hidden;
+          overscroll-behavior: contain;
+          padding-right: 4px;
+          scrollbar-gutter: stable;
+        }
+        .hero-topology-param-fixed {
+          height: 420px;
+          min-height: 420px;
+          max-height: 420px;
+          flex: 0 0 420px;
+          overflow: hidden;
+        }
+        .hero-topology-param-panel { height: 100%; }
+        .hero-topology-param-body {
+          min-height: 0;
+          flex: 1;
+          align-content: start;
+          overflow-y: auto;
+          overflow-x: hidden;
+          overscroll-behavior: contain;
+          scrollbar-gutter: stable;
+        }
+        .hero-import-error { margin: 16px 16px 0; padding: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: var(--robot-inner-radius); background: var(--robot-danger-soft); color: var(--robot-heading); font-size: 12px; }
+        .hero-detail-tool-button {
+          height: 40px;
+          padding: 0 12px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          flex-shrink: 0;
+          border: 1px solid var(--robot-border-strong);
+          border-radius: var(--robot-control-radius);
+          background: var(--robot-surface);
+          color: var(--robot-heading);
+          font: inherit;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+        }
+        .hero-detail-tool-button:hover,
+        .hero-detail-tool-button[data-active="true"] {
+          border-color: var(--robot-accent-border);
+          background: var(--robot-accent-soft);
+          color: var(--robot-accent-text);
+        }
+        .hero-detail-tool-button[data-icon-only="true"] { width: 40px; padding: 0; }
+        .hero-detail-tool-button:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
+        .hero-detail-menu { min-width: 176px; padding: 8px; border-color: var(--robot-border); border-radius: var(--robot-inner-radius); background: var(--robot-surface); color: var(--robot-heading); box-shadow: var(--robot-dialog-shadow); }
+        .robot-detail-main { overflow: hidden; }
+        .robot-detail-grid {
+          display: grid;
+          grid-template-columns: 300px minmax(420px, 1fr) 330px;
+          gap: var(--robot-section-gap);
+          min-height: 0;
+          flex: 1;
+          overflow: hidden;
+        }
+        @media (max-width: 1450px) {
+          .robot-detail-main { overflow-y: auto; padding-right: 4px; }
+          .robot-detail-grid {
+            grid-template-columns: minmax(280px, 0.8fr) minmax(420px, 1.2fr);
+            grid-auto-rows: minmax(560px, auto);
+            overflow: visible;
+          }
+          .robot-topology-card { grid-column: 1 / -1; height: 620px; min-height: 620px; }
+        }
+        @media (max-width: 860px) {
+          .robot-detail-grid { grid-template-columns: minmax(0, 1fr); }
+          .robot-topology-card { grid-column: auto; }
+        }
+      `}</style>
+      <main className="robot-detail-main" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        {/* Content grid: 3 columns */}
+        <div className="robot-detail-grid">
+          <section className="hero-detail-card hero-info-card">
+            <header className="hero-info-header">
+              <button type="button" className="hero-model-back" onClick={() => setActiveId(null)} aria-label="返回型号库" title="返回型号库">
+                <ArrowLeft size={20} />
               </button>
-            );
-          })}
-        </div>
-      </aside>
-
-      <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 14, overflow: 'hidden' }}>
-        <header style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: 16,
-          flexShrink: 0,
-          padding: '4px 0',
-        }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            {/* Breadcrumb */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-              <span style={{ color: 'var(--robot-muted)', fontSize: 12, fontWeight: 500 }}>型号库</span>
-              <ChevronRight size={12} color="var(--robot-subtle)" />
-              <span style={{ color: 'var(--robot-heading)', fontSize: 12, fontWeight: 600 }}>{activeModel.name}</span>
-            </div>
-            {/* Title row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-              <h2 style={{ color: 'var(--robot-heading)', fontSize: 18, fontWeight: 600, margin: 0 }}>{activeModel.name}</h2>
-              <span style={{
-                borderRadius: 99, fontSize: 11, fontWeight: 500, padding: '2px 10px',
-                background: STATUS_META[activeModel.status].bg,
-                color: STATUS_META[activeModel.status].color,
-                border: `1px solid ${STATUS_META[activeModel.status].border}`,
-              }}>
-                {STATUS_META[activeModel.status].label}
-              </span>
-            </div>
-            {/* Stats row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--robot-text)', fontSize: 12, flexWrap: 'wrap' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <Box size={11} />{activeModel.type}
-              </span>
-              <span style={{ color: 'var(--robot-border-strong)' }}>|</span>
-              <span>v{activeModel.version}</span>
-              <span style={{ color: 'var(--robot-border-strong)' }}>|</span>
-              <span>{activeModel.componentCount} 组件</span>
-              <span style={{ color: 'var(--robot-border-strong)' }}>|</span>
-              <span>{activeModel.peripherals.length} 外设</span>
-              <span style={{ color: 'var(--robot-border-strong)' }}>|</span>
-              <span>{flatTopology.length} 拓扑节点</span>
-              <span style={{ color: 'var(--robot-border-strong)' }}>|</span>
-              <span>更新于 {activeModel.updatedAt}</span>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <ArcoButton scope="robot" icon={<Pencil size={13} />} onClick={openEditDialog}>编辑</ArcoButton>
-            <ArcoButton
-              scope="robot"
-              onClick={togglePublish}
-              type={activeModel.status === 'published' ? 'default' : 'primary'}
-              icon={<CheckCircle2 size={13} />}
-            >
-              {activeModel.status === 'published' ? '取消发布' : '发布'}
-            </ArcoButton>
-            <span style={{ width: 1, height: 20, background: 'var(--robot-border-strong)', margin: '0 2px' }} />
-            <ArcoButton scope="robot" icon={<FileCode2 size={13} />} onClick={exportUrdf}>URDF</ArcoButton>
-            <ArcoButton scope="robot" icon={<FileJson size={13} />} onClick={exportJson}>JSON</ArcoButton>
-            <ArcoButton
-              scope="robot"
-              onClick={() => setDeleteDialogOpen(true)}
-              disabled={models.length <= 1}
-              status="danger"
-              icon={<Trash2 size={13} />}
-            >
-              删除
-            </ArcoButton>
-          </div>
-        </header>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '280px minmax(380px, 1fr) 330px', gap: 14, minHeight: 0, flex: 1, overflow: 'hidden' }}>
-          <div style={{ minHeight: 0, overflow: 'hidden' }}>
-            <SoftwareVersionPanel
-              selectionIds={activeModel.softwareSelectionIds}
-              onConfigure={() => setSoftwareDialogOpen(true)}
-            />
-          </div>
-
-          <div style={{ minHeight: 0, overflow: 'hidden' }}>
-            <RobotScene
-              model={activeModel}
-              editing={editingScene}
-              onToggleEditing={() => setEditingScene(prev => !prev)}
-              onPoseChange={pose => updateActive({ pose })}
-            />
-          </div>
-
-          <aside style={{ minHeight: 0, display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto', paddingRight: 2 }}>
-            <section style={{ background: 'var(--robot-surface)', border: '1px solid var(--robot-border)', borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--robot-shadow)', flexShrink: 0, maxHeight: 340, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid var(--robot-border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <GitBranch size={15} color="var(--robot-accent)" />
-                <span style={{ color: 'var(--robot-heading)', fontSize: 15, fontWeight: 600, flex: 1 }}>拓扑结构与链路</span>
-                <input type="file" accept=".urdf,.xml" onChange={handleUrdfImport} style={{ display: 'none' }} id="urdf-file-input" />
-                <ArcoButton
-                  scope="robot"
-                  onClick={() => document.getElementById('urdf-file-input')?.click()}
-                  size="small"
-                  icon={<FileCode2 size={12} />}
-                >
-                  导入URDF
-                </ArcoButton>
+              <div className="hero-model-heading">
+                <h2>{activeModel.name}</h2>
+                <p>{activeModel.type}</p>
               </div>
+              <HeroChip tone={activeModel.status === 'published' ? 'success' : 'default'}>
+                {STATUS_META[activeModel.status].label}
+              </HeroChip>
+            </header>
 
-              {urdfImportError && (
-                <div style={{ margin: '8px 12px 0', padding: '8px 12px', borderRadius: 8, background: 'var(--robot-danger-soft)', color: 'var(--robot-danger)', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                  <span>{urdfImportError}</span>
-                  <ArcoIconButton
-                    scope="robot"
-                    type="text"
-                    status="danger"
-                    size="mini"
-                    aria-label="关闭导入错误提示"
-                    title="关闭导入错误提示"
-                    icon={<X size={12} />}
-                    onClick={() => setUrdfImportError(null)}
-                  />
-                </div>
+            <div className="hero-info-content">
+              {activeModel.description && (
+                <p className="hero-model-description">{activeModel.description}</p>
               )}
 
-              <div style={{ padding: '8px 12px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
+              <div className="hero-homepage-row">
+                <span>关联首页</span>
+                {activeModel.homepageSchemeId ? (
+                  <HeroChip tone="accent">
+                    <LayoutGrid size={14} />
+                    {INITIAL_SCHEMES.find(s => s.id === activeModel.homepageSchemeId)?.name ?? activeModel.homepageSchemeId}
+                  </HeroChip>
+                ) : (
+                  <span>未指定</span>
+                )}
+              </div>
+
+              <div className="hero-model-actions">
+                <HeroButton variant="secondary" fullWidth onPress={openEditDialog}>
+                  <Pencil size={16} />编辑
+                </HeroButton>
+                <HeroButton variant={activeModel.status === 'published' ? 'tertiary' : 'primary'} fullWidth onPress={togglePublish}>
+                  <CheckCircle2 size={16} />{activeModel.status === 'published' ? '取消发布' : '发布'}
+                </HeroButton>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button type="button" className="hero-detail-button" data-variant="ghost" data-icon-only="true" aria-label="更多型号操作"><MoreHorizontal size={18} /></button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="hero-detail-menu">
+                    <DropdownMenuItem onSelect={exportUrdf}><FileCode2 size={16} />导出 URDF</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={exportJson}><FileJson size={16} />导出 JSON</DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      disabled={models.length <= 1}
+                      onSelect={() => { setDeleteTargetId(activeModel.id); setDeleteDialogOpen(true); }}
+                    ><Trash2 size={16} />删除型号</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <span className="hero-updated-at">更新于 {activeModel.updatedAt}</span>
+            </div>
+
+            <div className="hero-detail-divider" />
+            <div className="hero-software-section">
+              <SoftwareVersionPanel
+                catalog={softwareCatalog}
+                selectionIds={activeModel.softwareSelectionIds}
+                onConfigure={() => setSoftwareDialogOpen(true)}
+              />
+            </div>
+          </section>
+
+          <RobotScene
+            model={activeModel}
+            editing={editingScene}
+            onToggleEditing={() => setEditingScene(prev => !prev)}
+            onPoseChange={pose => updateActive({ pose })}
+          />
+
+          <section className="hero-detail-card hero-topology-card robot-topology-card">
+            <header className="hero-detail-card-header">
+              <GitBranch size={18} style={{ color: 'var(--robot-accent)' }} />
+              <h3 className="hero-detail-card-title">模型结构</h3>
+              <input type="file" accept=".urdf,.xml" onChange={handleUrdfImport} style={{ display: 'none' }} id="urdf-file-input" />
+              <button
+                type="button"
+                className="hero-detail-tool-button"
+                data-icon-only="true"
+                disabled={!selectedTopologyNode}
+                aria-label="新增节点"
+                title="在当前节点下新增节点"
+                onClick={() => {
+                  if (!selectedTopologyNode) return;
+                  const kind: TopologyKind = selectedTopologyNode.kind === 'link' ? 'joint' : 'link';
+                  setAddTargetId(selectedTopologyNode.id);
+                  setNewNodeKind(kind);
+                  setNewNodeLabel(kind === 'link' ? 'new_link' : 'new_joint');
+                  setAddNodeDialogOpen(true);
+                }}
+              >
+                <Plus size={16} />
+              </button>
+              <button
+                type="button"
+                className="hero-detail-tool-button"
+                data-icon-only="true"
+                aria-label="导入 URDF"
+                title="导入 URDF"
+                onClick={() => document.getElementById('urdf-file-input')?.click()}
+              >
+                <FileCode2 size={16} />
+              </button>
+            </header>
+
+            {urdfImportError && (
+              <div className="hero-import-error">
+                <span>{urdfImportError}</span>
+                <ArcoIconButton scope="robot" type="text" status="danger" size="mini" aria-label="关闭导入错误提示" title="关闭导入错误提示" icon={<X size={12} />} onClick={() => setUrdfImportError(null)} />
+              </div>
+            )}
+
+            <div className="hero-topology-content">
+              <div className="hero-topology-tree-scroll">
                 <TopologyTree
                   nodes={activeModel.topology}
                   selectedId={selectedTopologyNode?.id ?? 'base_link'}
@@ -2102,22 +2965,25 @@ export function RobotModelManager({
                     setNewNodeLabel(kind === 'link' ? 'new_link' : 'new_joint');
                     setAddNodeDialogOpen(true);
                   }}
-                  onDelete={(id) => handleDeleteTopologyNode(id)}
+                  onDelete={(id) => setDeleteTopologyTargetId(id)}
+                  onMove={handleMoveTopologyNode}
                 />
               </div>
-            </section>
-
-            {selectedTopologyNode && (
-              <TopologyParamPanel
-                node={selectedTopologyNode}
-                onChange={updateSelectedTopologyNode}
-              />
-            )}
-          </aside>
+              {selectedTopologyNode && (
+                <div className="hero-topology-param-fixed">
+                  <TopologyParamPanel
+                    node={selectedTopologyNode}
+                    onChange={updateSelectedTopologyNode}
+                  />
+                </div>
+              )}
+            </div>
+          </section>
         </div>
       </main>
 
       <SoftwareVersionDialog
+        catalog={softwareCatalog}
         open={softwareDialogOpen}
         selectionIds={activeModel.softwareSelectionIds}
         onOpenChange={setSoftwareDialogOpen}
@@ -2130,7 +2996,7 @@ export function RobotModelManager({
         onOpenChange={setAddNodeDialogOpen}
         scope="robot"
         title={`添加${newNodeKind === 'link' ? '连杆' : '关节'}节点`}
-        width={380}
+        size="sm"
         footer={(
           <>
             <ArcoButton scope="robot" onClick={() => setAddNodeDialogOpen(false)}>取消</ArcoButton>
@@ -2139,20 +3005,6 @@ export function RobotModelManager({
         )}
       >
             <div style={{ display: 'grid', gap: 12 }}>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {(['link', 'joint'] as TopologyKind[]).map(kind => (
-                  <ArcoButton
-                    scope="robot"
-                    key={kind}
-                    onClick={() => setNewNodeKind(kind)}
-                    type={newNodeKind === kind ? 'secondary' : 'default'}
-                    size="large"
-                    long
-                  >
-                    {kind === 'link' ? '连杆 Link' : '关节 Joint'}
-                  </ArcoButton>
-                ))}
-              </div>
               <ArcoField label="节点名称">
                 <ArcoTextInput
                   scope="robot"
@@ -2166,8 +3018,8 @@ export function RobotModelManager({
               {(() => {
                 const targetNode = findTopologyNode(activeModel.topology, addTargetId);
                 return targetNode ? (
-                  <div style={{ color: 'var(--robot-subtle)', fontSize: 12 }}>
-                    添加到 <strong style={{ color: 'var(--robot-accent-text)' }}>{targetNode.label}</strong> 下
+                  <div style={{ padding: '10px 12px', borderRadius: 'var(--robot-inner-radius)', background: 'var(--robot-soft)', color: 'var(--robot-subtle)', fontSize: 12, lineHeight: 1.6 }}>
+                    将在 <strong style={{ color: 'var(--robot-accent-text)' }}>{targetNode.label}</strong> 下新增{newNodeKind === 'link' ? '连杆' : '关节'}。结构规则：{targetNode.kind === 'link' ? '连杆的下级必须是关节' : '关节的下级必须是连杆'}。
                   </div>
                 ) : null;
               })()}
@@ -2175,11 +3027,41 @@ export function RobotModelManager({
       </ArcoModal>
 
       <ArcoModal
+        open={deleteTopologyTargetId !== null}
+        onOpenChange={open => { if (!open) setDeleteTopologyTargetId(null); }}
+        scope="robot"
+        title="删除结构节点"
+        status="danger"
+        size="sm"
+        footer={(
+          <>
+            <ArcoButton scope="robot" onClick={() => setDeleteTopologyTargetId(null)}>取消</ArcoButton>
+            <ArcoButton scope="robot" type="primary" status="danger" onClick={() => {
+              if (deleteTopologyTargetId) handleDeleteTopologyNode(deleteTopologyTargetId);
+              setDeleteTopologyTargetId(null);
+            }}>确认删除</ArcoButton>
+          </>
+        )}
+      >
+        {deleteTopologyTargetId && (() => {
+          const targetNode = findTopologyNode(activeModel.topology, deleteTopologyTargetId);
+          if (!targetNode) return null;
+          const descendantCount = flattenTopology(targetNode.children ?? []).length;
+          return (
+            <p style={{ margin: 0, color: 'var(--robot-muted)', fontSize: 14, lineHeight: 1.7 }}>
+              确认删除「<strong style={{ color: 'var(--robot-heading)' }}>{targetNode.label}</strong>」吗？
+              {descendantCount > 0 ? ` 其下 ${descendantCount} 个下级节点也会同时删除。` : ' 此操作不会影响其他结构节点。'}
+            </p>
+          );
+        })()}
+      </ArcoModal>
+
+      <ArcoModal
         open={modelDialogOpen}
         onOpenChange={setModelDialogOpen}
         scope="robot"
         title={draft?.id ? '编辑机器人型号' : '新建机器人型号'}
-        width={440}
+        size="md"
         footer={(
           <>
             <ArcoButton scope="robot" onClick={() => setModelDialogOpen(false)}>取消</ArcoButton>
@@ -2191,6 +3073,9 @@ export function RobotModelManager({
               <div style={{ display: 'grid', gap: 12 }}>
                 <ArcoField label="型号名称">
                   <ArcoTextInput scope="robot" value={draft.name} onChange={event => setDraft({ ...draft, name: event.target.value })} />
+                </ArcoField>
+                <ArcoField label="描述">
+                  <ArcoTextArea scope="robot" value={draft.description} onChange={event => setDraft({ ...draft, description: event.target.value })} placeholder="简要描述该型号的用途、场景与特点…" />
                 </ArcoField>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <ArcoField label="类型">
@@ -2219,29 +3104,19 @@ export function RobotModelManager({
                 <ArcoField label="挂载外设">
                   <ArcoTextArea scope="robot" value={draft.peripheralsText} onChange={event => setDraft({ ...draft, peripheralsText: event.target.value })} />
                 </ArcoField>
+                <ArcoField label="关联首页">
+                  <ArcoSelect scope="robot" value={draft.homepageSchemeId ?? ''} onChange={event => setDraft({ ...draft, homepageSchemeId: event.target.value || undefined })}>
+                    <option value="">— 不关联 —</option>
+                    {INITIAL_SCHEMES.map(scheme => (
+                      <option key={scheme.id} value={scheme.id}>{scheme.name} ({scheme.version})</option>
+                    ))}
+                  </ArcoSelect>
+                </ArcoField>
               </div>
             )}
       </ArcoModal>
 
-      <ArcoModal
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        scope="robot"
-        status="danger"
-        title="删除机器人型号"
-        icon={<Trash2 size={16} />}
-        width={360}
-        footer={(
-          <>
-            <ArcoButton scope="robot" onClick={() => setDeleteDialogOpen(false)}>取消</ArcoButton>
-            <ArcoButton scope="robot" type="primary" status="danger" onClick={confirmDelete}>删除</ArcoButton>
-          </>
-        )}
-      >
-            <p style={{ color: 'var(--robot-muted)', fontSize: 13, lineHeight: 1.7, margin: '0 0 18px' }}>
-              确认删除「{activeModel.name}」吗？删除后该型号的拓扑结构、外设配置与导出配置会一并移除。
-            </p>
-      </ArcoModal>
+      {deleteModal}
     </div>
   );
 }

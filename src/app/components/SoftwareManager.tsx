@@ -1,21 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Check, Copy, Edit3, Plus, Search, Trash2 } from 'lucide-react';
-import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTextInput } from './ArcoLike';
-
-interface SoftwareProduct {
-  id: string;
-  name: string;
-  description: string;
-  key: string;
-}
-
-function initialData(): SoftwareProduct[] {
-  return [
-    { id: 'sw1', name: '墨影控制器驱动', description: '', key: 'SW-EVEX-Y2R3' },
-    { id: 'sw2', name: '仙工控制器驱动', description: '', key: 'SW-KXMZ-A7B1' },
-    { id: 'sw3', name: '节卡机械臂驱动', description: '', key: 'SW-PLQN-D9F6' },
-  ];
-}
+import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTextArea, ArcoTextInput } from './ArcoLike';
+import { INITIAL_SOFTWARE_PRODUCTS, type SoftwareProduct } from '../softwareProducts';
 
 type FormData = Pick<SoftwareProduct, 'name' | 'description'>;
 const emptyForm: FormData = { name: '', description: '' };
@@ -28,8 +14,16 @@ function generateKey(): string {
   return `SW-${seg1}-${seg2}`;
 }
 
-export function SoftwareManager() {
-  const [items, setItems] = useState<SoftwareProduct[]>(initialData);
+export function SoftwareManager({
+  items: controlledItems,
+  onItemsChange,
+}: {
+  items?: SoftwareProduct[];
+  onItemsChange?: (items: SoftwareProduct[]) => void;
+}) {
+  const [internalItems, setInternalItems] = useState<SoftwareProduct[]>(INITIAL_SOFTWARE_PRODUCTS);
+  const items = controlledItems ?? internalItems;
+  const setItems = onItemsChange ?? setInternalItems;
   const [query, setQuery] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -81,58 +75,59 @@ export function SoftwareManager() {
   }
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '24px 28px', background: 'var(--app-bg)', overflow: 'hidden', boxSizing: 'border-box' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: 'var(--app-page-padding)', background: 'var(--app-bg)', overflow: 'hidden', boxSizing: 'border-box' }}>
       {/* Header + Search row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexShrink: 0, gap: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20, flexShrink: 0, gap: 20 }}>
         <div style={{ minWidth: 0 }}>
           <h1 style={{ color: 'var(--app-heading)', fontSize: 20, fontWeight: 600, margin: 0, lineHeight: 1.3 }}>软件产品</h1>
           <p style={{ color: 'var(--app-muted)', fontSize: 12, margin: '4px 0 0', fontWeight: 400 }}>管理系统中已登记的软件产品信息与标识码</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <div style={{ position: 'relative', width: 260 }}>
+          <div style={{ position: 'relative', width: 312 }}>
             <Search size={14} color="var(--app-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
             <ArcoTextInput
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="搜索名称、Key 或描述..."
-              style={{ width: '100%', height: 36, borderRadius: 10, padding: '0 12px 0 36px', fontSize: 13 }}
+              placeholder="搜索"
+              aria-label="搜索软件产品名称、Key 或描述"
+              style={{ width: '100%', height: 40, padding: '0 12px 0 36px', fontSize: 14 }}
             />
           </div>
-          <ArcoButton type="primary" icon={<Plus size={15} />} onClick={openAdd}>
+          <ArcoButton type="primary" size="large" icon={<Plus size={15} />} onClick={openAdd}>
             新增
           </ArcoButton>
         </div>
       </div>
 
       {/* Table */}
-      <div style={{ flex: 1, minHeight: 0, borderRadius: 12, border: '1px solid var(--app-border)', background: 'var(--app-surface)', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ minHeight: 0, maxHeight: 'calc(100vh - 176px)', flexShrink: 1, borderRadius: 'var(--app-card-radius)', border: '1px solid var(--app-border)', background: 'var(--app-surface)', overflow: 'hidden', boxShadow: 'var(--ds-shadow-xs)' }}>
+        <div style={{ maxHeight: 'calc(100vh - 176px)', overflow: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--app-border)', position: 'sticky', top: 0, zIndex: 1 }}>
-                <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--app-muted)', fontWeight: 500, fontSize: 11 }}>软件产品名称</th>
-                <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--app-muted)', fontWeight: 500, fontSize: 11 }}>描述</th>
-                <th style={{ textAlign: 'left', padding: '14px 20px', color: 'var(--app-muted)', fontWeight: 500, fontSize: 11 }}>Key</th>
-                <th style={{ textAlign: 'right', padding: '14px 20px', color: 'var(--app-muted)', fontWeight: 500, fontSize: 11, width: 120 }}>操作</th>
+              <tr style={{ height: 44, borderBottom: '1px solid var(--app-border)', position: 'sticky', top: 0, zIndex: 1, background: 'var(--app-soft)' }}>
+                <th style={{ textAlign: 'left', padding: '0 16px', color: 'var(--app-muted)', fontWeight: 500, fontSize: 12 }}>软件产品名称</th>
+                <th style={{ textAlign: 'left', padding: '0 16px', color: 'var(--app-muted)', fontWeight: 500, fontSize: 12 }}>描述</th>
+                <th style={{ textAlign: 'left', padding: '0 16px', color: 'var(--app-muted)', fontWeight: 500, fontSize: 12 }}>Key</th>
+                <th style={{ textAlign: 'right', padding: '0 16px', color: 'var(--app-muted)', fontWeight: 500, fontSize: 12, width: 120 }}>操作</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: '56px 20px', textAlign: 'center', color: 'var(--app-muted)', fontSize: 13 }}>
+                  <td colSpan={4} style={{ padding: '56px 20px', textAlign: 'center', color: 'var(--app-muted)', fontSize: 14 }}>
                     {query.trim() ? '未找到匹配的软件产品' : '暂无软件产品，点击"新增软件产品"开始添加'}
                   </td>
                 </tr>
               ) : (
                 filtered.map(item => (
                   <tr key={item.id} style={{ borderBottom: '1px solid var(--app-border)', transition: 'background 0.15s ease' }}>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ color: 'var(--app-heading)', fontWeight: 500, fontSize: 13 }}>{item.name}</span>
+                    <td style={{ height: 60, padding: '0 16px' }}>
+                      <span style={{ color: 'var(--app-heading)', fontWeight: 500, fontSize: 14 }}>{item.name}</span>
                     </td>
-                    <td style={{ padding: '12px 16px', color: item.description ? 'var(--app-text)' : 'var(--app-subtle)', fontSize: 13 }}>
+                    <td style={{ height: 60, padding: '0 16px', color: item.description ? 'var(--app-text)' : 'var(--app-subtle)', fontSize: 14 }}>
                       {item.description || '--'}
                     </td>
-                    <td style={{ padding: '12px 16px' }}>
+                    <td style={{ height: 60, padding: '0 16px' }}>
                       <button
                         onClick={() => handleCopy(item.key)}
                         title="点击复制 Key"
@@ -150,8 +145,8 @@ export function SoftwareManager() {
                         {copiedKey === item.key ? <Check size={12} /> : <Copy size={11} />}
                       </button>
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                    <td style={{ height: 60, padding: '0 16px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                         <ArcoIconButton size="small" icon={<Edit3 size={13} />} aria-label="编辑" title="编辑" onClick={() => openEdit(item)} />
                         <ArcoIconButton size="small" icon={<Trash2 size={13} />} aria-label="删除" title="删除" onClick={() => setDeleteTarget(item)} />
                       </div>
@@ -162,21 +157,15 @@ export function SoftwareManager() {
             </tbody>
           </table>
         </div>
-
-                {/* Footer stats */}
-        <div style={{ padding: '10px 16px', borderTop: '1px solid var(--app-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <span style={{ color: 'var(--app-muted)', fontSize: 12 }}>
-            共 {filtered.length} 个软件产品{query.trim() ? `（筛选自 ${items.length} 条）` : ''}
-          </span>
-        </div>
       </div>
 
       {/* ── Add / Edit Modal ── */}
       <ArcoModal
         open={modalOpen}
         onOpenChange={setModalOpen}
-        title={editingId ? '编辑软件产品' : '新增软件产品'}
-        width={480}
+        title={editingId ? '编辑软件产品' : '添加软件产品'}
+        description={editingId ? undefined : '填写名称与描述，保存后系统将自动生成唯一 Key'}
+        size="md"
         footer={(
           <>
             <ArcoButton onClick={() => setModalOpen(false)}>取消</ArcoButton>
@@ -186,30 +175,26 @@ export function SoftwareManager() {
           </>
         )}
       >
-        <div style={{ display: 'grid', gap: 16 }}>
+        <div style={{ display: 'grid', gap: 20 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--app-text)', marginBottom: 6 }}>软件产品名称 *</label>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: 'var(--app-heading)', marginBottom: 8 }}><span style={{ marginRight: 6, color: 'var(--app-danger)' }}>*</span>软件产品名称</label>
             <ArcoTextInput
               value={form.name}
               onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="例如：墨影控制器驱动"
-              style={{ width: '100%' }}
+              placeholder="请输入"
+              style={{ width: '100%', height: 40 }}
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--app-text)', marginBottom: 6 }}>描述</label>
-            <ArcoTextInput
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: 'var(--app-heading)', marginBottom: 8 }}>描述</label>
+            <ArcoTextArea
               value={form.description}
               onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="记录该软件产品的详细说明（可选）"
-              style={{ width: '100%' }}
+              placeholder="请输入"
+              rows={6}
+              style={{ width: '100%', minHeight: 140, resize: 'vertical' }}
             />
           </div>
-          {!editingId && (
-            <div style={{ background: 'var(--app-soft)', borderRadius: 8, padding: '10px 14px', border: '1px solid var(--app-border)' }}>
-              <span style={{ color: 'var(--app-muted)', fontSize: 11, fontWeight: 500 }}>Key 将在保存后由系统自动生成</span>
-            </div>
-          )}
         </div>
       </ArcoModal>
 
@@ -218,7 +203,7 @@ export function SoftwareManager() {
         open={deleteTarget !== null}
         onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
         title="删除软件产品"
-        width={400}
+        size="sm"
         status="danger"
         footer={(
           <>

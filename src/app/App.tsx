@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import {
-  Activity, ArrowLeft, ArrowRight, Bell, Box, CheckCircle2, ChevronRight, Clock3, Cpu, Download, Eye, FileKey2, FileText,
-  Folder, Home, LayoutGrid, LogOut, Moon, Package, PanelLeft, Pencil, RotateCcw, Save, Search, ShieldCheck, Sun, Trash2, User, Users, Wand2,
+  Activity, ArrowLeft, ArrowRight, Bell, Box, CheckCircle2, ChevronRight, ClipboardList, Clock3, Cpu, Download, Eye, FileKey2, FileText,
+  Home, LogOut, Moon, Package, PanelLeft, Pencil, RotateCcw, Save, Search, ShieldCheck, Sun, Trash2, User, Wand2,
 } from 'lucide-react';
 import { PanelList } from './components/PanelList';
 import { ComponentLibrary } from './components/ComponentLibrary';
@@ -12,6 +12,8 @@ import { PropertiesPanel } from './components/PropertiesPanel';
 import { RobotModelManager } from './components/RobotModelManager';
 import { ProductVersionManager } from './components/ProductVersionManager';
 import { SoftwareManager } from './components/SoftwareManager';
+import { InstallationRecordsManager } from './components/InstallationRecordsManager';
+import { INITIAL_SOFTWARE_PRODUCTS, type SoftwareProduct } from './softwareProducts';
 import { useComponentCatalog } from './components/useComponentCatalog';
 import { ArcoButton, ArcoIconButton, ArcoModal } from './components/ArcoLike';
 import { APP_THEME_VARS, type ThemeMode } from './theme';
@@ -23,7 +25,7 @@ import {
 
 const FONT = "'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
 
-type EditorNavKey = 'home' | 'status' | 'components' | 'records' | 'alerts' | 'settings' | 'apps' | 'products' | 'software';
+type EditorNavKey = 'home' | 'status' | 'components' | 'records' | 'alerts' | 'settings' | 'apps' | 'products' | 'software' | 'installations';
 type AppThemeMode = ThemeMode;
 type WorkspaceProduct = 'login' | 'workspace' | 'software' | 'authorization' | 'machine';
 
@@ -179,7 +181,7 @@ function WorkspaceLauncher({
           align-items: center;
           gap: 10px;
           color: var(--app-accent);
-          font-size: 13px;
+          font-size: 14px;
           font-weight: 650;
         }
         .workspace-machine-axis {
@@ -250,7 +252,7 @@ function WorkspaceLauncher({
           justify-content: space-between;
           gap: 12px;
           color: var(--app-accent);
-          font-size: 13px;
+          font-size: 14px;
           font-weight: 600;
         }
         .workspace-recent {
@@ -263,7 +265,7 @@ function WorkspaceLauncher({
           align-items: center;
           gap: 16px;
           color: var(--app-text);
-          font-size: 13px;
+          font-size: 14px;
         }
         @media (max-width: 860px) {
           .workspace-launcher__grid {
@@ -328,8 +330,8 @@ function WorkspaceLauncher({
             <Box size={18} />
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25 }}>墨影工作台</div>
-            <div style={{ marginTop: 2, color: 'var(--app-muted)', fontSize: 11 }}>产品与设备开发中心</div>
+            <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.25 }}>墨影工作台</div>
+            <div style={{ marginTop: 2, color: 'var(--app-muted)', fontSize: 12 }}>产品与设备开发中心</div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -340,8 +342,8 @@ function WorkspaceLauncher({
             title={isDark ? '切换为浅色模式' : '切换为暗色模式'}
             aria-label={isDark ? '切换为浅色模式' : '切换为暗色模式'}
             style={{
-              width: 36,
-              height: 36,
+              width: 40,
+              height: 40,
               border: '1px solid var(--app-border)',
               borderRadius: 8,
               background: 'var(--app-surface)',
@@ -401,9 +403,9 @@ function WorkspaceLauncher({
               }}>
                 <Cpu size={21} />
               </div>
-              <div style={{ marginTop: 28, color: 'var(--app-muted)', fontSize: 11, fontWeight: 700 }}>DIGITAL MACHINE</div>
+              <div style={{ marginTop: 28, color: 'var(--app-muted)', fontSize: 12, fontWeight: 700 }}>DIGITAL MACHINE</div>
               <h2 style={{ margin: '7px 0 0', fontSize: 24, lineHeight: 1.3, fontWeight: 700 }}>数字造机</h2>
-              <p style={{ margin: '12px 0 0', color: 'var(--app-text)', fontSize: 13, lineHeight: 1.7 }}>
+              <p style={{ margin: '12px 0 0', color: 'var(--app-text)', fontSize: 14, lineHeight: 1.7 }}>
                 从机器人型号、三维模型到组件生态与运行面板，完成数字设备配置。
               </p>
               <div className="workspace-primary-entry">
@@ -437,7 +439,7 @@ function WorkspaceLauncher({
                 <div style={{ marginTop: 20 }}>
                   <div style={{ color: 'var(--app-muted)', fontSize: 10, fontWeight: 700 }}>{product.eyebrow.toUpperCase()}</div>
                   <h2 style={{ margin: '5px 0 0', fontSize: 18, lineHeight: 1.35, fontWeight: 650 }}>{product.title}</h2>
-                  <p style={{ margin: '8px 0 0', color: 'var(--app-text)', fontSize: 13, lineHeight: 1.6 }}>{product.description}</p>
+                  <p style={{ margin: '8px 0 0', color: 'var(--app-text)', fontSize: 14, lineHeight: 1.6 }}>{product.description}</p>
                 </div>
               </button>
             );
@@ -488,8 +490,8 @@ function WorkspaceLogin({
           position: 'absolute',
           top: 20,
           right: 20,
-          width: 36,
-          height: 36,
+          width: 40,
+          height: 40,
           border: '1px solid var(--app-border)',
           borderRadius: 8,
           background: 'var(--app-surface)',
@@ -522,7 +524,7 @@ function WorkspaceLogin({
           <Box size={21} />
         </div>
         <h1 style={{ margin: '24px 0 0', fontSize: 24, lineHeight: 1.35, fontWeight: 700 }}>登录墨影工作台</h1>
-        <p style={{ margin: '8px 0 24px', color: 'var(--app-muted)', fontSize: 13, lineHeight: 1.65 }}>
+        <p style={{ margin: '8px 0 24px', color: 'var(--app-muted)', fontSize: 14, lineHeight: 1.65 }}>
           使用工作台账号进入产品与设备开发中心。
         </p>
         <form
@@ -531,7 +533,7 @@ function WorkspaceLogin({
             onLogin();
           }}
         >
-          <label htmlFor="workspace-account" style={{ display: 'block', color: 'var(--app-text)', fontSize: 13, fontWeight: 600 }}>
+          <label htmlFor="workspace-account" style={{ display: 'block', color: 'var(--app-text)', fontSize: 14, fontWeight: 600 }}>
             账号
           </label>
           <div style={{ position: 'relative', marginTop: 8 }}>
@@ -550,11 +552,11 @@ function WorkspaceLogin({
                 color: 'var(--app-heading)',
                 outline: 'none',
                 boxSizing: 'border-box',
-                fontSize: 13,
+                fontSize: 14,
               }}
             />
           </div>
-          <label htmlFor="workspace-password" style={{ display: 'block', marginTop: 18, color: 'var(--app-text)', fontSize: 13, fontWeight: 600 }}>
+          <label htmlFor="workspace-password" style={{ display: 'block', marginTop: 18, color: 'var(--app-text)', fontSize: 14, fontWeight: 600 }}>
             密码
           </label>
           <div style={{ position: 'relative', marginTop: 8 }}>
@@ -574,7 +576,7 @@ function WorkspaceLogin({
                 color: 'var(--app-heading)',
                 outline: 'none',
                 boxSizing: 'border-box',
-                fontSize: 13,
+                fontSize: 14,
               }}
             />
           </div>
@@ -693,7 +695,7 @@ function WorkspaceProductFrame({
             aria-label="返回墨影工作台"
             title="返回墨影工作台"
           />
-          <span style={{ color: 'var(--app-heading)', fontSize: 15, fontWeight: 650 }}>{title}</span>
+          <span style={{ color: 'var(--app-heading)', fontSize: 16, fontWeight: 650 }}>{title}</span>
         </div>
         <ArcoIconButton
           type="text"
@@ -725,9 +727,6 @@ interface EditTopBarProps {
   scheme: HomepageScheme;
   saveState: 'idle' | 'saved';
   onExit: () => void;
-  onAutoFill: () => void;
-  onPreview: () => void;
-  onExport: () => void;
   onSave: () => void;
 }
 
@@ -735,55 +734,35 @@ function EditorWorkspaceHeader({
   scheme,
   saveState,
   onExit,
-  onAutoFill,
-  onPreview,
-  onExport,
   onSave,
 }: EditTopBarProps) {
   return (
     <header style={{
-      padding: '20px 24px 16px',
+      height: 72,
+      padding: '0 24px',
       display: 'flex',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       justifyContent: 'space-between',
-      gap: '12px 20px',
-      flexWrap: 'wrap',
+      gap: 20,
       flexShrink: 0,
+      background: 'var(--app-surface)',
+      borderBottom: '1px solid var(--app-border)',
     }}>
-      <div style={{ minWidth: 0, flex: '1 1 260px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <ArcoIconButton
-          type="text"
-          size="small"
-          icon={<ArrowLeft size={17} />}
-          onClick={onExit}
-          aria-label="返回自定义首页"
-          title="返回自定义首页"
-          style={{ marginTop: 2 }}
-        />
-        <div style={{ minWidth: 0 }}>
+      <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <h1 style={{ color: 'var(--app-heading)', fontSize: 20, lineHeight: 1.3, fontWeight: 600, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <h1 style={{ color: 'var(--app-heading)', fontSize: 18, lineHeight: 1.3, fontWeight: 600, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {getSchemePageTitle(scheme)}
           </h1>
           <span style={{
             background: 'var(--app-accent-soft)', color: 'var(--app-accent)', border: '1px solid var(--app-accent-border)',
-            fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 8, flexShrink: 0,
+            fontSize: 10, fontWeight: 600, padding: '3px 9px', borderRadius: 999, flexShrink: 0,
           }}>
             {scheme.name} · {scheme.version}
           </span>
         </div>
-        <div style={{ marginTop: 8, color: 'var(--app-text)', fontSize: 13 }}>
-          上次编辑 {scheme.lastEdited} · {CANVAS_W} × {CANVAS_H} PX
-        </div>
-        </div>
       </div>
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8,
-        flex: '0 1 440px', flexWrap: 'wrap', marginLeft: 'auto',
-      }}>
-        <ArcoButton onClick={onPreview} icon={<Eye size={14} />}>预览</ArcoButton>
-        <ArcoButton onClick={onAutoFill} icon={<Wand2 size={14} />}>自动填补</ArcoButton>
-        <ArcoButton type="secondary" onClick={onExport} icon={<Download size={14} />}>导出看板</ArcoButton>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
+        <ArcoButton onClick={onExit} style={{ background: 'var(--app-surface)', border: '1px solid var(--app-border-strong)' }}>退出编辑</ArcoButton>
         <ArcoButton
           onClick={onSave}
           type={saveState === 'saved' ? 'default' : 'primary'}
@@ -794,6 +773,39 @@ function EditorWorkspaceHeader({
         </ArcoButton>
       </div>
     </header>
+  );
+}
+
+function EditorCanvasHeader({
+  scheme,
+  onAutoFill,
+  onExport,
+}: {
+  scheme: HomepageScheme;
+  onAutoFill: () => void;
+  onExport: () => void;
+}) {
+  return (
+    <div style={{
+      minHeight: 104,
+      padding: '20px 24px 16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 16,
+      flexShrink: 0,
+    }}>
+      <div style={{ minWidth: 0 }}>
+        <h2 style={{ color: 'var(--app-heading)', fontSize: 16, fontWeight: 600, lineHeight: 1.4, margin: 0 }}>编辑自定义首页面板</h2>
+        <div style={{ marginTop: 6, color: 'var(--app-muted)', fontSize: 12 }}>
+          上次编辑 {scheme.lastEdited} · {CANVAS_W} × {CANVAS_H} PX
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <ArcoButton onClick={onAutoFill} icon={<Wand2 size={14} />}>自动填补</ArcoButton>
+        <ArcoButton type="secondary" onClick={onExport} icon={<Download size={14} />}>导出看板</ArcoButton>
+      </div>
+    </div>
   );
 }
 
@@ -835,7 +847,7 @@ function GlobalTopBar({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <label style={{ position: 'relative', width: 162, height: 34, display: 'block' }}>
+        <label style={{ position: 'relative', width: 162, height: 40, display: 'block' }}>
           <Search size={15} color="var(--app-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <input
             placeholder="Search"
@@ -848,7 +860,7 @@ function GlobalTopBar({
               color: 'var(--app-heading)',
               padding: '0 34px 0 36px',
               outline: 'none',
-              fontSize: 13,
+              fontSize: 14,
               boxSizing: 'border-box',
             }}
           />
@@ -865,7 +877,7 @@ function GlobalTopBar({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 11,
+            fontSize: 12,
           }}>
             /
           </span>
@@ -913,11 +925,10 @@ function EditorNavRail({
   const navItems = [
     { key: 'home' as const, icon: Home, label: '首页自定义' },
     { key: 'apps' as const, icon: FileText, label: '型号模板' },
-    { key: 'components' as const, icon: Folder, label: '组件库' },
-    { key: 'records' as const, icon: LayoutGrid, label: '外设库' },
     { key: 'products' as const, icon: Package, label: '版本管理' },
     { key: 'software' as const, icon: Cpu, label: '软件产品' },
-    { key: 'status' as const, icon: Users, label: '用户管理' },
+    { key: 'installations' as const, icon: ClipboardList, label: '装机记录' },
+    // 组件库、外设库、用户管理模块暂时隐藏，页面能力保留以便后续恢复。
   ];
 
   function renderItem(key: EditorNavKey, Icon: typeof Home, label: string) {
@@ -1016,7 +1027,7 @@ function EditorNavRail({
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px' }}>
         <div style={{ width: 24, height: 24, borderRadius: 99, background: 'var(--app-heading)', flexShrink: 0 }} />
-        <span style={{ color: textColor, fontSize: 13, fontWeight: 500 }}>ByeWind</span>
+        <span style={{ color: textColor, fontSize: 14, fontWeight: 500 }}>ByeWind</span>
       </div>
     </nav>
   );
@@ -1099,7 +1110,7 @@ function EditorPlaceholderPanel({
             size="small"
             icon={<ArrowLeft size={16} />}
           />
-          <div style={{ color: 'var(--app-heading)', fontSize: 15, fontWeight: 600 }}>{meta.label}</div>
+          <div style={{ color: 'var(--app-heading)', fontSize: 16, fontWeight: 600 }}>{meta.label}</div>
         </div>
       </div>
 
@@ -1110,7 +1121,7 @@ function EditorPlaceholderPanel({
           border: '1px dashed var(--app-border-strong)',
           textAlign: 'center',
         }}>
-          <p style={{ color: 'var(--app-text)', fontSize: 13, fontWeight: 500, margin: '0 0 6px' }}>{meta.label}</p>
+          <p style={{ color: 'var(--app-text)', fontSize: 14, fontWeight: 500, margin: '0 0 6px' }}>{meta.label}</p>
           <p style={{ color: 'var(--app-muted)', fontSize: 12, lineHeight: 1.6, margin: 0 }}>{meta.description}</p>
         </div>
         <ArcoButton
@@ -1159,8 +1170,7 @@ function DeleteHomepageDialog({
       onOpenChange={onOpenChange}
       title="删除首页"
       status="danger"
-      icon={<Trash2 size={16} />}
-      width={360}
+      size="sm"
       footer={(
         <>
           <ArcoButton onClick={() => onOpenChange(false)}>取消</ArcoButton>
@@ -1168,7 +1178,7 @@ function DeleteHomepageDialog({
         </>
       )}
     >
-      <p style={{ color: 'var(--app-muted)', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
+      <p style={{ color: 'var(--app-muted)', fontSize: 14, lineHeight: 1.7, margin: 0 }}>
         确认删除「{scheme?.name ?? '当前首页'}」吗？该首页的组件布局与属性配置会一起移除。
       </p>
     </ArcoModal>
@@ -1205,7 +1215,7 @@ function EditToolbar({
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
         <span style={{ color: 'var(--app-muted)', fontSize: 12 }}>首页</span>
         <ChevronRight size={11} color="var(--app-muted)" />
-        <span style={{ color: 'var(--app-heading)', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {getSchemePageTitle(scheme)}
         </span>
         <span style={{
@@ -1217,7 +1227,7 @@ function EditToolbar({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-        <span style={{ color: 'var(--app-muted)', fontSize: 11 }}>上次编辑 {scheme.lastEdited}</span>
+        <span style={{ color: 'var(--app-muted)', fontSize: 12 }}>上次编辑 {scheme.lastEdited}</span>
         <ArcoButton onClick={onPreview} icon={<Eye size={13} />}>
           预览
         </ArcoButton>
@@ -1309,6 +1319,7 @@ function fillEmptySpaces(items: PlacedItem[]): PlacedItem[] {
 export default function App() {
   const { components: catalogComponents } = useComponentCatalog();
   const [workspaceProduct, setWorkspaceProduct] = useState<WorkspaceProduct>('workspace');
+  const [softwareProducts, setSoftwareProducts] = useState<SoftwareProduct[]>(INITIAL_SOFTWARE_PRODUCTS);
   const [schemes, setSchemes] = useState<HomepageScheme[]>(INITIAL_SCHEMES);
   const [activeSchemeId, setActiveSchemeId] = useState('s1');
   const [canvasItems, setCanvasItems] = useState<Record<string, PlacedItem[]>>(INITIAL_ITEMS);
@@ -1616,7 +1627,7 @@ export default function App() {
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
       >
-        <RobotModelManager themeMode={robotThemeMode} />
+        <RobotModelManager themeMode={robotThemeMode} softwareProducts={softwareProducts} />
       </AppShell>
     );
   }
@@ -1644,7 +1655,21 @@ export default function App() {
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
       >
-        <SoftwareManager />
+        <SoftwareManager items={softwareProducts} onItemsChange={setSoftwareProducts} />
+      </AppShell>
+    );
+  }
+
+  if (!isCanvasPreview && activeEditorNav === 'installations') {
+    return (
+      <AppShell
+        active={activeEditorNav}
+        themeMode={robotThemeMode}
+        onThemeToggle={toggleRobotThemeMode}
+        onNavChange={handleShellNavChange}
+        onWorkspace={returnToWorkspace}
+      >
+        <InstallationRecordsManager />
       </AppShell>
     );
   }
@@ -1661,12 +1686,21 @@ export default function App() {
         sidebarCollapsed
         hideTopBar
       >
-        <div style={{ height: '100%', display: 'flex', minHeight: 0, background: 'var(--app-bg)' }}>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0, background: 'var(--app-bg)' }}>
+          {!isCanvasPreview && activeScheme && (
+            <EditorWorkspaceHeader
+              scheme={activeScheme}
+              saveState={saveState}
+              onExit={() => { setIsEditing(false); setIsCanvasPreview(false); setActiveEditorNav('home'); setSelectedItemId(null); }}
+              onSave={handleSave}
+            />
+          )}
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: isCanvasPreview ? 0 : 'var(--app-section-gap)', padding: 'var(--app-page-padding)', overflow: 'hidden' }}>
           {!isCanvasPreview && (
             <>
               {activeEditorNav === 'components' ? (
                 <ComponentLibrary
-                  title="编辑面板"
+                  title="组件库"
                   showBack={false}
                   editorLayout
                   onExit={() => { setIsEditing(false); setIsCanvasPreview(false); setActiveEditorNav('home'); setSelectedItemId(null); }}
@@ -1680,17 +1714,13 @@ export default function App() {
               )}
             </>
           )}
-          <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', margin: isCanvasPreview ? '24px' : '24px 24px 24px 12px', background: 'var(--app-surface)', border: '1px solid var(--app-border)', borderRadius: 16, overflow: 'hidden' }}>
+          <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', background: 'var(--app-surface)', border: '1px solid var(--app-border)', borderRadius: 'var(--app-card-radius)', boxShadow: '0 16px 40px -34px var(--app-shadow-color)', overflow: 'hidden' }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, overflow: 'hidden' }}>
               {!isCanvasPreview && activeScheme && (
-                <EditorWorkspaceHeader
+                <EditorCanvasHeader
                   scheme={activeScheme}
-                  saveState={saveState}
-                  onExit={() => { setIsEditing(false); setIsCanvasPreview(false); setActiveEditorNav('home'); setSelectedItemId(null); }}
                   onAutoFill={autoFill}
-                  onPreview={() => { setSelectedItemId(null); setIsCanvasPreview(true); }}
                   onExport={() => exportScheme(activeScheme.id)}
-                  onSave={handleSave}
                 />
               )}
               <CanvasArea
@@ -1717,6 +1747,7 @@ export default function App() {
                 onClose={() => setSelectedItemId(null)}
               />
             )}
+          </div>
           </div>
           {isCanvasPreview && (
             <button
@@ -1832,7 +1863,7 @@ export default function App() {
                     {activeScheme.name} · {activeScheme.version}
                   </span>
                 </div>
-                <p style={{ color: 'var(--app-muted)', fontSize: 13, lineHeight: 1.6, margin: 0 }}>
+                <p style={{ color: 'var(--app-muted)', fontSize: 14, lineHeight: 1.6, margin: 0 }}>
                   根据现场任务和设备状态搭建首页
                 </p>
               </div>

@@ -52,7 +52,7 @@ function ToggleField({ field, value, onChange }: {
 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 36, marginBottom: 8 }}>
-      <span style={{ color: 'var(--app-text)', fontSize: 13 }}>{field.label}</span>
+      <span style={{ color: 'var(--app-text)', fontSize: 14 }}>{field.label}</span>
       <button
         onClick={() => onChange(!value)}
         aria-label={field.label}
@@ -218,11 +218,11 @@ export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, showTitl
         {!item && (
           <>
             <div style={{ borderRadius: 16, padding: '24px 16px', textAlign: 'center', background: 'var(--app-soft)', border: '1px dashed var(--app-border-strong)', marginBottom: 16 }}>
-              <p style={{ color: 'var(--app-muted)', fontSize: 13, fontWeight: 600, margin: '0 0 6px' }}>选中组件以配置内容</p>
-              <p style={{ color: 'var(--app-muted)', fontSize: 11, lineHeight: 1.6, margin: 0 }}>点击画布中的任意组件，可调整属性、尺寸与删除操作</p>
+              <p style={{ color: 'var(--app-muted)', fontSize: 14, fontWeight: 600, margin: '0 0 6px' }}>选中组件以配置内容</p>
+              <p style={{ color: 'var(--app-muted)', fontSize: 12, lineHeight: 1.6, margin: 0 }}>点击画布中的任意组件，可调整属性、尺寸与删除操作</p>
             </div>
             <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--app-border)' }}>
-              <div style={{ color: 'var(--app-heading)', fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
+              <div style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
                 画布信息
               </div>
               {[
@@ -232,7 +232,7 @@ export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, showTitl
               ].map(([label, value]) => (
                 <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                   <span style={{ color: 'var(--app-muted)', fontSize: 12 }}>{label}</span>
-                  <span style={{ color: value === '开启' ? 'var(--app-success)' : 'var(--app-heading)', background: value === '开启' ? 'var(--app-success-soft)' : 'var(--app-soft)', border: '1px solid var(--app-border)', borderRadius: 8, padding: '3px 8px', fontSize: 11, fontWeight: 500 }}>{value}</span>
+                  <span style={{ color: value === '开启' ? 'var(--app-success)' : 'var(--app-heading)', background: value === '开启' ? 'var(--app-success-soft)' : 'var(--app-soft)', border: '1px solid var(--app-border)', borderRadius: 8, padding: '3px 8px', fontSize: 12, fontWeight: 500 }}>{value}</span>
                 </div>
               ))}
             </div>
@@ -242,7 +242,7 @@ export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, showTitl
           <div style={{ marginBottom: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
               <span style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 600, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{def.name}</span>
-              <span style={{ background: 'var(--app-accent-soft)', color: 'var(--app-accent)', border: '1px solid var(--app-accent-border)', fontSize: 11, fontWeight: 500, padding: '1px 7px', borderRadius: 8, flexShrink: 0 }}>
+              <span style={{ background: 'var(--app-accent-soft)', color: 'var(--app-accent)', border: '1px solid var(--app-accent-border)', fontSize: 12, fontWeight: 500, padding: '1px 7px', borderRadius: 8, flexShrink: 0 }}>
                 {item.colSpan}×{item.rowSpan} 格
               </span>
             </div>
@@ -251,7 +251,7 @@ export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, showTitl
         )}
         {item && (
           <div style={{ marginBottom: 18, paddingTop: 14, borderTop: '1px solid var(--app-border)' }}>
-            <div style={{ color: 'var(--app-heading)', fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
+            <div style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
               尺寸设置
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -281,7 +281,7 @@ export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, showTitl
                 paddingTop: idx > 0 ? 14 : 0,
                 borderTop: idx > 0 ? '1px solid var(--app-border)' : 'none',
               }}>
-                <span style={{ color: 'var(--app-heading)', fontSize: 13, fontWeight: 600 }}>
+                <span style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 600 }}>
                   {field.label}
                 </span>
               </div>

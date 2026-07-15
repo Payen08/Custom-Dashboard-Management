@@ -8,4 +8,9 @@
   Run `npm i` to install the dependencies.
 
   Run `npm run dev` to start the development server.
-  
+
+  ## Design system
+
+  Product visual and interaction rules are documented in `guidelines/Guidelines.md`.
+  Shared tokens and layout/component primitives live in `src/styles/design-system.css`;
+  theme palettes and semantic color mappings live in `src/app/theme.ts`.

@@ -12,6 +12,10 @@ type CssVars = CSSProperties & Record<string, string | number | undefined>;
 function scopeVars(scope: ArcoScope): CssVars {
   const prefix = scope === 'robot' ? 'robot' : 'app';
   return {
+    '--arcoui-card-radius': `var(--${prefix}-card-radius, 16px)`,
+    '--arcoui-inner-radius': `var(--${prefix}-inner-radius, 12px)`,
+    '--arcoui-button-radius': 'var(--ds-radius-button, 8px)',
+    '--arcoui-control-radius': `var(--${prefix}-control-radius, 10px)`,
     '--arcoui-surface': `var(--${prefix}-surface)`,
     '--arcoui-soft': `var(--${prefix}-soft)`,
     '--arcoui-border': `var(--${prefix}-border)`,
@@ -102,12 +106,11 @@ interface ArcoModalProps {
   onOpenChange: (open: boolean) => void;
   title: ReactNode;
   description?: ReactNode;
-  icon?: ReactNode;
   children?: ReactNode;
   footer?: ReactNode;
-  headerExtra?: ReactNode;
   scope?: ArcoScope;
   status?: 'normal' | 'danger';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   width?: number | string;
   maxWidth?: number | string;
   maxHeight?: number | string;
@@ -121,19 +124,25 @@ export function ArcoModal({
   onOpenChange,
   title,
   description,
-  icon,
   children,
   footer,
-  headerExtra,
   scope = 'app',
   status = 'normal',
-  width = 420,
-  maxWidth = 'calc(100vw - 48px)',
-  maxHeight = 'calc(100vh - 56px)',
+  size = 'sm',
+  width,
+  maxWidth = 'var(--ds-modal-max-width, calc(100vw - 48px))',
+  maxHeight = 'var(--ds-modal-max-height, calc(100vh - 48px))',
   bodyStyle,
   contentStyle,
   closeable = true,
 }: ArcoModalProps) {
+  const sizeWidth = {
+    sm: 'var(--ds-modal-width-sm, 420px)',
+    md: 'var(--ds-modal-width-md, 560px)',
+    lg: 'var(--ds-modal-width-lg, 720px)',
+    xl: 'var(--ds-modal-width-xl, 900px)',
+  }[size];
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -145,21 +154,22 @@ export function ArcoModal({
           className="arcoui-modal-content"
           data-scope={scope}
           data-status={status}
+          data-size={size}
           style={{
             ...scopeVars(scope),
-            width,
+            width: width ?? sizeWidth,
             maxWidth,
             maxHeight,
             ...contentStyle,
           }}
         >
           <div className="arcoui-modal-header">
-            {icon && <div className="arcoui-modal-icon">{icon}</div>}
             <div className="arcoui-modal-title-area">
               <Dialog.Title className="arcoui-modal-title">{title}</Dialog.Title>
-              {description && <Dialog.Description className="arcoui-modal-description">{description}</Dialog.Description>}
+              <Dialog.Description className={description ? 'arcoui-modal-description' : 'arcoui-visually-hidden'}>
+                {description ?? '弹窗内容'}
+              </Dialog.Description>
             </div>
-            {headerExtra && <div className="arcoui-modal-header-extra">{headerExtra}</div>}
             {closeable && (
               <Dialog.Close asChild>
                 <ArcoIconButton

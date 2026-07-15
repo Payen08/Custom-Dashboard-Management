@@ -1,61 +1,137 @@
-**Add your own guidelines here**
-<!--
+# 产品视觉与交互规范
 
-System Guidelines
+本文件是页面设计与代码生成的强制约束。设计系统的代码单一来源为：
 
-Use this file to provide the AI with rules and guidelines you want it to follow.
-This template outlines a few examples of things you can add. You can add your own sections and format it to suit your needs
+- 基础与布局 Token：`src/styles/design-system.css`
+- 明暗主题与语义颜色：`src/app/theme.ts`
+- 基础 React 组件：`src/app/components/ArcoLike.tsx`
+- 基础组件样式：`src/styles/arco-like.css`
 
-TIP: More context isn't always better. It can confuse the LLM. Try and add the most important rules you need
+优先级：页面特殊规则 < 业务组件规则 < 基础组件规则 < Design Token。页面不得重复定义已存在的 Token。
 
-# General guidelines
+## 1. Design Token
 
-Any general rules you want the AI to follow.
-For example:
+### 命名
 
-* Only use absolute positioning when necessary. Opt for responsive and well structured layouts that use flexbox and grid by default
-* Refactor code as you go to keep code clean
-* Keep file sizes small and put helper functions and components in their own files.
+- `--ds-*`：跨产品共享的设计 Token。
+- `--app-*`：Web 应用语义变量，兼容既有页面。
+- `--robot-*`：机器人工作区语义变量，兼容既有页面。
+- 颜色必须使用语义名称，不按视觉值命名；例如使用 `danger`，不得使用 `red`。
 
---------------
+### 颜色
 
-# Design system guidelines
-Rules for how the AI should make generations look like your company's design system
+- 页面、布局、卡片、弱背景分别使用 `page / layout / surface / soft`。
+- 文本按 `heading / text / muted` 三级使用。
+- 品牌和状态色按 `accent / info / success / warning / danger` 使用。
+- 禁止在组件内新增十六进制颜色；3D 场景、坐标轴、图表数据系列除外。
+- 明暗模式必须来自 `THEME_PALETTES`，不得在页面组件中独立维护两套颜色。
 
-Additionally, if you select a design system to use in the prompt box, you can reference
-your design system's components, tokens, variables and components.
-For example:
+### 字体
 
-* Use a base font-size of 14px
-* Date formats should always be in the format “Jun 10”
-* The bottom toolbar should only ever have a maximum of 4 items
-* Never use the floating action button with the bottom toolbar
-* Chips should always come in sets of 3 or more
-* Don't use a dropdown if there are 2 or fewer options
+- 仅使用 `--ds-font-size-*`、`--ds-font-weight-*`、`--ds-line-height-*`。
+- 字号只使用偶数阶梯：10 / 12 / 14 / 16 / 18 / 20 / 24px，禁止新增 11 / 13 / 15px 等单数字号。
+- 正文默认 14px；辅助信息与紧凑标签 12px；模块标题 16–18px；页面标题 20–24px。
+- 正文常规字重 400；交互和标签 500/600；页面标题不超过 700。
+- 数字、版本号、坐标、代码和文件名可使用等宽字体 Token。
 
-You can also create sub sections and add more specific details
-For example:
+### 间距
 
+- 使用 4px 基础栅格：4、8、12、16、20、24、32、40、48、64。
+- 控件内部优先 8/12/16；模块之间优先 16/24；页面区块之间优先 24/32。
+- 禁止为“看起来差不多”新增 13px、15px、17px 等临时间距。
 
-## Button
-The Button component is a fundamental interactive element in our design system, designed to trigger actions or navigate
-users through the application. It provides visual feedback and clear affordances to enhance user experience.
+### 圆角、阴影、层级与透明度
 
-### Usage
-Buttons should be used for important actions that users need to take, such as form submissions, confirming choices,
-or initiating processes. They communicate interactivity and should have clear, action-oriented labels.
+- 按钮 8px、输入类控件 10px、内部容器 12px、卡片/浮层 16px、胶囊 999px。
+- 阴影只使用 `none / xs / sm / card / overlay / dialog` 六级。
+- 层级只使用 `base / sticky / dropdown / drawer / modal / toast / tooltip`。
+- Disabled 透明度统一为 0.45；不得仅依赖透明度表达 Error 或选中状态。
 
-### Variants
-* Primary Button
-  * Purpose : Used for the main action in a section or page
-  * Visual Style : Bold, filled with the primary brand color
-  * Usage : One primary button per section to guide users toward the most important action
-* Secondary Button
-  * Purpose : Used for alternative or supporting actions
-  * Visual Style : Outlined with the primary color, transparent background
-  * Usage : Can appear alongside a primary button for less important actions
-* Tertiary Button
-  * Purpose : Used for the least important actions
-  * Visual Style : Text-only with no border, using primary color
-  * Usage : For actions that should be available but not emphasized
--->
+## 2. 页面布局
+
+- 页面必须使用 `--ds-layout-*`；默认页面边距 24px、模块间距 16px。
+- 导航、侧栏、内容区必须是 `flex/grid` 布局，禁止用绝对定位搭建主体结构。
+- 主内容必须设置 `min-width: 0`、`min-height: 0`，需要滚动的最近容器负责 `overflow`。
+- 固定表格列、吸顶栏、侧栏不得制造无意义竖线；通过背景和阴影表达层级。
+- 12 列栅格用于桌面端，移动端降为 4 列。
+
+## 3. 基础组件
+
+- 优先复用 `ArcoLike` 中的 Button、Input、Select、Checkbox、Modal、Upload 等组件。
+- 新基础组件必须包含 Normal、Hover、Active、Focus、Disabled、Loading 状态。
+- 同一模块仅允许一个主按钮；危险操作必须使用 danger 状态并二次确认。
+- 输入框与选择器必须有可见 Label；Placeholder 不能替代 Label。
+- 表格默认表头 44px、数据行 52px；宽表使用内部横向滚动。
+- 页面工具栏的搜索框与“导入、导出、刷新、新建/新增”主要操作统一 40px 高；弹窗表单输入和 Footer 按钮也使用 40px。表格行内操作、标签增删等紧凑控件保持 24–32px。
+- 常规文字按钮默认 40px 高，紧凑按钮只允许 32px，迷你图标操作只允许 24px；按钮圆角全部使用 8px，不允许页面自行定义高度或圆角。
+- Modal 用于需要确认的短任务；Drawer 用于保留页面上下文的连续配置。
+- Dropdown 使用 HeroUI 风格浮层：16px 外圆角、12px 条目圆角、overlay 阴影、危险项独立状态。
+
+### 3.1 弹窗标准
+
+弹窗统一使用 `ArcoModal`，不得在业务页面重新搭建遮罩、定位、标题栏或底部操作区。
+
+| 规格 | 宽度 | 适用场景 |
+| --- | ---: | --- |
+| `sm` | 420px | 确认、删除、单一短任务 |
+| `md` | 560px | 标准表单、创建或编辑 |
+| `lg` | 720px | 多段表单、小型数据列表 |
+| `xl` | 900px | 大型列表、对比、可展开详情 |
+
+- 默认最大宽度为 `calc(100vw - 48px)`，最大高度为 `calc(100vh - 48px)`；窄屏不得超出视口。
+- 弹窗圆角统一 16px，遮罩使用 `overlay` 语义色，阴影使用 `--ds-shadow-dialog`。危险弹窗也保持中性外边框，不使用整圈红色边框。
+- 标题统一使用 18px / 600；禁止在标题左侧放图标，右侧只保留关闭按钮。
+- 标题描述是可选项，非必要不显示。只有需要在任务开始前说明系统行为、输入结果或操作范围时，才使用一行 12px 描述；禁止重复标题或堆叠多行帮助文字。
+- 具体风险、影响数量、校验错误和表单字段帮助属于正文内容，应放入 Body 的提示区、字段帮助文字或危险信息条。
+- Header 左右间距 24px；Body 左右间距 24px；Footer 右对齐，与正文共用同一对齐线。
+- 弹窗内的 Input、Textarea 和 Select 统一使用 `surface` 白色底与中性灰色描边；Hover 只加深边框，Focus 使用主题色 Focus Ring。页面搜索框可继续使用弱填充背景。
+- 高度超出时只允许 Body 滚动，Header 与 Footer 必须固定；列表型弹窗的局部列表可再设内部最大高度。
+- Footer 操作顺序为“次要 / 取消”在左、“主要 / 确认”在右；只有关闭动作时使用普通次要按钮。
+- 同一弹窗最多一个主按钮；删除等危险操作使用 danger 按钮并提供明确后果说明。
+- 列表型弹窗优先使用分段切换 + 单层列表 / 折叠列表，禁止在展开区再套完整表格或多层卡片。
+- 关闭规则统一：右上角 `X`、`Esc`、点击遮罩及 Footer “关闭 / 取消”使用同一个 `onOpenChange` 收口；未保存表单关闭前需二次确认。
+
+## 4. 业务组件
+
+- 设备卡片、状态卡片、数据面板、配置面板和图表容器必须建立独立业务类，不得复制页面内联样式。
+- 业务组件只能组合基础组件和 Token，不得覆盖基础组件的核心状态规则。
+- 卡片必须预留异步内容空间，避免 Loading 完成后发生布局跳动。
+- 状态不能只用颜色表达，必须同时使用文字、图标或形状。
+- 3D、图表等深色内容区属于独立 Scene Scope，不得反向污染普通页面主题。
+
+## 5. 页面模板
+
+- 列表页：页面标题/说明 + 搜索筛选/新增 + 表格或卡片区。
+- 详情页：摘要区 + 主内容 + 可选侧栏；主要操作置于摘要区右侧。
+- 配置页：导航树/步骤 + 配置内容 + 固定提交区，内部区域独立滚动。
+- 数据看板：12 列栅格，指标卡在上、核心数据居中、辅助信息在侧或下方。
+- 编辑器页面：顶部任务栏 + 左侧资源 + 中央画布 + 右侧属性；三栏高度一致、各自内部滚动。
+- 新页面优先使用 `.ds-page--list/detail/config/dashboard/editor` 模板类。
+
+## 6. 响应规则
+
+- ≥1200px：完整导航与多栏布局。
+- 768–1199px：减少页面边距和侧栏宽度，优先保持主任务区。
+- <768px：多栏改纵向；侧栏宽度变 100%；页面边距 16px。
+- 内容溢出时先压缩可伸缩区域，再启用内部滚动，不允许正文被裁切。
+- 表格在窄屏可横向滚动或转卡片；操作列不得被遮挡。
+- Hover 入口在触屏设备必须常显或有等价点击入口。
+
+## 7. 状态规则
+
+- Normal：信息层级清晰，不使用多余高亮。
+- Hover：只改变颜色、背景、边框或阴影，不改变占位尺寸。
+- Active/Selected：必须持续可见，与 Hover 有明显区别。
+- Focus：所有键盘可操作组件显示 2px Focus Ring。
+- Disabled：降低透明度、显示不可用光标，并阻止事件。
+- Loading：按钮显示 Spinner；内容区优先 Skeleton，并保留最终尺寸。
+- Empty：说明为什么为空，并在可执行时提供下一步操作。
+- Error：说明问题与恢复方式；危险色不能作为唯一信息。
+- 动效默认 120–240ms，并遵守 `prefers-reduced-motion`。
+
+## 8. 开发约束
+
+- 新页面不得新增大段 `<style>` 内联样式；通用样式进入设计系统，业务样式进入对应业务组件样式文件。
+- React 内联样式仅允许动态几何值、运行时坐标、图表数据或一次性计算结果。
+- 改动后必须执行 `npm run build` 与 `git diff --check`。
+- 每次新增组件前，先确认现有基础组件或业务组件是否已覆盖需求。

@@ -29,7 +29,7 @@ function KpiMetricsWidget() {
             <span style={{ color: m.color, fontSize: 22, fontWeight: 600, lineHeight: 1 }}>{m.value}</span>
             <span style={{ color: m.color, fontSize: 12, fontWeight: 600 }}>{m.unit}</span>
           </div>
-          <span style={{ color: 'var(--app-muted)', fontSize: 11 }}>{m.label}</span>
+          <span style={{ color: 'var(--app-muted)', fontSize: 12 }}>{m.label}</span>
         </div>
       ))}
     </div>
@@ -49,7 +49,7 @@ function DeviceStatusWidget() {
   ];
   return (
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '12px 10px', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ color: 'var(--app-muted)', fontSize: 11, fontWeight: 500, marginBottom: 8, paddingLeft: 4 }}>设备状态</div>
+      <div style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500, marginBottom: 8, paddingLeft: 4 }}>设备状态</div>
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {devices.map((d, i) => (
           <div key={i} style={{
@@ -59,7 +59,7 @@ function DeviceStatusWidget() {
             border: '1px solid var(--app-border)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 13, color: 'var(--app-border-strong)', width: 16, textAlign: 'center' }}>{d.icon}</span>
+              <span style={{ fontSize: 14, color: 'var(--app-border-strong)', width: 16, textAlign: 'center' }}>{d.icon}</span>
               <span style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 500 }}>{d.name}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -86,7 +86,7 @@ function AlertInfoWidget() {
   return (
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '12px 14px', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <span style={{ color: 'var(--app-muted)', fontSize: 11, fontWeight: 500 }}>告警信息</span>
+        <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>告警信息</span>
         <span style={{ background: 'var(--app-danger-soft)', color: 'var(--app-danger)', fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 8 }}>
           {alerts.length} 条
         </span>
@@ -182,7 +182,7 @@ function MapViewWidget() {
 
       {/* Title */}
       <div style={{ position: 'absolute', top: 12, left: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ color: 'var(--app-scene-text)', fontSize: 13, fontWeight: 500 }}>实时地图与机器人状态</span>
+        <span style={{ color: 'var(--app-scene-text)', fontSize: 14, fontWeight: 500 }}>实时地图与机器人状态</span>
         <span style={{ background: 'var(--app-success-soft)', color: 'var(--app-success)', fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99, border: '1px solid var(--app-success)' }}>● 在线</span>
       </div>
 
@@ -233,7 +233,7 @@ function TrayStatusWidget() {
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ color: 'var(--app-muted)', fontSize: 11, fontWeight: 500 }}>料盘情况</span>
+        <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>料盘情况</span>
         <span style={{ color: 'var(--app-muted)', fontSize: 10 }}>233种进 3/9</span>
       </div>
 
@@ -242,7 +242,7 @@ function TrayStatusWidget() {
         {/* Raw trays (生料盘) */}
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ color: 'var(--app-text)', fontSize: 11, fontWeight: 600 }}>生料盘</span>
+            <span style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 600 }}>生料盘</span>
             <span style={{ color: 'var(--app-accent)', fontSize: 10, fontWeight: 500 }}>4/0</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
@@ -260,7 +260,7 @@ function TrayStatusWidget() {
         {/* Temp trays (暂料盘) */}
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ color: 'var(--app-text)', fontSize: 11, fontWeight: 600 }}>暂料盘</span>
+            <span style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 600 }}>暂料盘</span>
             <span style={{ color: 'var(--app-muted)', fontSize: 10, fontWeight: 500 }}>0/0</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
@@ -272,15 +272,15 @@ function TrayStatusWidget() {
 
         {/* Production completion */}
         <div style={{ flex: 1.5 }}>
-          <div style={{ color: 'var(--app-text)', fontSize: 11, fontWeight: 600, marginBottom: 6 }}>料盘生产完成状态</div>
+          <div style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>料盘生产完成状态</div>
           <div style={{ display: 'flex', gap: 4 }}>
             {prodStatus.map(p => (
               <div key={p.num} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                 <div style={{ width: '100%', aspectRatio: '1', borderRadius: 8, background: p.bg, border: `1px solid color-mix(in srgb, ${p.color} 27%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <span style={{ color: p.color, fontSize: 12, fontWeight: 600 }}>{p.num}</span>
                 </div>
-                <span style={{ color: p.color, fontSize: 9, fontWeight: 600 }}>{p.label}</span>
-                <span style={{ color: 'var(--app-heading)', fontSize: 11, fontWeight: 500 }}>{p.count}</span>
+                <span style={{ color: p.color, fontSize: 10, fontWeight: 600 }}>{p.label}</span>
+                <span style={{ color: 'var(--app-heading)', fontSize: 12, fontWeight: 500 }}>{p.count}</span>
               </div>
             ))}
           </div>
@@ -299,7 +299,7 @@ function ActiveTasksWidget() {
   return (
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '12px 14px', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <span style={{ color: 'var(--app-muted)', fontSize: 11, fontWeight: 500 }}>正在执行的任务</span>
+        <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>正在执行的任务</span>
         <span style={{ background: 'var(--app-success-soft)', color: 'var(--app-success)', fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 8 }}>
           {tasks.length} 个
         </span>
@@ -317,7 +317,7 @@ function ActiveTasksWidget() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: 'var(--app-heading)', fontSize: 12, fontWeight: 500, marginBottom: 2 }}>{t.name}</div>
-                <div style={{ color: 'var(--app-muted)', fontSize: 11 }}>{t.sub}</div>
+                <div style={{ color: 'var(--app-muted)', fontSize: 12 }}>{t.sub}</div>
               </div>
             </div>
             <ArcoButton long size="small" status="danger" icon={<X size={12} />}>
@@ -342,7 +342,7 @@ function TaskQueueWidget() {
   return (
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '12px 14px', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexShrink: 0 }}>
-        <span style={{ color: 'var(--app-muted)', fontSize: 11, fontWeight: 500 }}>任务队列</span>
+        <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>任务队列</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ background: 'var(--app-accent-soft)', color: 'var(--app-accent)', fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 8 }}>20 条</span>
           <span style={{ color: 'var(--app-border-strong)', fontSize: 10 }}>近20条任务记录 ›</span>
@@ -672,7 +672,7 @@ export function CanvasArea({
                 <div style={{ width: 60, height: 60, borderRadius: 18, background: 'var(--app-accent-soft)', border: '2px dashed var(--app-accent-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
                   <Layers size={26} color="var(--app-accent)" />
                 </div>
-                <p style={{ color: 'var(--app-muted)', fontSize: 15, lineHeight: 1.7, margin: 0 }}>
+                <p style={{ color: 'var(--app-muted)', fontSize: 16, lineHeight: 1.7, margin: 0 }}>
                   从左侧拖拽组件到画布<br />或点击已放置组件编辑属性
                 </p>
               </div>
@@ -691,7 +691,7 @@ export function CanvasArea({
               border: `2px dashed ${dropPreview.canPlace ? 'var(--app-success)' : 'var(--app-danger)'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <span style={{ color: dropPreview.canPlace ? 'var(--app-success)' : 'var(--app-danger)', fontSize: 13, fontWeight: 600 }}>
+              <span style={{ color: dropPreview.canPlace ? 'var(--app-success)' : 'var(--app-danger)', fontSize: 14, fontWeight: 600 }}>
                 {dropPreview.canPlace ? '释放以放置' : '位置已占用'}
               </span>
             </div>
@@ -757,9 +757,9 @@ export function CanvasArea({
                       right: 8,
                       bottom: 8,
                       zIndex: 12,
-                      width: 28,
-                      height: 28,
-                      borderRadius: 9,
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
                       background: 'var(--app-brand)',
                       color: 'var(--app-surface)',
                       border: '1px solid color-mix(in srgb, var(--app-surface) 65%, transparent)',

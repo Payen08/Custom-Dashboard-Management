@@ -102,7 +102,7 @@ export function PanelList({
             value={schemeQuery}
             onChange={e => setSchemeQuery(e.target.value)}
             placeholder="搜索"
-            style={{ height: 44, borderRadius: 8, paddingLeft: 38 }}
+            style={{ height: 40, borderRadius: 8, paddingLeft: 38 }}
           />
         </label>
       </div>
@@ -147,7 +147,7 @@ export function PanelList({
                       {scheme.name}
                     </span>
                   </div>
-                  <div style={{ color: 'var(--app-muted)', fontSize: 13, marginBottom: 8 }}>{scheme.lastEdited} 更新</div>
+                  <div style={{ color: 'var(--app-muted)', fontSize: 14, marginBottom: 8 }}>{scheme.lastEdited} 更新</div>
                   <span
                     style={{
                       display: 'inline-flex',
@@ -158,7 +158,7 @@ export function PanelList({
                       background: 'var(--app-accent-soft)',
                       color: 'var(--app-accent)',
                       border: '1px solid var(--app-accent-border)',
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: 500,
                     }}
                   >
@@ -226,7 +226,7 @@ export function PanelList({
             background: 'var(--app-soft)',
             border: '1px dashed var(--app-border-strong)',
             color: 'var(--app-muted)',
-            fontSize: 13,
+            fontSize: 14,
             textAlign: 'center',
             padding: '28px 16px',
           }}>
@@ -267,7 +267,7 @@ export function PanelList({
         open={renamingId !== null}
         onOpenChange={open => { if (!open) setRenamingId(null); }}
         title="重命名面板"
-        width={340}
+        size="sm"
         footer={(
           <>
             <ArcoButton onClick={() => setRenamingId(null)}>取消</ArcoButton>

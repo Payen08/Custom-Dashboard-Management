@@ -165,22 +165,22 @@ export function ComponentManagerDialog({
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
           <div style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 600 }}>标签</div>
-          <span style={{ color: 'var(--app-muted)', fontSize: 11 }}>{form.tags.length}/{MAX_TAGS}</span>
+          <span style={{ color: 'var(--app-muted)', fontSize: 12 }}>{form.tags.length}/{MAX_TAGS}</span>
         </div>
         {form.tags.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
             {form.tags.map(tag => (
               <span key={tag} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5, height: 28, padding: '0 7px 0 9px', borderRadius: 8,
+                display: 'inline-flex', alignItems: 'center', gap: 4, height: 32, padding: '0 8px 0 10px', borderRadius: 8,
                 background: 'var(--app-accent-soft)', color: 'var(--app-accent)', border: '1px solid var(--app-accent-border)',
-                fontSize: 11, fontWeight: 600,
+                fontSize: 12, fontWeight: 600,
               }}>
                 <Tag size={11} />{tag}
                 <button
                   onClick={() => removeTag(tag)}
                   aria-label={`移除标签${tag}`}
                   title={`移除标签${tag}`}
-                  style={{ display: 'grid', placeItems: 'center', width: 16, height: 16, padding: 0, border: 0, borderRadius: 4, background: 'transparent', color: 'inherit', cursor: 'pointer' }}
+                  style={{ display: 'grid', placeItems: 'center', width: 24, height: 24, padding: 0, border: 0, borderRadius: 8, background: 'transparent', color: 'inherit', cursor: 'pointer' }}
                 >
                   <X size={11} />
                 </button>
@@ -194,7 +194,7 @@ export function ComponentManagerDialog({
               <button
                 key={tag}
                 onClick={() => addSuggestedTag(tag)}
-                style={{ height: 26, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '0 8px', borderRadius: 8, border: '1px solid var(--app-border)', background: 'var(--app-soft)', color: 'var(--app-text)', fontSize: 11, cursor: 'pointer' }}
+                style={{ height: 32, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 10px', borderRadius: 8, border: '1px solid var(--app-border)', background: 'var(--app-soft)', color: 'var(--app-text)', fontSize: 12, cursor: 'pointer' }}
               >
                 <Plus size={10} />{tag}
               </button>
@@ -214,7 +214,7 @@ export function ComponentManagerDialog({
             placeholder={atLimit ? '最多添加 8 个标签' : placeholder}
             aria-label={ariaLabel}
             disabled={atLimit}
-            style={{ flex: 1, height: 36 }}
+            style={{ flex: 1, height: 40 }}
           />
           <ArcoIconButton
             type="secondary"
@@ -223,6 +223,7 @@ export function ComponentManagerDialog({
             title="添加标签"
             onClick={addTag}
             disabled={atLimit || !tagInput.trim()}
+            style={{ width: 40, height: 40 }}
           />
         </div>
       </div>
@@ -237,14 +238,7 @@ export function ComponentManagerDialog({
         onOpenChange(next);
       }}
       title={isForm ? (view === 'add' ? '导入组件' : `编辑组件 · ${form.name}`) : '组件管理'}
-      description={view === 'add'
-        ? '上传内部组件包。第三方外部开发者导入暂未开放。'
-        : isForm
-          ? '维护组件适用范围和标签。'
-          : '统一管理自定义首页和组件库使用的组件。'}
-      icon={view === 'add' ? undefined : isForm ? <Edit3 size={17} /> : <LayoutGrid size={17} />}
-      width={isForm ? 620 : 920}
-      maxHeight="calc(100vh - 48px)"
+      size={isForm ? 'lg' : 'xl'}
       bodyStyle={{ padding: isForm ? '20px 24px 24px' : '0 24px 20px' }}
       footer={isForm ? (
         <>
@@ -350,7 +344,7 @@ export function ComponentManagerDialog({
                     background: filter === key ? 'var(--app-surface)' : 'transparent',
                     color: filter === key ? 'var(--app-accent)' : 'var(--app-muted)',
                     boxShadow: filter === key ? '0 1px 3px var(--app-shadow-color)' : 'none',
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: filter === key ? 600 : 500,
                     cursor: 'pointer',
                   }}
@@ -365,7 +359,7 @@ export function ComponentManagerDialog({
             <div className="component-manager-row component-manager-row--header" style={{
               padding: '8px 12px',
               color: 'var(--app-muted)',
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 600,
             }}>
               <span>组件</span><span>组件包</span><span>适用范围</span><span style={{ textAlign: 'right' }}>操作</span>
@@ -397,10 +391,10 @@ export function ComponentManagerDialog({
                       <BarChart2 size={15} />
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ color: 'var(--app-heading)', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {component.name}
                       </div>
-                      <div style={{ marginTop: 3, color: 'var(--app-muted)', fontSize: 11 }}>
+                      <div style={{ marginTop: 3, color: 'var(--app-muted)', fontSize: 12 }}>
                         {component.isCustom ? '自定义组件' : '系统组件'}
                       </div>
                     </div>
@@ -443,7 +437,7 @@ export function ComponentManagerDialog({
               );
             })}
             {filteredComponents.length === 0 && (
-              <div style={{ padding: '48px 16px', textAlign: 'center', color: 'var(--app-muted)', fontSize: 13 }}>
+              <div style={{ padding: '48px 16px', textAlign: 'center', color: 'var(--app-muted)', fontSize: 14 }}>
                 没有符合条件的组件
               </div>
             )}
@@ -452,7 +446,7 @@ export function ComponentManagerDialog({
       ) : view === 'add' ? (
         <div style={{ display: 'grid', gap: 16 }}>
           <div>
-            <div style={{ color: 'var(--app-heading)', fontSize: 13, fontWeight: 600, marginBottom: 9 }}>上传组件包</div>
+            <div style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 600, marginBottom: 9 }}>上传组件包</div>
             <label style={{
               minHeight: 190,
               padding: 24,
@@ -505,7 +499,7 @@ export function ComponentManagerDialog({
               <FileArchive size={18} color="var(--app-accent)" />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: 'var(--app-heading)', fontSize: 12, fontWeight: 600 }}>{componentNameFromFile(packageFile.name)}</div>
-                <div style={{ marginTop: 3, color: 'var(--app-muted)', fontSize: 11 }}>导入后将在组件库和自定义首页中同步可用</div>
+                <div style={{ marginTop: 3, color: 'var(--app-muted)', fontSize: 12 }}>导入后将在组件库和自定义首页中同步可用</div>
               </div>
               <ArcoIconButton type="text" size="small" icon={<X size={13} />} aria-label="移除组件包" onClick={() => setPackageFile(null)} />
             </div>
@@ -527,7 +521,7 @@ export function ComponentManagerDialog({
               <FileArchive size={18} color="var(--app-accent)" />
               <div>
                 <div style={{ color: 'var(--app-heading)', fontSize: 12, fontWeight: 600 }}>{form.packageName ?? form.name}</div>
-                <div style={{ marginTop: 3, color: 'var(--app-muted)', fontSize: 11 }}>{form.packageSize ?? '组件包'} · {form.importedAt ?? '已导入'}</div>
+                <div style={{ marginTop: 3, color: 'var(--app-muted)', fontSize: 12 }}>{form.packageSize ?? '组件包'} · {form.importedAt ?? '已导入'}</div>
               </div>
             </div>
           )}
