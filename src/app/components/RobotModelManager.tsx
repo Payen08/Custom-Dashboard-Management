@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
-  ArrowLeft, Box, CheckCircle2, ChevronDown, ChevronRight, FileCode2, FileJson, GitBranch, LayoutGrid,
-  MoreHorizontal, Pencil, Plus, RefreshCw, Save, Search, SlidersHorizontal, Trash2, X,
+  ArrowLeft, Box, CheckCircle2, ChevronDown, ChevronRight, FileCode2, FileJson, FileUp, LayoutGrid,
+  LockKeyhole, MoreHorizontal, Pencil, Plus, RefreshCw, Save, Search, SlidersHorizontal, Trash2, X,
 } from 'lucide-react';
 import {
   ArcoButton,
@@ -18,6 +18,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { ROBOT_THEME_VARS, type ThemeMode } from '../theme';
@@ -26,8 +27,9 @@ import type { SoftwareProduct } from '../softwareProducts';
 import { CategoryTree, buildInitialData as buildProductVersionData, type ProductCategory } from './ProductVersionManager';
 
 type PublishStatus = 'published' | 'draft';
-type TopologyKind = 'link' | 'joint';
+type TopologyKind = 'link' | 'joint' | 'mesh';
 type TopologyDropPosition = 'before' | 'inside' | 'after';
+type MeshRole = 'visual' | 'collision';
 type SoftwarePackageSlot = 'controller' | 'armDriver' | 'endEffector' | 'powerDriver' | 'perception';
 type JointType = 'fixed' | 'revolute' | 'continuous' | 'prismatic';
 
@@ -56,6 +58,12 @@ interface JointLimit {
   velocity: number;
 }
 
+interface LinkMesh {
+  filename: string;
+  scale: Vector3;
+  origin: OriginPose;
+}
+
 interface TopologyNode {
   id: string;
   label: string;
@@ -64,6 +72,11 @@ interface TopologyNode {
   axis?: Vector3;
   jointType?: JointType;
   limit?: JointLimit;
+  meshRole?: MeshRole;
+  mesh?: LinkMesh;
+  // Legacy fields remain readable so existing prototype data can be exported.
+  visualMesh?: LinkMesh;
+  collisionMesh?: LinkMesh;
   children?: TopologyNode[];
 }
 
@@ -152,6 +165,7 @@ const STATUS_META: Record<PublishStatus, { label: string; color: string; bg: str
 const DEFAULT_ORIGIN: OriginPose = { x: 0, y: 0, z: 0, rx: 0, ry: 0, rz: 0 };
 const DEFAULT_AXIS: Vector3 = { x: 0, y: 0, z: 1 };
 const DEFAULT_LIMIT: JointLimit = { lower: -180, upper: 180, effort: 80, velocity: 1.2 };
+const DEFAULT_MESH_SCALE: Vector3 = { x: 1, y: 1, z: 1 };
 const JOINT_TYPES: JointType[] = ['fixed', 'revolute', 'continuous', 'prismatic'];
 const THEME_STORAGE_KEY = 'robot-manager-theme-mode';
 
@@ -460,6 +474,42 @@ function mcrTopology(): TopologyNode[] {
       origin: { x: 0, y: 0, z: 0, rx: 0, ry: 0, rz: 0 },
       children: [
         {
+          id: 'base_body_mesh',
+          label: 'base_body_mesh',
+          kind: 'mesh',
+          meshRole: 'visual',
+          origin: { x: 0, y: 0, z: 0, rx: 0, ry: 0, rz: 0 },
+          mesh: {
+            filename: 'package://mcr_description/meshes/base_link.stl',
+            scale: { x: 1, y: 1, z: 1 },
+            origin: { x: 0, y: 0, z: 0, rx: 0, ry: 0, rz: 0 },
+          },
+        },
+        {
+          id: 'base_cover_mesh',
+          label: 'base_cover_mesh',
+          kind: 'mesh',
+          meshRole: 'visual',
+          origin: { x: 0, y: 0, z: 0.08, rx: 0, ry: 0, rz: 0 },
+          mesh: {
+            filename: 'package://mcr_description/meshes/base_link_cover.stl',
+            scale: { x: 1, y: 1, z: 1 },
+            origin: { x: 0, y: 0, z: 0.08, rx: 0, ry: 0, rz: 0 },
+          },
+        },
+        {
+          id: 'base_collision_mesh',
+          label: 'base_collision_mesh',
+          kind: 'mesh',
+          meshRole: 'collision',
+          origin: { x: 0, y: 0, z: 0, rx: 0, ry: 0, rz: 0 },
+          mesh: {
+            filename: 'package://mcr_description/meshes/base_link_collision.stl',
+            scale: { x: 1, y: 1, z: 1 },
+            origin: { x: 0, y: 0, z: 0, rx: 0, ry: 0, rz: 0 },
+          },
+        },
+        {
           id: 'chassis_joint',
           label: 'chassis_joint',
           kind: 'joint',
@@ -738,7 +788,7 @@ function updateTopologyNode(nodes: TopologyNode[], id: string, patch: Partial<To
 }
 
 function originOf(node: TopologyNode): OriginPose {
-  return { ...DEFAULT_ORIGIN, ...(node.origin ?? {}) };
+  return { ...DEFAULT_ORIGIN, ...(node.kind === 'mesh' ? node.mesh?.origin : node.origin) };
 }
 
 function axisOf(node: TopologyNode): Vector3 {
@@ -749,15 +799,64 @@ function limitOf(node: TopologyNode): JointLimit {
   return { ...DEFAULT_LIMIT, ...(node.limit ?? {}) };
 }
 
+function topologyMeshOf(node: TopologyNode): LinkMesh {
+  return {
+    filename: node.mesh?.filename ?? '',
+    scale: { ...DEFAULT_MESH_SCALE, ...(node.mesh?.scale ?? {}) },
+    origin: { ...DEFAULT_ORIGIN, ...(node.mesh?.origin ?? node.origin ?? {}) },
+  };
+}
+
+function topologyKindMeta(kind: TopologyKind) {
+  if (kind === 'link') {
+    return { label: '连杆', code: 'Link', color: 'var(--robot-accent)', background: 'var(--robot-accent-soft)', text: 'var(--robot-accent-text)' };
+  }
+  if (kind === 'joint') {
+    return { label: '关节', code: 'Joint', color: 'var(--robot-success)', background: 'var(--robot-success-soft)', text: 'var(--robot-success)' };
+  }
+  return { label: 'Mesh', code: 'Mesh', color: 'var(--robot-warning)', background: 'var(--robot-warning-soft)', text: 'var(--robot-warning)' };
+}
+
+function canAddTopologyChildKind(parentKind: TopologyKind, childKind: TopologyKind) {
+  if (parentKind === 'link') return childKind === 'joint' || childKind === 'mesh';
+  if (parentKind === 'joint') return childKind === 'link';
+  return false;
+}
+
+function buildLinkMeshXml(slot: 'visual' | 'collision', mesh?: LinkMesh): string {
+  if (!mesh?.filename.trim()) return '';
+  const origin = { ...DEFAULT_ORIGIN, ...mesh.origin };
+  const scale = { ...DEFAULT_MESH_SCALE, ...mesh.scale };
+  return [
+    `    <${slot}>`,
+    `      <origin xyz="${origin.x} ${origin.y} ${origin.z}" rpy="${origin.rx} ${origin.ry} ${origin.rz}" />`,
+    `      <geometry>`,
+    `        <mesh filename="${escapeXml(mesh.filename.trim())}" scale="${scale.x} ${scale.y} ${scale.z}" />`,
+    `      </geometry>`,
+    `    </${slot}>`,
+  ].join('\n');
+}
+
 function buildUrdf(model: RobotModel) {
   const flat = flattenTopology(model.topology);
   const links = flat.filter(node => node.kind === 'link');
   const joints = flat.filter(node => node.kind === 'joint');
   const linkXml = links.map(link => {
     const origin = originOf(link);
+    const meshNodes = (link.children ?? []).filter(child => child.kind === 'mesh');
+    const geometryXml = meshNodes.length > 0
+      ? meshNodes
+        .map(meshNode => buildLinkMeshXml(meshNode.meshRole ?? 'visual', topologyMeshOf(meshNode)))
+        .filter(Boolean)
+      : [
+        buildLinkMeshXml('visual', link.visualMesh),
+        buildLinkMeshXml('collision', link.collisionMesh),
+      ].filter(Boolean);
     return [
       `  <!-- link_origin name="${escapeXml(link.label)}" xyz="${origin.x} ${origin.y} ${origin.z}" rpy="${origin.rx} ${origin.ry} ${origin.rz}" -->`,
-      `  <link name="${escapeXml(link.label)}" />`,
+      geometryXml.length === 0
+        ? `  <link name="${escapeXml(link.label)}" />`
+        : [`  <link name="${escapeXml(link.label)}">`, ...geometryXml, '  </link>'].join('\n'),
     ].join('\n');
   }).join('\n');
   const packageXml = SOFTWARE_PACKAGE_SLOTS.map(slot => {
@@ -820,6 +919,46 @@ interface ParsedUrdfJoint {
 interface ParsedUrdfLink {
   name: string;
   origin: OriginPose;
+  meshes: Array<{
+    name: string;
+    role: MeshRole;
+    data: LinkMesh;
+  }>;
+}
+
+function parseMeshElements(linkEl: Element, role: MeshRole, linkName: string): ParsedUrdfLink['meshes'] {
+  const containers = Array.from(linkEl.querySelectorAll(`:scope > ${role}`));
+  return containers.flatMap((container, index) => {
+    const meshEl = container.querySelector(':scope > geometry > mesh');
+    const filename = meshEl?.getAttribute('filename')?.trim();
+    if (!meshEl || !filename) return [];
+    const scaleValues = (meshEl.getAttribute('scale') ?? '1 1 1').trim().split(/\s+/).map(Number);
+    return [{
+      name: container.getAttribute('name')?.trim() || `${linkName}_${role}_${index + 1}_mesh`,
+      role,
+      data: {
+        filename,
+        scale: {
+          x: Number.isFinite(scaleValues[0]) ? scaleValues[0] : 1,
+          y: Number.isFinite(scaleValues[1]) ? scaleValues[1] : 1,
+          z: Number.isFinite(scaleValues[2]) ? scaleValues[2] : 1,
+        },
+        origin: parseOrigin(container.querySelector(':scope > origin')),
+      },
+    }];
+  });
+}
+
+function meshNodesFromParsedLink(link: ParsedUrdfLink): TopologyNode[] {
+  return link.meshes.map((entry, index) => ({
+    id: `mesh-${link.name}-${entry.role}-${index}-${Date.now()}`,
+    label: entry.name,
+    kind: 'mesh',
+    meshRole: entry.role,
+    mesh: entry.data,
+    origin: entry.data.origin,
+    children: [],
+  }));
 }
 
 function parseUrdf(xmlText: string): { links: ParsedUrdfLink[]; joints: ParsedUrdfJoint[] } {
@@ -836,7 +975,14 @@ function parseUrdf(xmlText: string): { links: ParsedUrdfLink[]; joints: ParsedUr
     const name = linkEl.getAttribute('name') ?? 'unnamed_link';
     const originEl = linkEl.querySelector(':scope > origin');
     const origin = parseOrigin(originEl);
-    links.push({ name, origin });
+    links.push({
+      name,
+      origin,
+      meshes: [
+        ...parseMeshElements(linkEl, 'visual', name),
+        ...parseMeshElements(linkEl, 'collision', name),
+      ],
+    });
   });
 
   const joints: ParsedUrdfJoint[] = [];
@@ -891,7 +1037,7 @@ function urdfToTopology(links: ParsedUrdfLink[], joints: ParsedUrdfJoint[]): Top
       label: link.name,
       kind: 'link',
       origin: link.origin,
-      children: [],
+      children: meshNodesFromParsedLink(link),
     });
   });
 
@@ -939,7 +1085,10 @@ function urdfToTopology(links: ParsedUrdfLink[], joints: ParsedUrdfJoint[]): Top
         };
         const childLink = linkMap.get(joint.child);
         if (childLink) {
-          childLink.children = buildChildren(joint.child);
+          childLink.children = [
+            ...(childLink.children ?? []).filter(child => child.kind === 'mesh'),
+            ...buildChildren(joint.child),
+          ];
           jointNode.children!.push(childLink);
         }
         children.push(jointNode);
@@ -955,7 +1104,10 @@ function urdfToTopology(links: ParsedUrdfLink[], joints: ParsedUrdfJoint[]): Top
     visited.add(rootName);
     const rootLink = linkMap.get(rootName);
     if (rootLink) {
-      rootLink.children = buildChildren(rootName);
+      rootLink.children = [
+        ...(rootLink.children ?? []).filter(child => child.kind === 'mesh'),
+        ...buildChildren(rootName),
+      ];
       rootNodes.push(rootLink);
     }
   });
@@ -1027,7 +1179,16 @@ function canMoveTopologyNode(
   if (draggedId === targetId) return false;
   const dragged = findTopologyLocation(nodes, draggedId);
   const target = findTopologyLocation(nodes, targetId);
-  if (!dragged || !target || dragged.parentId === undefined) return false;
+  if (!dragged || !target) return false;
+  if (_position === 'inside') {
+    if (target.node.kind === 'mesh') return false;
+    if (dragged.node.kind === 'mesh') return target.node.kind === 'link';
+    return true;
+  }
+  if (dragged.node.kind === 'mesh') {
+    if (!target.parentId) return false;
+    return findTopologyNode(nodes, target.parentId)?.kind === 'link';
+  }
   return true;
 }
 
@@ -1221,13 +1382,19 @@ function RobotCardPreview({ model }: { model: RobotModel }) {
 function RobotScene({
   model,
   editing,
+  readOnly,
   onToggleEditing,
   onPoseChange,
+  onExport,
+  onReadOnlyAttempt,
 }: {
   model: RobotModel;
   editing: boolean;
+  readOnly: boolean;
   onToggleEditing: () => void;
   onPoseChange: (pose: RobotPose) => void;
+  onExport: () => void;
+  onReadOnlyAttempt: () => void;
 }) {
   const isHumanoid = model.type.includes('人形');
   const baseY = 282 - model.pose.height * 0.35;
@@ -1235,21 +1402,8 @@ function RobotScene({
 
   return (
     <section className="hero-detail-card hero-scene-card">
-      <header className="hero-detail-card-header">
-        <h3 className="hero-detail-card-title">3D 模型可视化</h3>
-        <button
-          type="button"
-          className="hero-detail-tool-button"
-          data-active={editing ? 'true' : 'false'}
-          onClick={onToggleEditing}
-        >
-          <SlidersHorizontal size={16} />
-          {editing ? '结束编辑' : '开始编辑'}
-        </button>
-      </header>
-
       <div className="hero-scene-content" style={{ background: 'var(--robot-scene-bg)' }}>
-        <svg viewBox="0 0 720 430" style={{ width: '100%', height: '100%', display: 'block' }}>
+        <svg viewBox="0 0 720 430" preserveAspectRatio="xMidYMid slice" style={{ width: '100%', height: '100%', display: 'block' }}>
           <defs>
             <linearGradient id="robot-space-bg" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="var(--robot-scene-top)" />
@@ -1294,13 +1448,13 @@ function RobotScene({
             );
           })}
 
-          <g transform="translate(82 342)">
+          <g transform="translate(640 382)">
             <line x1="0" y1="0" x2="70" y2="0" stroke="var(--robot-axis-x)" strokeWidth="3" />
             <line x1="0" y1="0" x2="0" y2="-70" stroke="var(--robot-axis-y)" strokeWidth="3" />
-            <line x1="0" y1="0" x2="46" y2="-42" stroke="var(--robot-axis-z)" strokeWidth="3" />
-            <text x="78" y="5" fill="var(--robot-axis-x)" fontSize="12" fontWeight="700">X</text>
-            <text x="-10" y="-78" fill="var(--robot-axis-y)" fontSize="12" fontWeight="700">Y</text>
-            <text x="52" y="-48" fill="var(--robot-axis-z)" fontSize="12" fontWeight="700">Z</text>
+            <line x1="0" y1="0" x2="-42" y2="-38" stroke="var(--robot-axis-z)" strokeWidth="3" />
+            <text x="76" y="5" fill="var(--robot-axis-x)" fontSize="12" fontWeight="700">X</text>
+            <text x="-9" y="-78" fill="var(--robot-axis-y)" fontSize="12" fontWeight="700">Y</text>
+            <text x="-56" y="-42" fill="var(--robot-axis-z)" fontSize="12" fontWeight="700">Z</text>
           </g>
 
           <g transform={`translate(360 ${baseY}) rotate(${model.pose.rotation})`} filter="url(#robot-glow)">
@@ -1326,24 +1480,34 @@ function RobotScene({
           </g>
         </svg>
 
-        <div style={{
-          position: 'absolute',
-          left: 16,
-          top: 16,
-          display: 'flex',
-          gap: 8,
-          alignItems: 'center',
-          flexWrap: 'wrap',
-        }}>
-          <HeroChip tone="accent">{model.type}</HeroChip>
-          <HeroChip tone="success">{model.componentCount} 组件</HeroChip>
+        <div className="hero-scene-status">
+          3D预览 <span /> {model.id.replace('robot-', '').toUpperCase()}
+        </div>
+
+        <div className="hero-scene-telemetry" aria-hidden="true">
+          {['J1  -0.292748', 'J2  -0.292748', 'J3  -0.292748', 'J4  -0.292748', 'J5  -0.292748', 'J6  -0.292748', 'X / Y / Z', '-0.292748 / -0.292748 / -0.292748', 'RX / RY / RZ', '-0.292748 / -0.292748 / -0.292748'].map((line, index) => (
+            <span key={`${index}-${line}`}>{line}</span>
+          ))}
+        </div>
+
+        <button type="button" className="hero-scene-export" onClick={onExport}>
+          <FileCode2 size={17} />
+          <span>导出</span>
+        </button>
+
+        <div className="hero-scene-tool-dock" aria-label="3D 场景工具">
+          <button type="button" data-active={editing ? 'true' : 'false'} onClick={readOnly ? onReadOnlyAttempt : onToggleEditing} aria-label={editing ? '结束编辑' : '开始编辑'} title={readOnly ? '取消发布后可编辑模型' : editing ? '结束编辑' : '开始编辑'}>
+            <SlidersHorizontal size={17} />
+          </button>
+          <button type="button" aria-label="模型视图" title="模型视图"><Box size={17} /></button>
+          <button type="button" aria-label="网格视图" title="网格视图"><LayoutGrid size={17} /></button>
         </div>
 
         {editing && (
           <div style={{
             position: 'absolute',
-            right: 16,
-            top: 16,
+            right: 88,
+            top: 24,
             width: 220,
             borderRadius: 16,
             background: 'var(--robot-hud-bg)',
@@ -1396,6 +1560,8 @@ function TopologyTreeRow({
   onAddChild,
   onDelete,
   onMove,
+  readOnly,
+  onReadOnlyAttempt,
 }: {
   node: TopologyNode;
   depth: number;
@@ -1414,22 +1580,27 @@ function TopologyTreeRow({
   onAddChild?: (parentId: string, kind: TopologyKind) => void;
   onDelete?: (id: string) => void;
   onMove?: (draggedId: string, targetId: string, position: TopologyDropPosition) => void;
+  readOnly: boolean;
+  onReadOnlyAttempt: () => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [dropPreview, setDropPreview] = useState<{ position: TopologyDropPosition; valid: boolean } | null>(null);
   const dropPreviewRef = useRef<{ position: TopologyDropPosition; valid: boolean } | null>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const hasChildren = Boolean(node.children?.length);
-  const isRoot = depth === 0;
-  const nextKind: TopologyKind = node.kind === 'link' ? 'joint' : 'link';
-  const nextKindLabel = nextKind === 'link' ? '连杆' : '关节';
+  const kindMeta = topologyKindMeta(node.kind);
+  const childActions: Array<{ kind: TopologyKind; label: string }> = node.kind === 'link'
+    ? [{ kind: 'mesh', label: 'Mesh' }, { kind: 'joint', label: '关节' }]
+    : node.kind === 'joint'
+      ? [{ kind: 'link', label: '连杆' }]
+      : [];
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'TOPOLOGY_NODE',
     item: { type: 'TOPOLOGY_NODE', nodeId: node.id, kind: node.kind } satisfies TopologyDragItem,
-    canDrag: !isRoot && !isEditing,
+    canDrag: !readOnly && !isEditing,
     collect: monitor => ({ isDragging: monitor.isDragging() }),
-  }), [node.id, node.kind, isRoot, isEditing]);
+  }), [node.id, node.kind, isEditing, readOnly]);
 
   const [{ isOver }, drop] = useDrop<TopologyDragItem, void, { isOver: boolean }>(() => ({
     accept: 'TOPOLOGY_NODE',
@@ -1477,7 +1648,7 @@ function TopologyTreeRow({
   return (
     <div
       ref={rowRef}
-      title={!isRoot && !isEditing ? '拖动节点可调整层级、顺序或父级' : undefined}
+      title={readOnly ? '取消发布后可调整模型结构' : !isEditing ? '拖动节点可调整层级、顺序或父级' : undefined}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
@@ -1485,11 +1656,11 @@ function TopologyTreeRow({
         display: 'flex',
         alignItems: 'center',
         gap: 4,
-        minHeight: 34,
-        marginLeft: depth * 14,
-        padding: '0 4px 0 4px',
+        minHeight: 38,
+        marginLeft: depth * 18,
+        padding: '0 4px',
         borderRadius: 8,
-        border: selected ? '1px solid var(--robot-accent-border)' : '1px solid transparent',
+        border: '1px solid transparent',
         background: isOver && dropPreview?.position === 'inside'
           ? dropBackground
           : selected
@@ -1499,9 +1670,11 @@ function TopologyTreeRow({
               : 'transparent',
         boxShadow: dropBoxShadow,
         opacity: isDragging ? 0.42 : 1,
-        cursor: isOver && dropPreview && !dropPreview.valid
+        cursor: readOnly
+          ? 'pointer'
+          : isOver && dropPreview && !dropPreview.valid
           ? 'not-allowed'
-          : !isRoot && !isEditing
+          : !isEditing
             ? isDragging ? 'grabbing' : 'grab'
             : 'default',
         transition: 'background 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease',
@@ -1523,7 +1696,7 @@ function TopologyTreeRow({
 
       {isEditing ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-          <span style={{ width: 8, height: 8, borderRadius: 99, background: node.kind === 'link' ? 'var(--robot-accent)' : 'var(--robot-success)', flexShrink: 0 }} />
+          <span style={{ width: 8, height: 8, borderRadius: 99, background: kindMeta.color, flexShrink: 0 }} />
           <input
             value={editValue}
             onChange={event => onEditValueChange(event.target.value)}
@@ -1539,18 +1712,15 @@ function TopologyTreeRow({
       ) : (
         <button
           type="button"
+          className="hero-topology-node-button"
           onClick={() => onSelect(node.id)}
-          onDoubleClick={event => { event.stopPropagation(); onStartEdit(); }}
+          onDoubleClick={event => { event.stopPropagation(); readOnly ? onReadOnlyAttempt() : onStartEdit(); }}
           style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, background: 'none', border: 'none', padding: 0, color: 'var(--robot-text)', cursor: 'pointer', textAlign: 'left' }}
         >
-          <span style={{ width: 8, height: 8, borderRadius: 99, background: node.kind === 'link' ? 'var(--robot-accent)' : 'var(--robot-success)', flexShrink: 0 }} />
-          <span style={{ fontSize: 12, fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title="双击重命名">{node.label}</span>
+          <span style={{ width: 8, height: 8, borderRadius: 99, background: kindMeta.color, flexShrink: 0 }} />
+          <span style={{ fontSize: 14, fontWeight: selected ? 600 : 500, color: selected ? 'var(--robot-accent-text)' : 'var(--robot-text)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title="双击重命名">{node.label}</span>
         </button>
       )}
-
-      <span style={{ borderRadius: 999, background: node.kind === 'link' ? 'var(--robot-accent-soft)' : 'var(--robot-success-soft)', color: node.kind === 'link' ? 'var(--robot-accent-text)' : 'var(--robot-success)', fontSize: 10, fontWeight: 500, padding: '2px 7px', flexShrink: 0 }}>
-        {node.kind === 'link' ? '连杆' : '关节'}
-      </span>
 
       <div style={{ width: 28, height: 28, flexShrink: 0, marginLeft: 2 }}>
         {!isDragging && <DropdownMenu>
@@ -1559,10 +1729,16 @@ function TopologyTreeRow({
               <MoreHorizontal size={15} />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="hero-detail-menu">
-            <DropdownMenuItem onSelect={() => onAddChild?.(node.id, nextKind)}><Plus size={15} />新增子{nextKindLabel}</DropdownMenuItem>
-            <DropdownMenuItem onSelect={onStartEdit}><Pencil size={15} />重命名</DropdownMenuItem>
-            <DropdownMenuItem variant="destructive" disabled={deleteDisabled} onSelect={() => onDelete?.(node.id)}><Trash2 size={15} />删除节点</DropdownMenuItem>
+          <DropdownMenuContent align="end" sideOffset={8} collisionPadding={12} className="heroui-tree-menu">
+            {childActions.map(action => (
+              <DropdownMenuItem key={action.kind} className="heroui-tree-menu__item" onSelect={() => readOnly ? onReadOnlyAttempt() : onAddChild?.(node.id, action.kind)}>
+                {action.kind === 'mesh' ? <Box size={15} /> : <Plus size={15} />}
+                新增{action.label}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuItem className="heroui-tree-menu__item" onSelect={readOnly ? onReadOnlyAttempt : onStartEdit}><Pencil size={15} />重命名</DropdownMenuItem>
+            <DropdownMenuSeparator className="heroui-tree-menu__separator" />
+            <DropdownMenuItem className="heroui-tree-menu__item" variant="destructive" disabled={!readOnly && deleteDisabled} onSelect={() => readOnly ? onReadOnlyAttempt() : onDelete?.(node.id)}><Trash2 size={15} />删除节点</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>}
       </div>
@@ -1586,6 +1762,8 @@ function TopologyTree({
   onMove,
   depth = 0,
   rootNodes,
+  readOnly = false,
+  onReadOnlyAttempt = () => {},
 }: {
   nodes: TopologyNode[];
   selectedId: string;
@@ -1596,6 +1774,8 @@ function TopologyTree({
   onMove?: (draggedId: string, targetId: string, position: TopologyDropPosition) => void;
   depth?: number;
   rootNodes?: TopologyNode[];
+  readOnly?: boolean;
+  onReadOnlyAttempt?: () => void;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -1643,6 +1823,8 @@ function TopologyTree({
               onAddChild={onAddChild}
               onDelete={onDelete}
               onMove={onMove}
+              readOnly={readOnly}
+              onReadOnlyAttempt={onReadOnlyAttempt}
             />
             {expanded && node.children && (
               <TopologyTree
@@ -1655,6 +1837,8 @@ function TopologyTree({
                 onMove={onMove}
                 depth={depth + 1}
                 rootNodes={fullTree}
+                readOnly={readOnly}
+                onReadOnlyAttempt={onReadOnlyAttempt}
               />
             )}
           </div>
@@ -1665,22 +1849,46 @@ function TopologyTree({
 }
 
 function axisInputStyle(): React.CSSProperties {
-  return { ...inputStyle(), height: 28, borderRadius: 8, padding: '0 8px', fontSize: 12 };
+  return { ...inputStyle(), height: 40, borderRadius: 8, padding: '0 10px', fontSize: 14 };
 }
 
 function TopologyParamPanel({
   node,
   onChange,
+  readOnly,
+  onReadOnlyAttempt,
 }: {
   node: TopologyNode;
   onChange: (patch: Partial<TopologyNode>) => void;
+  readOnly: boolean;
+  onReadOnlyAttempt: () => void;
 }) {
+  const meshInputRef = useRef<HTMLInputElement>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState(node.label);
+  const kindMeta = topologyKindMeta(node.kind);
   const origin = originOf(node);
   const axis = axisOf(node);
   const limit = limitOf(node);
+  const mesh = topologyMeshOf(node);
+
+  useEffect(() => {
+    setNameDraft(node.label);
+    setRenaming(false);
+  }, [node.id, node.label]);
+
+  function commitName() {
+    const nextName = nameDraft.trim();
+    if (nextName && nextName !== node.label) onChange({ label: nextName });
+    else setNameDraft(node.label);
+    setRenaming(false);
+  }
 
   function updateOrigin(key: keyof OriginPose, value: string) {
-    onChange({ origin: { ...origin, [key]: Number(value) || 0 } });
+    const nextOrigin = { ...origin, [key]: Number(value) || 0 };
+    onChange(node.kind === 'mesh'
+      ? { origin: nextOrigin, mesh: { ...mesh, origin: nextOrigin } }
+      : { origin: nextOrigin });
   }
 
   function updateAxis(key: keyof Vector3, value: string) {
@@ -1691,26 +1899,58 @@ function TopologyParamPanel({
     onChange({ limit: { ...limit, [key]: Number(value) || 0 } });
   }
 
+  function updateMesh(patch: Partial<LinkMesh>) {
+    const nextMesh = { ...mesh, ...patch };
+    onChange({ mesh: nextMesh, origin: nextMesh.origin });
+  }
+
+  function updateMeshScale(key: keyof Vector3, value: string) {
+    updateMesh({ scale: { ...mesh.scale, [key]: Number(value) || 0 } });
+  }
+
+  function selectMeshFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    updateMesh({ filename: `package://meshes/${file.name}` });
+  }
+
   return (
-    <section className="hero-topology-param-panel" style={{ background: 'var(--robot-surface)', border: '1px solid var(--robot-border)', borderRadius: 'var(--robot-card-radius)', overflow: 'hidden', boxShadow: 'var(--robot-shadow)', flexShrink: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid var(--robot-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ color: 'var(--robot-heading)', fontSize: 16, fontWeight: 600 }}>节点参数</div>
-        </div>
+    <section className="hero-topology-param-panel" style={{ position: 'relative', background: 'var(--robot-surface)', border: '1px solid var(--robot-border)', borderRadius: 'var(--robot-card-radius)', overflow: 'hidden', boxShadow: 'var(--robot-shadow)', flexShrink: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ minHeight: 64, padding: '12px 16px', borderBottom: '1px solid var(--robot-border)', display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{
           borderRadius: 999,
-          background: node.kind === 'link' ? 'var(--robot-accent-soft)' : 'var(--robot-success-soft)',
-          color: node.kind === 'link' ? 'var(--robot-accent-text)' : 'var(--robot-success)',
+          background: kindMeta.background,
+          color: kindMeta.text,
           fontSize: 10,
           fontWeight: 600,
           padding: '3px 8px',
           flexShrink: 0,
         }}>
-          {node.kind === 'link' ? 'Link' : 'Joint'}
+          {kindMeta.code}
         </span>
+        {renaming ? (
+          <input
+            value={nameDraft}
+            onChange={event => setNameDraft(event.target.value)}
+            onBlur={commitName}
+            onKeyDown={event => {
+              if (event.key === 'Enter') commitName();
+              if (event.key === 'Escape') { setNameDraft(node.label); setRenaming(false); }
+            }}
+            autoFocus
+            aria-label="节点名称"
+            style={{ minWidth: 0, flex: 1, height: 32, border: '1px solid var(--robot-accent-border)', borderRadius: 8, padding: '0 8px', background: 'var(--robot-surface)', color: 'var(--robot-heading)', font: 'inherit', fontSize: 14, outline: 'none' }}
+          />
+        ) : (
+          <strong style={{ minWidth: 0, flex: 1, overflow: 'hidden', color: 'var(--robot-heading)', fontSize: 14, fontWeight: 600, textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.label}</strong>
+        )}
+        <button type="button" className="software-config-edit" onClick={readOnly ? onReadOnlyAttempt : () => setRenaming(true)} aria-label="编辑节点名称" title={readOnly ? '取消发布后可编辑节点' : '编辑节点名称'}>
+          <Pencil size={14} />
+        </button>
       </div>
 
-      <div className="hero-topology-param-body" style={{ padding: 12, display: 'grid', gap: 12 }}>
+      <fieldset className="hero-topology-param-body" style={{ minWidth: 0, margin: 0, padding: 12, border: 0, display: 'grid', gap: 12 }}>
         <div>
           <div style={{ color: 'var(--robot-muted)', fontSize: 12, fontWeight: 600, marginBottom: 7 }}>位置 xyz</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
@@ -1734,6 +1974,71 @@ function TopologyParamPanel({
             ))}
           </div>
         </div>
+
+        {node.kind === 'mesh' && (
+          <div className="hero-link-mesh-card">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ color: 'var(--robot-heading)', fontSize: 12, fontWeight: 600 }}>Mesh 几何资源</span>
+              <span style={{ color: 'var(--robot-subtle)', fontSize: 10 }}>{mesh.filename ? '已配置' : '未配置'}</span>
+            </div>
+
+            <div className="hero-link-mesh-tabs" aria-label="Mesh 类型">
+              {(['visual', 'collision'] as const).map(role => (
+                <button
+                  key={role}
+                  type="button"
+                  className="hero-link-mesh-tab"
+                  data-active={(node.meshRole ?? 'visual') === role}
+                  onClick={() => onChange({ meshRole: role })}
+                >
+                  {role === 'visual' ? 'Visual' : 'Collision'}
+                </button>
+              ))}
+            </div>
+
+            <input
+              ref={meshInputRef}
+              type="file"
+              accept=".stl,.dae,.obj,.glb,.gltf,.mesh"
+              onChange={selectMeshFile}
+              style={{ display: 'none' }}
+            />
+            <label>
+              <span style={{ color: 'var(--robot-muted)', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 5 }}>Mesh URI</span>
+              <div className="hero-link-mesh-file-row">
+                <ArcoTextInput
+                  scope="robot"
+                  value={mesh.filename}
+                  onChange={event => updateMesh({ filename: event.target.value })}
+                  placeholder="package://robot/meshes/link.stl"
+                  style={axisInputStyle()}
+                />
+                <button
+                  type="button"
+                  className="hero-link-mesh-file-button"
+                  aria-label={`选择 ${(node.meshRole ?? 'visual') === 'visual' ? 'Visual' : 'Collision'} Mesh 文件`}
+                  title="选择 Mesh 文件"
+                  onClick={() => meshInputRef.current?.click()}
+                >
+                  <FileUp size={14} />
+                </button>
+              </div>
+            </label>
+
+            <div>
+              <div style={{ color: 'var(--robot-muted)', fontSize: 12, fontWeight: 600, marginBottom: 7 }}>缩放 scale</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+                {(['x', 'y', 'z'] as const).map(key => (
+                  <label key={key}>
+                    <span style={{ color: 'var(--robot-subtle)', fontSize: 10, fontWeight: 600, display: 'block', marginBottom: 4 }}>{key.toUpperCase()}</span>
+                    <ArcoTextInput scope="robot" type="number" step="0.01" value={mesh.scale[key]} onChange={event => updateMeshScale(key, event.target.value)} style={axisInputStyle()} />
+                  </label>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        )}
 
         {node.kind === 'joint' && (
           <>
@@ -1776,7 +2081,8 @@ function TopologyParamPanel({
             </div>
           </>
         )}
-      </div>
+      </fieldset>
+      {readOnly && <button type="button" className="hero-readonly-interceptor" onClick={onReadOnlyAttempt} aria-label="取消发布后编辑节点参数" />}
     </section>
   );
 }
@@ -1785,10 +2091,14 @@ function SoftwareVersionPanel({
   catalog,
   selectionIds,
   onConfigure,
+  readOnly,
+  onReadOnlyAttempt,
 }: {
   catalog: SoftwareVersionCategory[];
   selectionIds: string[];
   onConfigure: () => void;
+  readOnly: boolean;
+  onReadOnlyAttempt: () => void;
 }) {
   const treeCategories = useMemo<ProductCategory[]>(() => {
     const selectedSet = new Set(selectionIds);
@@ -1829,9 +2139,9 @@ function SoftwareVersionPanel({
         <button
           type="button"
           className="software-config-edit"
-          onClick={onConfigure}
+          onClick={readOnly ? onReadOnlyAttempt : onConfigure}
           aria-label="编辑软件配置"
-          title="编辑软件配置"
+          title={readOnly ? '取消发布后可编辑软件配置' : '编辑软件配置'}
         >
           <Pencil size={14} />
         </button>
@@ -2099,9 +2409,12 @@ export function RobotModelManager({
   const [internalThemeMode] = useState<ThemeMode>(initialThemeMode);
   const [draft, setDraft] = useState<RobotDraft | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [publishLockNotice, setPublishLockNotice] = useState(false);
+  const publishLockTimerRef = useRef<number | null>(null);
 
   // Topology CRUD state
   const [addNodeDialogOpen, setAddNodeDialogOpen] = useState(false);
+  const [addNodeAsRoot, setAddNodeAsRoot] = useState(false);
   const [addTargetId, setAddTargetId] = useState<string>('base_link');
   const [newNodeKind, setNewNodeKind] = useState<TopologyKind>('link');
   const [newNodeLabel, setNewNodeLabel] = useState('');
@@ -2111,6 +2424,7 @@ export function RobotModelManager({
   const themeMode = controlledThemeMode ?? internalThemeMode;
   const softwareCatalog = useMemo(() => buildSoftwareVersionCatalog(), []);
   const activeModel = activeId ? (models.find(model => model.id === activeId) ?? null) : null;
+  const modelReadOnly = activeModel?.status === 'published';
   const selectedTopologyNode = useMemo(
     () => activeModel ? (findTopologyNode(activeModel.topology, selectedTopologyId) ?? activeModel.topology[0]) : null,
     [activeModel, selectedTopologyId],
@@ -2139,6 +2453,45 @@ export function RobotModelManager({
     document.documentElement.dataset.robotTheme = themeMode;
     window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
   }, [themeMode]);
+
+  useEffect(() => () => {
+    if (publishLockTimerRef.current !== null) window.clearTimeout(publishLockTimerRef.current);
+  }, []);
+
+  function notifyPublishLock() {
+    setPublishLockNotice(true);
+    if (publishLockTimerRef.current !== null) window.clearTimeout(publishLockTimerRef.current);
+    publishLockTimerRef.current = window.setTimeout(() => setPublishLockNotice(false), 2600);
+  }
+
+  const publishLockToast = publishLockNotice ? (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        position: 'fixed',
+        top: 68,
+        left: '50%',
+        zIndex: 90,
+        minHeight: 40,
+        padding: '0 16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        border: '1px solid var(--robot-accent-border)',
+        borderRadius: 8,
+        background: 'var(--robot-surface)',
+        boxShadow: '0 10px 30px rgba(15, 23, 42, 0.14)',
+        color: 'var(--robot-heading)',
+        fontSize: 14,
+        fontWeight: 500,
+        transform: 'translateX(-50%)',
+      }}
+    >
+      <LockKeyhole size={16} color="var(--robot-accent)" />
+      当前型号已发布，请先取消发布后再编辑
+    </div>
+  ) : null;
 
   const deleteModal = (
     <ArcoModal
@@ -2172,6 +2525,7 @@ export function RobotModelManager({
   if (!activeModel) {
     return (
       <>
+        {publishLockToast}
         <div style={{
           ...robotThemeVars(themeMode),
           flex: 1,
@@ -2349,8 +2703,12 @@ export function RobotModelManager({
                             size="sm"
                             isIconOnly
                             ariaLabel={`编辑${model.name}`}
-                            title="编辑"
+                            title={model.status === 'published' ? '取消发布后可编辑' : '编辑'}
                             onPress={() => {
+                              if (model.status === 'published') {
+                                notifyPublishLock();
+                                return;
+                              }
                               setActiveId(model.id);
                               setEditingScene(false);
                               setSelectedTopologyId('base_link');
@@ -2363,8 +2721,12 @@ export function RobotModelManager({
                             size="sm"
                             isIconOnly
                             ariaLabel={`删除${model.name}`}
-                            title="删除"
+                            title={model.status === 'published' ? '取消发布后可删除' : '删除'}
                             onPress={() => {
+                              if (model.status === 'published') {
+                                notifyPublishLock();
+                                return;
+                              }
                               setDeleteTargetId(model.id);
                               setDeleteDialogOpen(true);
                             }}
@@ -2392,6 +2754,7 @@ export function RobotModelManager({
   }
 
   function updateActive(partial: Partial<RobotModel>) {
+    if (activeModel.status === 'published' && partial.status !== 'draft') return;
     setModels(prev => prev.map(model => model.id === activeModel.id ? { ...model, ...partial, updatedAt: nowLabel() } : model));
   }
 
@@ -2408,20 +2771,30 @@ export function RobotModelManager({
 
   function handleAddTopologyNode() {
     if (!newNodeLabel.trim()) return;
-    const targetNode = findTopologyNode(activeModel.topology, addTargetId);
-    if (!targetNode) return;
-    const childKind: TopologyKind = targetNode.kind === 'link' ? 'joint' : 'link';
+    const targetNode = addNodeAsRoot ? null : findTopologyNode(activeModel.topology, addTargetId);
+    if (!addNodeAsRoot && !targetNode) return;
+    const childKind: TopologyKind = addNodeAsRoot ? 'link' : newNodeKind;
+    if (targetNode && !canAddTopologyChildKind(targetNode.kind, childKind)) return;
     const child: TopologyNode = {
       id: topoUid(),
       label: newNodeLabel.trim(),
       kind: childKind,
       origin: { ...DEFAULT_ORIGIN },
       ...(childKind === 'joint' ? { jointType: 'revolute' as JointType, axis: { ...DEFAULT_AXIS }, limit: { ...DEFAULT_LIMIT } } : {}),
+      ...(childKind === 'mesh' ? {
+        meshRole: 'visual' as MeshRole,
+        mesh: { filename: '', scale: { ...DEFAULT_MESH_SCALE }, origin: { ...DEFAULT_ORIGIN } },
+      } : {}),
       children: [],
     };
-    updateActive({ topology: addTopologyChild(activeModel.topology, addTargetId, child) });
+    updateActive({
+      topology: addNodeAsRoot
+        ? [...activeModel.topology, child]
+        : addTopologyChild(activeModel.topology, addTargetId, child),
+    });
     setSelectedTopologyId(child.id);
     setAddNodeDialogOpen(false);
+    setAddNodeAsRoot(false);
     setNewNodeLabel('');
   }
 
@@ -2444,6 +2817,10 @@ export function RobotModelManager({
   }
 
   function handleUrdfImport(event: React.ChangeEvent<HTMLInputElement>) {
+    if (modelReadOnly) {
+      event.target.value = '';
+      return;
+    }
     const file = event.target.files?.[0];
     if (!file) return;
     setUrdfImportError(null);
@@ -2492,6 +2869,7 @@ export function RobotModelManager({
   }
 
   function openEditDialog() {
+    if (modelReadOnly) return;
     setDraft({
       id: activeModel.id,
       name: activeModel.name,
@@ -2539,6 +2917,10 @@ export function RobotModelManager({
   }
 
   function togglePublish() {
+    setEditingScene(false);
+    setSoftwareDialogOpen(false);
+    setAddNodeDialogOpen(false);
+    setDeleteTopologyTargetId(null);
     updateActive({ status: activeModel.status === 'published' ? 'draft' : 'published' });
   }
 
@@ -2546,6 +2928,7 @@ export function RobotModelManager({
     const targetId = deleteTargetId || activeModel?.id;
     if (!targetId || models.length <= 1) return;
     const targetModel = models.find(m => m.id === targetId);
+    if (targetModel?.status === 'published') return;
     const currentIndex = models.findIndex(model => model.id === targetId);
     const next = models.filter(model => model.id !== targetId);
     setModels(next);
@@ -2587,6 +2970,7 @@ export function RobotModelManager({
       overflow: 'hidden',
       transition: 'background 0.22s ease, color 0.22s ease',
     }}>
+      {publishLockToast}
       <style>{`
         .hero-detail-card {
           width: 100%;
@@ -2663,6 +3047,8 @@ export function RobotModelManager({
         }
         .software-config-edit:hover { color: var(--robot-accent-text); background: var(--robot-accent-soft); }
         .software-config-edit:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
+        .software-config-edit:disabled,
+        .hero-detail-tool-button:disabled { cursor: not-allowed; opacity: 0.4; pointer-events: none; }
         .hero-detail-chip {
           max-width: 100%;
           min-height: 24px;
@@ -2681,15 +3067,18 @@ export function RobotModelManager({
           text-overflow: ellipsis;
         }
         .hero-detail-chip[data-tone="accent"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
-        .hero-detail-chip[data-tone="success"] { background: var(--robot-success-soft); color: var(--robot-heading); }
+        .hero-detail-chip[data-tone="success"] { background: var(--robot-success-soft); color: var(--robot-success); }
+        .hero-status-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: 99px; background: currentColor; }
         .hero-detail-chip[data-tone="danger"] { background: var(--robot-danger-soft); color: var(--robot-heading); }
-        .hero-info-card { display: flex; flex-direction: column; }
+        .hero-info-card { height: auto; flex: 0 0 auto; display: flex; flex-direction: column; }
         .hero-info-header {
-          padding: 16px 16px 0;
+          min-height: 84px;
+          padding: 16px;
           display: flex;
           align-items: center;
           gap: 12px;
           flex-shrink: 0;
+          border-bottom: 1px solid var(--robot-border);
         }
         .hero-model-back {
           width: 44px;
@@ -2700,8 +3089,8 @@ export function RobotModelManager({
           padding: 0;
           border: 1px solid transparent;
           border-radius: var(--robot-inner-radius);
-          background: var(--robot-accent-soft);
-          color: var(--robot-accent-text);
+          background: var(--robot-soft);
+          color: var(--robot-heading);
           cursor: pointer;
           transition: background-color 180ms ease, border-color 180ms ease;
         }
@@ -2712,7 +3101,7 @@ export function RobotModelManager({
           margin: 0;
           overflow: hidden;
           color: var(--robot-heading);
-          font-size: 16px;
+          font-size: 20px;
           line-height: 24px;
           font-weight: 600;
           text-overflow: ellipsis;
@@ -2731,7 +3120,7 @@ export function RobotModelManager({
           padding: 16px;
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 14px;
           flex-shrink: 0;
         }
         .hero-model-description {
@@ -2739,21 +3128,93 @@ export function RobotModelManager({
           margin: 0;
           overflow: hidden;
           color: var(--robot-muted);
-          font-size: 12px;
-          line-height: 18px;
+          font-size: 14px;
+          line-height: 22px;
           -webkit-box-orient: vertical;
           -webkit-line-clamp: 2;
         }
-        .hero-homepage-row { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--robot-muted); font-size: 12px; }
+        .hero-homepage-row { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--robot-muted); font-size: 14px; }
         .hero-homepage-row > span:first-child { flex-shrink: 0; }
         .hero-model-actions { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
-        .hero-updated-at { color: var(--robot-subtle); font-size: 10px; line-height: 14px; }
-        .hero-detail-divider { height: 1px; flex-shrink: 0; background: var(--robot-border); }
+        .hero-updated-at { color: var(--robot-subtle); font-size: 12px; line-height: 18px; }
+        .hero-software-card { min-height: 0; flex: 1; }
         .hero-software-section { min-height: 0; flex: 1; overflow: hidden; }
-        .hero-scene-card { min-height: 0; }
-        .hero-scene-content { position: relative; min-height: 360px; flex: 1; overflow: hidden; }
-        .hero-topology-card { min-height: 0; }
-        .hero-topology-content { min-height: 0; padding: 12px 16px 16px; display: flex; flex: 1; flex-direction: column; gap: 16px; overflow: hidden; }
+        .hero-scene-card { min-height: 0; padding: 16px; }
+        .hero-scene-content { position: relative; min-height: 520px; flex: 1; overflow: hidden; border-radius: 12px; }
+        .hero-scene-status {
+          position: absolute;
+          left: 24px;
+          top: 24px;
+          min-height: 30px;
+          padding: 0 12px;
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          border: 1px solid rgba(34, 197, 94, 0.35);
+          border-radius: 999px;
+          background: rgba(10, 88, 41, 0.72);
+          color: #32d36d;
+          font-size: 12px;
+          font-weight: 600;
+          backdrop-filter: blur(10px);
+        }
+        .hero-scene-status > span { width: 3px; height: 3px; border-radius: 99px; background: currentColor; }
+        .hero-scene-telemetry {
+          position: absolute;
+          left: 24px;
+          top: 68px;
+          display: grid;
+          gap: 4px;
+          color: rgba(255,255,255,0.68);
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+          font-size: 10px;
+          line-height: 14px;
+          letter-spacing: 0;
+          pointer-events: none;
+        }
+        .hero-scene-export {
+          position: absolute;
+          right: 24px;
+          top: 24px;
+          width: 64px;
+          height: 64px;
+          display: grid;
+          place-items: center;
+          align-content: center;
+          gap: 5px;
+          border: 0;
+          border-radius: 12px;
+          background: rgba(255,255,255,0.11);
+          color: rgba(255,255,255,0.9);
+          font: inherit;
+          font-size: 12px;
+          cursor: pointer;
+          backdrop-filter: blur(12px);
+          transition: background-color 180ms ease;
+        }
+        .hero-scene-export:hover { background: rgba(255,255,255,0.18); }
+        .hero-scene-export:focus-visible { outline: 3px solid rgba(255,255,255,0.24); outline-offset: 2px; }
+        .hero-scene-tool-dock {
+          position: absolute;
+          left: 24px;
+          bottom: 24px;
+          display: grid;
+          gap: 2px;
+          padding: 4px;
+          border: 1px solid rgba(255,255,255,0.11);
+          border-radius: 12px;
+          background: rgba(18,18,18,0.78);
+          backdrop-filter: blur(12px);
+        }
+        .hero-scene-tool-dock button { width: 36px; height: 36px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: transparent; color: rgba(255,255,255,0.78); cursor: pointer; }
+        .hero-scene-tool-dock button:hover,
+        .hero-scene-tool-dock button[data-active="true"] { background: var(--robot-brand); color: #fff; }
+        .hero-scene-tool-dock button:disabled { cursor: not-allowed; opacity: 0.4; }
+        .hero-scene-tool-dock button:disabled:hover { background: transparent; color: rgba(255,255,255,0.78); }
+        .hero-topology-card { min-height: 0; flex: 1 1 50%; }
+        .hero-topology-node-button:focus { outline: none; }
+        .hero-topology-node-button:focus-visible { border-radius: 6px; outline: 2px solid var(--robot-accent-border); outline-offset: 2px; }
+        .hero-topology-content { min-height: 0; padding: 12px 16px 16px; display: flex; flex: 1; flex-direction: column; overflow: hidden; }
         .hero-topology-tree-scroll {
           min-height: 132px;
           flex: 1 1 0;
@@ -2763,14 +3224,7 @@ export function RobotModelManager({
           padding-right: 4px;
           scrollbar-gutter: stable;
         }
-        .hero-topology-param-fixed {
-          height: 420px;
-          min-height: 420px;
-          max-height: 420px;
-          flex: 0 0 420px;
-          overflow: hidden;
-        }
-        .hero-topology-param-panel { height: 100%; }
+        .hero-topology-param-panel { min-height: 0; flex: 1 1 50%; }
         .hero-topology-param-body {
           min-height: 0;
           flex: 1;
@@ -2780,6 +3234,24 @@ export function RobotModelManager({
           overscroll-behavior: contain;
           scrollbar-gutter: stable;
         }
+        .hero-readonly-interceptor {
+          position: absolute;
+          inset: 64px 0 0;
+          z-index: 5;
+          padding: 0;
+          border: 0;
+          background: transparent;
+          cursor: pointer;
+        }
+        .hero-readonly-interceptor:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: -4px; }
+        .hero-link-mesh-card { display: grid; gap: 12px; padding: 10px; border: 1px solid var(--robot-border); border-radius: var(--robot-inner-radius); background: var(--robot-soft); }
+        .hero-link-mesh-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; border-radius: 10px; background: var(--robot-neutral-soft); }
+        .hero-link-mesh-tab { height: 28px; border: 0; border-radius: 8px; background: transparent; color: var(--robot-muted); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .hero-link-mesh-tab[data-active="true"] { background: var(--robot-surface); color: var(--robot-accent-text); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08); }
+        .hero-link-mesh-file-row { display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 8px; }
+        .hero-link-mesh-file-button { width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 1px solid var(--robot-border-strong); border-radius: var(--robot-control-radius); background: var(--robot-surface); color: var(--robot-muted); cursor: pointer; }
+        .hero-link-mesh-file-button:hover { border-color: var(--robot-accent-border); background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+        .hero-link-mesh-file-button:focus-visible, .hero-link-mesh-tab:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
         .hero-import-error { margin: 16px 16px 0; padding: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: var(--robot-inner-radius); background: var(--robot-danger-soft); color: var(--robot-heading); font-size: 12px; }
         .hero-detail-tool-button {
           height: 40px;
@@ -2807,34 +3279,41 @@ export function RobotModelManager({
         }
         .hero-detail-tool-button[data-icon-only="true"] { width: 40px; padding: 0; }
         .hero-detail-tool-button:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
-        .hero-detail-menu { min-width: 176px; padding: 8px; border-color: var(--robot-border); border-radius: var(--robot-inner-radius); background: var(--robot-surface); color: var(--robot-heading); box-shadow: var(--robot-dialog-shadow); }
+        .hero-detail-model-menu { min-width: 184px !important; }
+        .hero-detail-button[data-state="open"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
         .robot-detail-main { overflow: hidden; }
         .robot-detail-grid {
           display: grid;
-          grid-template-columns: 300px minmax(420px, 1fr) 330px;
+          grid-template-columns: 330px minmax(560px, 1fr) 330px;
           gap: var(--robot-section-gap);
           min-height: 0;
           flex: 1;
           overflow: hidden;
         }
-        @media (max-width: 1450px) {
+        .robot-detail-left,
+        .robot-detail-right { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: var(--robot-section-gap); overflow: hidden; }
+        @media (max-width: 1540px) {
+          .robot-detail-grid { grid-template-columns: 300px minmax(520px, 1fr) 300px; }
+        }
+        @media (max-width: 1240px) {
           .robot-detail-main { overflow-y: auto; padding-right: 4px; }
           .robot-detail-grid {
             grid-template-columns: minmax(280px, 0.8fr) minmax(420px, 1.2fr);
-            grid-auto-rows: minmax(560px, auto);
+            grid-auto-rows: minmax(680px, auto);
             overflow: visible;
           }
-          .robot-topology-card { grid-column: 1 / -1; height: 620px; min-height: 620px; }
+          .robot-detail-right { grid-column: 1 / -1; min-height: 720px; display: grid; grid-template-columns: 1fr 1fr; }
         }
         @media (max-width: 860px) {
           .robot-detail-grid { grid-template-columns: minmax(0, 1fr); }
-          .robot-topology-card { grid-column: auto; }
+          .robot-detail-right { grid-column: auto; display: flex; }
         }
       `}</style>
       <main className="robot-detail-main" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         {/* Content grid: 3 columns */}
         <div className="robot-detail-grid">
-          <section className="hero-detail-card hero-info-card">
+          <div className="robot-detail-left">
+            <section className="hero-detail-card hero-info-card">
             <header className="hero-info-header">
               <button type="button" className="hero-model-back" onClick={() => setActiveId(null)} aria-label="返回型号库" title="返回型号库">
                 <ArrowLeft size={20} />
@@ -2844,6 +3323,7 @@ export function RobotModelManager({
                 <p>{activeModel.type}</p>
               </div>
               <HeroChip tone={activeModel.status === 'published' ? 'success' : 'default'}>
+                <span className="hero-status-dot" />
                 {STATUS_META[activeModel.status].label}
               </HeroChip>
             </header>
@@ -2866,8 +3346,8 @@ export function RobotModelManager({
               </div>
 
               <div className="hero-model-actions">
-                <HeroButton variant="secondary" fullWidth onPress={openEditDialog}>
-                  <Pencil size={16} />编辑
+                <HeroButton variant="primary" fullWidth title={modelReadOnly ? '取消发布后可编辑信息' : '编辑信息'} onPress={modelReadOnly ? notifyPublishLock : openEditDialog}>
+                  <Pencil size={16} />编辑信息
                 </HeroButton>
                 <HeroButton variant={activeModel.status === 'published' ? 'tertiary' : 'primary'} fullWidth onPress={togglePublish}>
                   <CheckCircle2 size={16} />{activeModel.status === 'published' ? '取消发布' : '发布'}
@@ -2876,56 +3356,71 @@ export function RobotModelManager({
                   <DropdownMenuTrigger asChild>
                     <button type="button" className="hero-detail-button" data-variant="ghost" data-icon-only="true" aria-label="更多型号操作"><MoreHorizontal size={18} /></button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="hero-detail-menu">
-                    <DropdownMenuItem onSelect={exportUrdf}><FileCode2 size={16} />导出 URDF</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={exportJson}><FileJson size={16} />导出 JSON</DropdownMenuItem>
+                  <DropdownMenuContent align="end" sideOffset={8} collisionPadding={12} className="heroui-tree-menu hero-detail-model-menu">
+                    <DropdownMenuItem className="heroui-tree-menu__item" onSelect={exportUrdf}><FileCode2 size={16} />导出 URDF</DropdownMenuItem>
+                    <DropdownMenuItem className="heroui-tree-menu__item" onSelect={exportJson}><FileJson size={16} />导出 JSON</DropdownMenuItem>
+                    <DropdownMenuSeparator className="heroui-tree-menu__separator" />
                     <DropdownMenuItem
+                      className="heroui-tree-menu__item"
                       variant="destructive"
-                      disabled={models.length <= 1}
-                      onSelect={() => { setDeleteTargetId(activeModel.id); setDeleteDialogOpen(true); }}
+                      disabled={!modelReadOnly && models.length <= 1}
+                      onSelect={() => {
+                        if (modelReadOnly) {
+                          notifyPublishLock();
+                          return;
+                        }
+                        setDeleteTargetId(activeModel.id);
+                        setDeleteDialogOpen(true);
+                      }}
                     ><Trash2 size={16} />删除型号</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-
-              <span className="hero-updated-at">更新于 {activeModel.updatedAt}</span>
             </div>
+            </section>
 
-            <div className="hero-detail-divider" />
-            <div className="hero-software-section">
+            <section className="hero-detail-card hero-software-card">
+              <div className="hero-software-section">
               <SoftwareVersionPanel
                 catalog={softwareCatalog}
                 selectionIds={activeModel.softwareSelectionIds}
                 onConfigure={() => setSoftwareDialogOpen(true)}
+                readOnly={modelReadOnly}
+                onReadOnlyAttempt={notifyPublishLock}
               />
-            </div>
-          </section>
+              </div>
+            </section>
+          </div>
 
           <RobotScene
             model={activeModel}
             editing={editingScene}
+            readOnly={modelReadOnly}
             onToggleEditing={() => setEditingScene(prev => !prev)}
             onPoseChange={pose => updateActive({ pose })}
+            onExport={exportUrdf}
+            onReadOnlyAttempt={notifyPublishLock}
           />
 
-          <section className="hero-detail-card hero-topology-card robot-topology-card">
+          <div className="robot-detail-right">
+            <section className="hero-detail-card hero-topology-card robot-topology-card">
             <header className="hero-detail-card-header">
-              <GitBranch size={18} style={{ color: 'var(--robot-accent)' }} />
               <h3 className="hero-detail-card-title">模型结构</h3>
               <input type="file" accept=".urdf,.xml" onChange={handleUrdfImport} style={{ display: 'none' }} id="urdf-file-input" />
               <button
                 type="button"
                 className="hero-detail-tool-button"
                 data-icon-only="true"
-                disabled={!selectedTopologyNode}
-                aria-label="新增节点"
-                title="在当前节点下新增节点"
+                aria-label="新增根 Link"
+                title={modelReadOnly ? '取消发布后可新增结构' : '新增根 Link'}
                 onClick={() => {
-                  if (!selectedTopologyNode) return;
-                  const kind: TopologyKind = selectedTopologyNode.kind === 'link' ? 'joint' : 'link';
-                  setAddTargetId(selectedTopologyNode.id);
-                  setNewNodeKind(kind);
-                  setNewNodeLabel(kind === 'link' ? 'new_link' : 'new_joint');
+                  if (modelReadOnly) {
+                    notifyPublishLock();
+                    return;
+                  }
+                  setAddNodeAsRoot(true);
+                  setNewNodeKind('link');
+                  setNewNodeLabel('new_base_link');
                   setAddNodeDialogOpen(true);
                 }}
               >
@@ -2936,8 +3431,8 @@ export function RobotModelManager({
                 className="hero-detail-tool-button"
                 data-icon-only="true"
                 aria-label="导入 URDF"
-                title="导入 URDF"
-                onClick={() => document.getElementById('urdf-file-input')?.click()}
+                title={modelReadOnly ? '取消发布后可导入 URDF' : '导入 URDF'}
+                onClick={() => modelReadOnly ? notifyPublishLock() : document.getElementById('urdf-file-input')?.click()}
               >
                 <FileCode2 size={16} />
               </button>
@@ -2960,25 +3455,30 @@ export function RobotModelManager({
                     updateActive({ topology: renameTopologyNode(activeModel.topology, id, label) });
                   }}
                   onAddChild={(parentId, kind) => {
+                    setAddNodeAsRoot(false);
                     setAddTargetId(parentId);
                     setNewNodeKind(kind);
-                    setNewNodeLabel(kind === 'link' ? 'new_link' : 'new_joint');
+                    setNewNodeLabel(kind === 'link' ? 'new_link' : kind === 'joint' ? 'new_joint' : 'new_mesh');
                     setAddNodeDialogOpen(true);
                   }}
                   onDelete={(id) => setDeleteTopologyTargetId(id)}
                   onMove={handleMoveTopologyNode}
+                  readOnly={modelReadOnly}
+                  onReadOnlyAttempt={notifyPublishLock}
                 />
               </div>
-              {selectedTopologyNode && (
-                <div className="hero-topology-param-fixed">
-                  <TopologyParamPanel
-                    node={selectedTopologyNode}
-                    onChange={updateSelectedTopologyNode}
-                  />
-                </div>
-              )}
             </div>
-          </section>
+            </section>
+
+            {selectedTopologyNode && (
+              <TopologyParamPanel
+                node={selectedTopologyNode}
+                onChange={updateSelectedTopologyNode}
+                readOnly={modelReadOnly}
+                onReadOnlyAttempt={notifyPublishLock}
+              />
+            )}
+          </div>
         </div>
       </main>
 
@@ -2993,13 +3493,16 @@ export function RobotModelManager({
       {/* Add Topology Node Dialog */}
       <ArcoModal
         open={addNodeDialogOpen}
-        onOpenChange={setAddNodeDialogOpen}
+        onOpenChange={open => {
+          setAddNodeDialogOpen(open);
+          if (!open) setAddNodeAsRoot(false);
+        }}
         scope="robot"
-        title={`添加${newNodeKind === 'link' ? '连杆' : '关节'}节点`}
+        title={addNodeAsRoot ? '添加根 Link' : `添加${topologyKindMeta(newNodeKind).label}节点`}
         size="sm"
         footer={(
           <>
-            <ArcoButton scope="robot" onClick={() => setAddNodeDialogOpen(false)}>取消</ArcoButton>
+            <ArcoButton scope="robot" onClick={() => { setAddNodeDialogOpen(false); setAddNodeAsRoot(false); }}>取消</ArcoButton>
             <ArcoButton scope="robot" type="primary" onClick={handleAddTopologyNode} disabled={!newNodeLabel.trim()}>添加</ArcoButton>
           </>
         )}
@@ -3011,15 +3514,33 @@ export function RobotModelManager({
                   value={newNodeLabel}
                   onChange={e => setNewNodeLabel(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleAddTopologyNode(); }}
-                  placeholder={newNodeKind === 'link' ? '例如: forearm_link' : '例如: elbow_joint'}
+                  placeholder={addNodeAsRoot
+                    ? '例如: left_arm_base_link'
+                    : newNodeKind === 'link'
+                      ? '例如: forearm_link'
+                      : newNodeKind === 'joint'
+                        ? '例如: elbow_joint'
+                        : '例如: forearm_visual_mesh'}
                   autoFocus
                 />
               </ArcoField>
               {(() => {
+                if (addNodeAsRoot) {
+                  return (
+                    <div style={{ padding: '10px 12px', borderRadius: 'var(--robot-inner-radius)', background: 'var(--robot-soft)', color: 'var(--robot-subtle)', fontSize: 12, lineHeight: 1.6 }}>
+                      将创建一个独立根 Link。双臂模型也可在同一根 Link 下分别新增左、右两条 Joint → Link 分支。
+                    </div>
+                  );
+                }
                 const targetNode = findTopologyNode(activeModel.topology, addTargetId);
                 return targetNode ? (
                   <div style={{ padding: '10px 12px', borderRadius: 'var(--robot-inner-radius)', background: 'var(--robot-soft)', color: 'var(--robot-subtle)', fontSize: 12, lineHeight: 1.6 }}>
-                    将在 <strong style={{ color: 'var(--robot-accent-text)' }}>{targetNode.label}</strong> 下新增{newNodeKind === 'link' ? '连杆' : '关节'}。结构规则：{targetNode.kind === 'link' ? '连杆的下级必须是关节' : '关节的下级必须是连杆'}。
+                    将在 <strong style={{ color: 'var(--robot-accent-text)' }}>{targetNode.label}</strong> 下新增{topologyKindMeta(newNodeKind).label}。
+                    {targetNode.kind === 'link'
+                      ? newNodeKind === 'mesh'
+                        ? ' 同一个 Link 可挂载多个 Visual 或 Collision Mesh。'
+                        : ' Link 可同时包含 Mesh 与 Joint 分支。'
+                      : ' Joint 下级为 Link。'}
                   </div>
                 ) : null;
               })()}

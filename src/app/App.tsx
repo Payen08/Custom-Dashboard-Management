@@ -13,6 +13,7 @@ import { RobotModelManager } from './components/RobotModelManager';
 import { ProductVersionManager } from './components/ProductVersionManager';
 import { SoftwareManager } from './components/SoftwareManager';
 import { InstallationRecordsManager } from './components/InstallationRecordsManager';
+import { WorkspaceLogin as WorkspaceLoginScreen } from './components/WorkspaceLogin';
 import { INITIAL_SOFTWARE_PRODUCTS, type SoftwareProduct } from './softwareProducts';
 import { useComponentCatalog } from './components/useComponentCatalog';
 import { ArcoButton, ArcoIconButton, ArcoModal } from './components/ArcoLike';
@@ -1015,7 +1016,7 @@ function EditorNavRail({
         </div>
         <div style={{ minWidth: 0 }}>
           <div style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 700, lineHeight: 1.25 }}>数字造机</div>
-          <div style={{ color: mutedColor, fontSize: 10, marginTop: 2 }}>百川软件 · 版本管理中心</div>
+          <div style={{ color: mutedColor, fontSize: 10, marginTop: 2 }}>软件管理与授权平台</div>
         </div>
       </button>
 
@@ -1318,7 +1319,7 @@ function fillEmptySpaces(items: PlacedItem[]): PlacedItem[] {
 
 export default function App() {
   const { components: catalogComponents } = useComponentCatalog();
-  const [workspaceProduct, setWorkspaceProduct] = useState<WorkspaceProduct>('workspace');
+  const [workspaceProduct, setWorkspaceProduct] = useState<WorkspaceProduct>('login');
   const [softwareProducts, setSoftwareProducts] = useState<SoftwareProduct[]>(INITIAL_SOFTWARE_PRODUCTS);
   const [schemes, setSchemes] = useState<HomepageScheme[]>(INITIAL_SCHEMES);
   const [activeSchemeId, setActiveSchemeId] = useState('s1');
@@ -1568,7 +1569,7 @@ export default function App() {
 
   if (workspaceProduct === 'login') {
     return (
-      <WorkspaceLogin
+      <WorkspaceLoginScreen
         themeMode={robotThemeMode}
         onThemeToggle={toggleRobotThemeMode}
         onLogin={() => setWorkspaceProduct('workspace')}
