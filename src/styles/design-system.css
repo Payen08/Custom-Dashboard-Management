@@ -131,6 +131,9 @@
   --ds-button-height-sm: 32px;
   --ds-button-height-md: 40px;
   --ds-button-height-lg: 40px;
+  --ds-tag-height-sm: 20px;
+  --ds-tag-height-md: 24px;
+  --ds-tag-padding-inline: 8px;
   --ds-field-height-md: 40px;
   --ds-field-height-lg: 40px;
   --ds-control-padding-inline-sm: 10px;
@@ -163,6 +166,15 @@
   --ds-chart-container-min-height: 280px;
   --ds-business-card-padding: 16px;
 }
+
+/*
+ * Component contract
+ * - Tags identify status, scope, version and counts. They use tonal fills only;
+ *   borders are reserved for controls and containers, not metadata.
+ * - Buttons use their semantic type: primary for the page's main action,
+ *   secondary for supporting actions, text for inline actions, and outline for
+ *   toolbars where a low-emphasis boundary improves scanning.
+ */
 
 /* Responsive rules: keep internal scroll; reduce gaps before collapsing structure. */
 @media (max-width: 1199px) {

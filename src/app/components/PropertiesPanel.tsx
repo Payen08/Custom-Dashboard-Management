@@ -1,6 +1,6 @@
 import { X, Trash2, Settings2 } from 'lucide-react';
 import { type PlacedItem, type ComponentDef, COMPONENT_DEFS, COMPONENT_PROPS, GRID_COLS, GRID_ROWS, type PropField } from '../shared';
-import { ArcoButton, ArcoField, ArcoIconButton, ArcoSelect, ArcoTextInput } from './ArcoLike';
+import { ArcoButton, ArcoField, ArcoIconButton, ArcoSelect, ArcoTag, ArcoTextInput } from './HeroUI';
 
 interface Props {
   item: PlacedItem | null;
@@ -232,7 +232,7 @@ export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, showTitl
               ].map(([label, value]) => (
                 <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                   <span style={{ color: 'var(--app-muted)', fontSize: 12 }}>{label}</span>
-                  <span style={{ color: value === '开启' ? 'var(--app-success)' : 'var(--app-heading)', background: value === '开启' ? 'var(--app-success-soft)' : 'var(--app-soft)', border: '1px solid var(--app-border)', borderRadius: 8, padding: '3px 8px', fontSize: 12, fontWeight: 500 }}>{value}</span>
+                  <ArcoTag tone={value === '开启' ? 'success' : 'neutral'}>{value}</ArcoTag>
                 </div>
               ))}
             </div>
@@ -242,9 +242,7 @@ export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, showTitl
           <div style={{ marginBottom: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
               <span style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 600, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{def.name}</span>
-              <span style={{ background: 'var(--app-accent-soft)', color: 'var(--app-accent)', border: '1px solid var(--app-accent-border)', fontSize: 12, fontWeight: 500, padding: '1px 7px', borderRadius: 8, flexShrink: 0 }}>
-                {item.colSpan}×{item.rowSpan} 格
-              </span>
+              <ArcoTag tone="accent" style={{ flexShrink: 0 }}>{item.colSpan}×{item.rowSpan} 格</ArcoTag>
             </div>
             <p style={{ color: 'var(--app-text)', fontSize: 12, margin: 0, lineHeight: 1.6 }}>{def.description}</p>
           </div>

@@ -5,7 +5,7 @@ import {
   type PlacedItem, type DragItem, type ComponentDef,
   COMPONENT_DEFS, GRID_COLS, GRID_ROWS, CELL_W, CELL_H, CANVAS_W, CANVAS_H, isFree,
 } from '../shared';
-import { ArcoButton } from './ArcoLike';
+import { ArcoButton, ArcoTag } from './HeroUI';
 
 // ── Widget renderers (faithful to dashboard screenshot) ───────────────────────
 
@@ -87,9 +87,7 @@ function AlertInfoWidget() {
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '12px 14px', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>告警信息</span>
-        <span style={{ background: 'var(--app-danger-soft)', color: 'var(--app-danger)', fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 8 }}>
-          {alerts.length} 条
-        </span>
+        <ArcoTag tone="danger" size="small">{alerts.length} 条</ArcoTag>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 7 }}>
         {alerts.map((a, i) => (
@@ -101,10 +99,7 @@ function AlertInfoWidget() {
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
               <div style={{ width: 7, height: 7, borderRadius: 99, flexShrink: 0, marginTop: 3, background: a.level === 'error' ? 'var(--app-danger)' : 'var(--app-warning)' }} />
               <span style={{ color: 'var(--app-heading)', fontSize: 12, fontWeight: 600, flex: 1 }}>{a.text}</span>
-              <span style={{
-                color: a.actionColor, fontSize: 10, fontWeight: 500,
-                border: `1px solid ${a.actionColor}55`, padding: '1px 8px', borderRadius: 99, flexShrink: 0,
-              }}>{a.action}</span>
+              <ArcoTag tone={a.level === 'error' ? 'danger' : 'warning'} size="small" style={{ flexShrink: 0 }}>{a.action}</ArcoTag>
             </div>
             <div style={{ paddingLeft: 15, color: 'var(--app-muted)', fontSize: 10 }}>{a.detail}</div>
           </div>
@@ -183,7 +178,7 @@ function MapViewWidget() {
       {/* Title */}
       <div style={{ position: 'absolute', top: 12, left: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ color: 'var(--app-scene-text)', fontSize: 14, fontWeight: 500 }}>实时地图与机器人状态</span>
-        <span style={{ background: 'var(--app-success-soft)', color: 'var(--app-success)', fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99, border: '1px solid var(--app-success)' }}>● 在线</span>
+        <ArcoTag tone="success" size="small">● 在线</ArcoTag>
       </div>
 
       {/* Expand icon */}
@@ -300,9 +295,7 @@ function ActiveTasksWidget() {
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '12px 14px', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>正在执行的任务</span>
-        <span style={{ background: 'var(--app-success-soft)', color: 'var(--app-success)', fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 8 }}>
-          {tasks.length} 个
-        </span>
+        <ArcoTag tone="success" size="small">{tasks.length} 个</ArcoTag>
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
         {tasks.map((t, i) => (
@@ -344,7 +337,7 @@ function TaskQueueWidget() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexShrink: 0 }}>
         <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>任务队列</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ background: 'var(--app-accent-soft)', color: 'var(--app-accent)', fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 8 }}>20 条</span>
+          <ArcoTag tone="accent" size="small">20 条</ArcoTag>
           <span style={{ color: 'var(--app-border-strong)', fontSize: 10 }}>近20条任务记录 ›</span>
         </div>
       </div>

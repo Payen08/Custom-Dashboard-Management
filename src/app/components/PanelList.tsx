@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus, MoreHorizontal, LayoutGrid, Pencil, Copy, Trash2, Download, Search } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { type HomepageScheme } from '../shared';
-import { ArcoButton, ArcoModal, ArcoTextInput } from './ArcoLike';
+import { ArcoButton, ArcoModal, ArcoTag, ArcoTextInput } from './HeroUI';
 import { ComponentManagerDialog } from './ComponentManagerDialog';
 
 interface PanelListProps {
@@ -148,22 +148,7 @@ export function PanelList({
                     </span>
                   </div>
                   <div style={{ color: 'var(--app-muted)', fontSize: 14, marginBottom: 8 }}>{scheme.lastEdited} 更新</div>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      height: 22,
-                      padding: '0 8px',
-                      borderRadius: 99,
-                      background: 'var(--app-accent-soft)',
-                      color: 'var(--app-accent)',
-                      border: '1px solid var(--app-accent-border)',
-                      fontSize: 12,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {schemeTag(scheme)}
-                  </span>
+                  <ArcoTag tone="accent">{schemeTag(scheme)}</ArcoTag>
                 </div>
 
                 <DropdownMenu.Root>
@@ -247,14 +232,10 @@ export function PanelList({
         </ArcoButton>
         <ArcoButton
           onClick={handleAdd}
+          type="secondary"
           size="large"
           icon={<Plus size={14} />}
           long
-          style={{
-            borderStyle: 'dashed',
-            borderColor: 'var(--app-accent-border)',
-            color: 'var(--app-accent)',
-          }}
         >
           新增首页
         </ArcoButton>

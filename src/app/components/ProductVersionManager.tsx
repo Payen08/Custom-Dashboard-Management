@@ -20,7 +20,7 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
-import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTextArea, ArcoTextInput } from './ArcoLike';
+import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTag, ArcoTextArea, ArcoTextInput } from './HeroUI';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -242,47 +242,7 @@ function Badge({
   children: ReactNode;
   tone?: 'neutral' | 'accent' | 'success' | 'danger';
 }) {
-  const palette = {
-    neutral: {
-      color: 'var(--app-muted)',
-      background: 'var(--app-soft)',
-      border: 'var(--app-border)',
-    },
-    accent: {
-      color: 'var(--app-accent)',
-      background: 'var(--app-accent-soft)',
-      border: 'var(--app-accent-border)',
-    },
-    success: {
-      color: 'var(--app-success)',
-      background: 'var(--app-success-soft)',
-      border: 'color-mix(in srgb, var(--app-success) 24%, var(--app-border))',
-    },
-    danger: {
-      color: 'var(--app-danger)',
-      background: 'var(--app-danger-soft)',
-      border: 'var(--app-danger-border)',
-    },
-  }[tone];
-
-  return (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      height: 24,
-      borderRadius: 999,
-      border: `1px solid ${palette.border}`,
-      background: palette.background,
-      color: palette.color,
-      padding: '0 9px',
-      fontSize: 12,
-      fontWeight: 600,
-      lineHeight: 1,
-      whiteSpace: 'nowrap',
-    }}>
-      {children}
-    </span>
-  );
+  return <ArcoTag tone={tone}>{children}</ArcoTag>;
 }
 
 function FieldLabel({ children, required }: { children: ReactNode; required?: boolean }) {
@@ -1820,12 +1780,11 @@ export function ProductVersionManager() {
         </div>
         <div style={{ flexShrink: 0, padding: 12, borderTop: '1px solid var(--app-border)' }}>
           <ArcoButton
-            type="outline"
+            type="secondary"
             size="large"
             long
             icon={<Plus size={16} />}
             onClick={() => openCreateProduct()}
-            style={{ borderStyle: 'dashed', borderColor: 'var(--app-accent-border)', background: 'var(--app-accent-soft)', color: 'var(--app-accent)' }}
           >
             新增产品
           </ArcoButton>

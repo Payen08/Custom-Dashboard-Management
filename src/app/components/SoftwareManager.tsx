@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Check, Copy, Edit3, Plus, Search, Trash2 } from 'lucide-react';
-import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTextArea, ArcoTextInput } from './ArcoLike';
+import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTextArea, ArcoTextInput } from './HeroUI';
 import { INITIAL_SOFTWARE_PRODUCTS, type SoftwareProduct } from '../softwareProducts';
 
 type FormData = Pick<SoftwareProduct, 'name' | 'description'>;

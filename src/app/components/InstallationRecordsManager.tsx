@@ -3,8 +3,8 @@ import {
   ChevronRight, Edit3, FileText, RefreshCw, Search, Upload,
 } from 'lucide-react';
 import {
-  ArcoButton, ArcoField, ArcoIconButton, ArcoModal, ArcoTextArea, ArcoTextInput,
-} from './ArcoLike';
+  ArcoButton, ArcoField, ArcoIconButton, ArcoModal, ArcoTag, ArcoTextArea, ArcoTextInput,
+} from './HeroUI';
 
 interface SoftwareItem {
   name: string;
@@ -89,17 +89,11 @@ const INITIAL_RECORDS: InstallationRecord[] = [
 ];
 
 function StatusPill({ tone = 'neutral', children }: { tone?: 'success' | 'danger' | 'accent' | 'neutral'; children: ReactNode }) {
-  const colors = {
-    success: ['var(--app-success-soft)', 'var(--app-success)'],
-    danger: ['var(--app-danger-soft)', 'var(--app-danger)'],
-    accent: ['var(--app-accent-soft)', 'var(--app-accent)'],
-    neutral: ['var(--app-neutral-soft)', 'var(--app-text)'],
-  } as const;
-  return <span style={{ display: 'inline-flex', alignItems: 'center', minHeight: 22, padding: '0 8px', flexShrink: 0, borderRadius: 999, background: colors[tone][0], color: colors[tone][1], fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>{children}</span>;
+  return <ArcoTag tone={tone} style={{ flexShrink: 0 }}>{children}</ArcoTag>;
 }
 
 function ModelPill({ children }: { children: ReactNode }) {
-  return <span style={{ minHeight: 28, padding: '0 10px', display: 'inline-flex', alignItems: 'center', border: '1px solid var(--app-border)', borderRadius: 8, background: 'var(--app-soft)', color: 'var(--app-text)', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>{children}</span>;
+  return <ArcoTag>{children}</ArcoTag>;
 }
 
 function RecordEditModal({ record, onClose, onSave }: { record: InstallationRecord | null; onClose: () => void; onSave: (next: InstallationRecord) => void }) {
@@ -356,7 +350,7 @@ function SoftwareStatusList({ status, items, activities, expandedSoftwareName, o
 }
 
 function VersionPill({ children }: { children: ReactNode }) {
-  return <span style={{ display: 'inline-flex', alignItems: 'center', minHeight: 26, padding: '0 10px', flexShrink: 0, border: '1px solid var(--app-border)', borderRadius: 999, background: 'var(--app-soft)', color: 'var(--app-muted)', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>{children}</span>;
+  return <ArcoTag style={{ flexShrink: 0 }}>{children}</ArcoTag>;
 }
 
 function InlineSoftwareActivityList({ softwareName, activities }: { softwareName: string; activities: InstallationActivity[] }) {

@@ -9,14 +9,14 @@ import { PanelList } from './components/PanelList';
 import { ComponentLibrary } from './components/ComponentLibrary';
 import { CanvasArea } from './components/CanvasArea';
 import { PropertiesPanel } from './components/PropertiesPanel';
-import { RobotModelManager } from './components/RobotModelManager';
+import { RobotComponentLibrary, RobotModelManager } from './components/RobotModelManager';
 import { ProductVersionManager } from './components/ProductVersionManager';
 import { SoftwareManager } from './components/SoftwareManager';
 import { InstallationRecordsManager } from './components/InstallationRecordsManager';
 import { WorkspaceLogin as WorkspaceLoginScreen } from './components/WorkspaceLogin';
 import { INITIAL_SOFTWARE_PRODUCTS, type SoftwareProduct } from './softwareProducts';
 import { useComponentCatalog } from './components/useComponentCatalog';
-import { ArcoButton, ArcoIconButton, ArcoModal } from './components/ArcoLike';
+import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTag } from './components/HeroUI';
 import { APP_THEME_VARS, type ThemeMode } from './theme';
 import {
   type HomepageScheme, type PlacedItem,
@@ -754,16 +754,11 @@ function EditorWorkspaceHeader({
           <h1 style={{ color: 'var(--app-heading)', fontSize: 18, lineHeight: 1.3, fontWeight: 600, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {getSchemePageTitle(scheme)}
           </h1>
-          <span style={{
-            background: 'var(--app-accent-soft)', color: 'var(--app-accent)', border: '1px solid var(--app-accent-border)',
-            fontSize: 10, fontWeight: 600, padding: '3px 9px', borderRadius: 999, flexShrink: 0,
-          }}>
-            {scheme.name} · {scheme.version}
-          </span>
+          <ArcoTag tone="accent" style={{ flexShrink: 0 }}>{scheme.name} · {scheme.version}</ArcoTag>
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
-        <ArcoButton onClick={onExit} style={{ background: 'var(--app-surface)', border: '1px solid var(--app-border-strong)' }}>退出编辑</ArcoButton>
+        <ArcoButton type="outline" onClick={onExit}>退出编辑</ArcoButton>
         <ArcoButton
           onClick={onSave}
           type={saveState === 'saved' ? 'default' : 'primary'}
@@ -926,10 +921,11 @@ function EditorNavRail({
   const navItems = [
     { key: 'home' as const, icon: Home, label: '首页自定义' },
     { key: 'apps' as const, icon: FileText, label: '型号模板' },
+    { key: 'components' as const, icon: Box, label: '组件库' },
     { key: 'products' as const, icon: Package, label: '版本管理' },
     { key: 'software' as const, icon: Cpu, label: '软件产品' },
     { key: 'installations' as const, icon: ClipboardList, label: '装机记录' },
-    // 组件库、外设库、用户管理模块暂时隐藏，页面能力保留以便后续恢复。
+    // 外设库、用户管理模块暂时隐藏，页面能力保留以便后续恢复。
   ];
 
   function renderItem(key: EditorNavKey, Icon: typeof Home, label: string) {
@@ -1219,12 +1215,7 @@ function EditToolbar({
         <span style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {getSchemePageTitle(scheme)}
         </span>
-        <span style={{
-          background: 'var(--app-accent-soft)', color: 'var(--app-accent)',
-          fontSize: 10, fontWeight: 500, padding: '1px 6px', borderRadius: 99, flexShrink: 0,
-        }}>
-          {scheme.version}
-        </span>
+        <ArcoTag tone="accent" size="small" style={{ flexShrink: 0 }}>{scheme.version}</ArcoTag>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -1629,6 +1620,20 @@ export default function App() {
         onWorkspace={returnToWorkspace}
       >
         <RobotModelManager themeMode={robotThemeMode} softwareProducts={softwareProducts} />
+      </AppShell>
+    );
+  }
+
+  if (!isCanvasPreview && activeEditorNav === 'components') {
+    return (
+      <AppShell
+        active={activeEditorNav}
+        themeMode={robotThemeMode}
+        onThemeToggle={toggleRobotThemeMode}
+        onNavChange={handleShellNavChange}
+        onWorkspace={returnToWorkspace}
+      >
+        <RobotComponentLibrary themeMode={robotThemeMode} />
       </AppShell>
     );
   }

@@ -4,8 +4,8 @@ import {
 } from 'lucide-react';
 import { type ComponentDef } from '../shared';
 import {
-  ArcoButton, ArcoIconButton, ArcoModal, ArcoTextArea, ArcoTextInput,
-} from './ArcoLike';
+  ArcoButton, ArcoIconButton, ArcoModal, ArcoTag, ArcoTextArea, ArcoTextInput,
+} from './HeroUI';
 import { useComponentCatalog } from './useComponentCatalog';
 
 type CatalogFilter = 'all' | 'system' | 'custom';
@@ -170,11 +170,7 @@ export function ComponentManagerDialog({
         {form.tags.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
             {form.tags.map(tag => (
-              <span key={tag} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4, height: 32, padding: '0 8px 0 10px', borderRadius: 8,
-                background: 'var(--app-accent-soft)', color: 'var(--app-accent)', border: '1px solid var(--app-accent-border)',
-                fontSize: 12, fontWeight: 600,
-              }}>
+              <ArcoTag key={tag} tone="accent" style={{ gap: 4, minHeight: 32, padding: '0 8px 0 10px', fontWeight: 600 }}>
                 <Tag size={11} />{tag}
                 <button
                   onClick={() => removeTag(tag)}
@@ -184,7 +180,7 @@ export function ComponentManagerDialog({
                 >
                   <X size={11} />
                 </button>
-              </span>
+              </ArcoTag>
             ))}
           </div>
         )}
@@ -409,14 +405,7 @@ export function ComponentManagerDialog({
                   </div>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                     {component.scopes.slice(0, 2).map(scope => (
-                      <span key={scope} style={{
-                        padding: '2px 7px',
-                        borderRadius: 6,
-                        background: 'var(--app-soft)',
-                        color: 'var(--app-text)',
-                        border: '1px solid var(--app-border)',
-                        fontSize: 10,
-                      }}>{scope}</span>
+                      <ArcoTag key={scope} size="small">{scope}</ArcoTag>
                     ))}
                     {component.scopes.length > 2 && <span style={{ color: 'var(--app-muted)', fontSize: 10 }}>+{component.scopes.length - 2}</span>}
                   </div>

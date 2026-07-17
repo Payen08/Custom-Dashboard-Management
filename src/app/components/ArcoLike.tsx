@@ -7,6 +7,8 @@ type ArcoScope = 'app' | 'robot';
 type ButtonVisualType = 'default' | 'primary' | 'secondary' | 'text' | 'outline';
 type ButtonStatus = 'normal' | 'success' | 'danger' | 'warning';
 type ButtonSize = 'mini' | 'small' | 'default' | 'large';
+type TagTone = 'neutral' | 'accent' | 'success' | 'warning' | 'danger';
+type TagSize = 'small' | 'default';
 type CssVars = CSSProperties & Record<string, string | number | undefined>;
 
 function scopeVars(scope: ArcoScope): CssVars {
@@ -99,6 +101,38 @@ export const ArcoButton = forwardRef<HTMLButtonElement, ArcoButtonProps>(functio
 
 export function ArcoIconButton(props: Omit<ArcoButtonProps, 'iconOnly'>) {
   return <ArcoButton {...props} iconOnly />;
+}
+
+interface ArcoTagProps extends React.HTMLAttributes<HTMLSpanElement> {
+  tone?: TagTone;
+  size?: TagSize;
+  scope?: ArcoScope;
+}
+
+/**
+ * Semantic metadata only. Tags are intentionally borderless so status, scope,
+ * version and count labels keep one visual language throughout the product.
+ */
+export function ArcoTag({
+  tone = 'neutral',
+  size = 'default',
+  scope = 'app',
+  className,
+  style,
+  children,
+  ...props
+}: ArcoTagProps) {
+  return (
+    <span
+      data-tone={tone}
+      data-size={size}
+      className={cx('arcoui-tag', className)}
+      style={{ ...scopeVars(scope), ...style }}
+      {...props}
+    >
+      {children}
+    </span>
+  );
 }
 
 interface ArcoModalProps {

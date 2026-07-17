@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDrag } from 'react-dnd';
 import { ArrowLeft, BarChart2, Map, Factory, ListChecks, ChevronDown, ChevronRight, List, Search } from 'lucide-react';
 import { CATEGORIES, type ComponentDef } from '../shared';
-import { ArcoButton, ArcoIconButton, ArcoTextInput } from './ArcoLike';
+import { ArcoButton, ArcoIconButton, ArcoTag, ArcoTextInput } from './HeroUI';
 import { ComponentManagerDialog } from './ComponentManagerDialog';
 import { useComponentCatalog } from './useComponentCatalog';
 
@@ -18,13 +18,6 @@ const CATEGORY_META: Record<string, { icon: React.ReactNode; color: string; bg: 
   map:        { icon: <Map size={13} />,       color: 'var(--app-accent)', bg: 'var(--app-accent-soft)', border: 'var(--app-accent-border)' },
   production: { icon: <Factory size={13} />,   color: 'var(--app-accent)', bg: 'var(--app-accent-soft)', border: 'var(--app-accent-border)' },
   task:       { icon: <ListChecks size={13} />, color: 'var(--app-accent)', bg: 'var(--app-accent-soft)', border: 'var(--app-accent-border)' },
-};
-
-const SCOPE_STYLE: Record<string, { bg: string; color: string; border: string }> = {
-  '复合机器人': { bg: 'var(--app-accent-soft)', color: 'var(--app-accent)', border: 'var(--app-accent-border)' },
-  'AGV':        { bg: 'var(--app-soft)', color: 'var(--app-text)', border: 'var(--app-border)' },
-  '巡检':       { bg: 'var(--app-soft)', color: 'var(--app-text)', border: 'var(--app-border)' },
-  '通用':       { bg: 'var(--app-soft)', color: 'var(--app-text)', border: 'var(--app-border)' },
 };
 
 const THUMBNAILS: Record<string, React.ReactNode> = {
@@ -61,8 +54,8 @@ function DraggableCard({ def, categoryId, compact = false }: { def: ComponentDef
           {!compact && <p style={{ color: 'var(--app-text)', fontSize: 12, lineHeight: 1.55, margin: '0 0 8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{def.description}</p>}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {def.scopes.map(s => {
-              const sc = SCOPE_STYLE[s] ?? { bg: 'var(--app-soft)', color: 'var(--app-text)', border: 'var(--app-border)' };
-              return <span key={s} style={{ background: sc.bg, color: sc.color, border: '1px solid ' + sc.border, fontSize: 12, fontWeight: 500, padding: '1px 7px', borderRadius: 8, lineHeight: 1.6 }}>{s}</span>;
+              const tone = s === '复合机器人' ? 'accent' : 'neutral';
+              return <ArcoTag key={s} tone={tone} size="small">{s}</ArcoTag>;
             })}
           </div>
         </div>
@@ -107,7 +100,7 @@ export function ComponentLibrary({ onExit, title = '组件库', showBack = true,
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ width: 26, height: 26, background: meta.bg, color: meta.color, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid ' + meta.border }}>{meta.icon}</div>
                   <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--app-heading)' }}>{cat.name}</span>
-                  <span style={{ background: 'var(--app-soft)', color: 'var(--app-muted)', fontSize: 12, fontWeight: 600, minWidth: 22, height: 22, padding: '0 7px', borderRadius: 7, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--app-border)' }}>{items.length}</span>
+                  <ArcoTag>{items.length}</ArcoTag>
                 </div>
                 {isExpanded ? <ChevronDown size={12} color="var(--app-muted)" /> : <ChevronRight size={12} color="var(--app-muted)" />}
               </button>
