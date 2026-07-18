@@ -1,5 +1,27 @@
-import { forwardRef, useId, type CSSProperties, type ReactNode } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
+import { Children, forwardRef, isValidElement, useId, type CSSProperties, type ReactNode } from 'react';
+import {
+  ButtonRoot,
+  CheckboxContent,
+  CheckboxControl,
+  CheckboxIndicator,
+  CheckboxRoot,
+  ChipRoot,
+  InputRoot,
+  ListBoxItemRoot,
+  ListBoxRoot,
+  ModalBackdrop,
+  ModalContainer,
+  ModalDialog,
+  ModalHeading,
+  ModalRoot,
+  SelectIndicator,
+  SelectPopover,
+  SelectRoot,
+  SelectTrigger,
+  SelectValue,
+  TextAreaRoot,
+  useOverlayState,
+} from '@heroui/react';
 import { Upload, X } from 'lucide-react';
 import '../../styles/arco-like.css';
 
@@ -79,10 +101,13 @@ export const ArcoButton = forwardRef<HTMLButtonElement, ArcoButtonProps>(functio
   ...props
 }, ref) {
   return (
-    <button
+    <ButtonRoot
       ref={ref}
       type={htmlType}
-      disabled={disabled || loading}
+      isDisabled={disabled || loading}
+      isIconOnly={iconOnly}
+      size={size === 'large' ? 'lg' : size === 'default' ? 'md' : 'sm'}
+      variant={type === 'primary' ? 'primary' : type === 'secondary' ? 'secondary' : type === 'outline' ? 'outline' : type === 'text' ? 'tertiary' : 'secondary'}
       data-scope={scope}
       data-type={type}
       data-status={status}
@@ -95,7 +120,7 @@ export const ArcoButton = forwardRef<HTMLButtonElement, ArcoButtonProps>(functio
     >
       {loading ? <span className="arcoui-spinner" aria-hidden="true" /> : icon}
       {!iconOnly && children}
-    </button>
+    </ButtonRoot>
   );
 });
 
@@ -123,7 +148,10 @@ export function ArcoTag({
   ...props
 }: ArcoTagProps) {
   return (
-    <span
+    <ChipRoot
+      color={tone === 'neutral' ? 'default' : tone}
+      size={size === 'small' ? 'sm' : 'md'}
+      variant="soft"
       data-tone={tone}
       data-size={size}
       className={cx('arcoui-tag', className)}
@@ -131,7 +159,7 @@ export function ArcoTag({
       {...props}
     >
       {children}
-    </span>
+    </ChipRoot>
   );
 }
 
@@ -170,6 +198,7 @@ export function ArcoModal({
   contentStyle,
   closeable = true,
 }: ArcoModalProps) {
+  const overlayState = useOverlayState({ isOpen: open, onOpenChange });
   const sizeWidth = {
     sm: 'var(--ds-modal-width-sm, 420px)',
     md: 'var(--ds-modal-width-md, 560px)',
@@ -178,13 +207,13 @@ export function ArcoModal({
   }[size];
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay
+    <ModalRoot state={overlayState}>
+      <ModalBackdrop
           className="arcoui-modal-overlay"
           style={scopeVars(scope)}
-        />
-        <Dialog.Content
+      >
+        <ModalContainer>
+          <ModalDialog
           className="arcoui-modal-content"
           data-scope={scope}
           data-status={status}
@@ -199,13 +228,12 @@ export function ArcoModal({
         >
           <div className="arcoui-modal-header">
             <div className="arcoui-modal-title-area">
-              <Dialog.Title className="arcoui-modal-title">{title}</Dialog.Title>
-              <Dialog.Description className={description ? 'arcoui-modal-description' : 'arcoui-visually-hidden'}>
+              <ModalHeading className="arcoui-modal-title">{title}</ModalHeading>
+              <p className={description ? 'arcoui-modal-description' : 'arcoui-visually-hidden'}>
                 {description ?? '弹窗内容'}
-              </Dialog.Description>
+              </p>
             </div>
             {closeable && (
-              <Dialog.Close asChild>
                 <ArcoIconButton
                   scope={scope}
                   type="text"
@@ -214,17 +242,18 @@ export function ArcoModal({
                   aria-label="关闭"
                   title="关闭"
                   className="arcoui-modal-close"
+                  onClick={() => overlayState.close()}
                 />
-              </Dialog.Close>
             )}
           </div>
           <div className="arcoui-modal-body" style={bodyStyle}>
             {children}
           </div>
           {footer && <div className="arcoui-modal-footer">{footer}</div>}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+          </ModalDialog>
+        </ModalContainer>
+      </ModalBackdrop>
+    </ModalRoot>
   );
 }
 
@@ -255,7 +284,7 @@ export const ArcoTextInput = forwardRef<HTMLInputElement, ArcoInputProps>(functi
   ...props
 }, ref) {
   return (
-    <input
+    <InputRoot
       ref={ref}
       className={cx('arcoui-input', className)}
       style={{ ...scopeVars(scope), ...style }}
@@ -275,7 +304,7 @@ export const ArcoTextArea = forwardRef<HTMLTextAreaElement, ArcoTextAreaProps>(f
   ...props
 }, ref) {
   return (
-    <textarea
+    <TextAreaRoot
       ref={ref}
       className={cx('arcoui-input arcoui-textarea', className)}
       style={{ ...scopeVars(scope), ...style }}
@@ -293,17 +322,55 @@ export const ArcoSelect = forwardRef<HTMLSelectElement, ArcoSelectProps>(functio
   className,
   style,
   children,
-  ...props
+  value,
+  defaultValue,
+  disabled,
+  onChange,
+  name,
+  required,
+  autoFocus,
+  'aria-label': ariaLabel,
 }, ref) {
+  const options = Children.toArray(children).flatMap(child => {
+    if (!isValidElement<{ value?: string | number; disabled?: boolean; children?: ReactNode }>(child) || child.type !== 'option') {
+      return [];
+    }
+
+    const optionValue = String(child.props.value ?? child.props.children ?? '');
+    return [{
+      value: optionValue,
+      label: child.props.children,
+      disabled: child.props.disabled,
+    }];
+  });
+
   return (
-    <select
-      ref={ref}
-      className={cx('arcoui-input arcoui-select', className)}
+    <SelectRoot
+      ref={ref as unknown as React.Ref<HTMLDivElement>}
+      selectedKey={value == null ? undefined : String(value)}
+      defaultSelectedKey={defaultValue == null ? undefined : String(defaultValue)}
+      isDisabled={disabled}
+      name={name}
+      isRequired={required}
+      autoFocus={autoFocus}
+      aria-label={ariaLabel}
+      onSelectionChange={key => onChange?.({ target: { value: String(key) } } as React.ChangeEvent<HTMLSelectElement>)}
       style={{ ...scopeVars(scope), ...style }}
-      {...props}
     >
-      {children}
-    </select>
+      <SelectTrigger className={cx('arcoui-input arcoui-select', className)}>
+        <SelectValue />
+        <SelectIndicator />
+      </SelectTrigger>
+      <SelectPopover>
+        <ListBoxRoot>
+          {options.map(option => (
+            <ListBoxItemRoot key={option.value} id={option.value} isDisabled={option.disabled} textValue={String(option.label)}>
+              {option.label}
+            </ListBoxItemRoot>
+          ))}
+        </ListBoxRoot>
+      </SelectPopover>
+    </SelectRoot>
   );
 });
 
@@ -317,24 +384,35 @@ export function ArcoCheckbox({
   label,
   className,
   style,
-  ...props
+  checked,
+  defaultChecked,
+  disabled,
+  onChange,
+  name,
+  required,
+  autoFocus,
+  'aria-label': ariaLabel,
 }: ArcoCheckboxProps) {
-  if (!label) {
-    return (
-      <input
-        type="checkbox"
-        className={cx('arcoui-checkbox', className)}
-        style={{ ...scopeVars(scope), ...style }}
-        {...props}
-      />
-    );
-  }
-
   return (
-    <label className={cx('arcoui-checkbox-row', className)} style={{ ...scopeVars(scope), ...style }}>
-      <input type="checkbox" className="arcoui-checkbox" {...props} />
+    <CheckboxRoot
+      className={cx('arcoui-checkbox-row', className)}
+      style={{ ...scopeVars(scope), ...style }}
+      isSelected={checked}
+      defaultSelected={defaultChecked}
+      isDisabled={disabled}
+      isRequired={required}
+      autoFocus={autoFocus}
+      name={name}
+      aria-label={ariaLabel ?? (typeof label === 'string' ? label : undefined)}
+      onChange={isSelected => onChange?.({ target: { checked: isSelected } } as React.ChangeEvent<HTMLInputElement>)}
+    >
+      <CheckboxContent className="arcoui-checkbox">
+        <CheckboxControl>
+          <CheckboxIndicator />
+        </CheckboxControl>
+      </CheckboxContent>
       {label && <span>{label}</span>}
-    </label>
+    </CheckboxRoot>
   );
 }
 

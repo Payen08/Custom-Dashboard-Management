@@ -372,7 +372,11 @@
 }
 
 .arcoui-select {
-  appearance: auto;
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
 }
 
 .arcoui-textarea {
@@ -406,8 +410,23 @@
 .arcoui-checkbox {
   width: 16px;
   height: 16px;
-  accent-color: var(--arcoui-accent);
+  flex: 0 0 16px;
+  display: inline-flex;
   cursor: pointer;
+}
+
+.arcoui-checkbox [data-slot="checkbox-control"] {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--arcoui-border-strong);
+  border-radius: 4px;
+  background: var(--arcoui-surface);
+  box-sizing: border-box;
+}
+
+.arcoui-checkbox-row[data-selected] .arcoui-checkbox [data-slot="checkbox-control"] {
+  border-color: var(--arcoui-accent);
+  background: var(--arcoui-accent);
 }
 
 .arcoui-upload {

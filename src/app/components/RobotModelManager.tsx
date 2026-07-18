@@ -3789,7 +3789,20 @@ export function RobotComponentLibrary({ themeMode }: { themeMode?: ThemeMode }) 
   const [nodeLabel, setNodeLabel] = useState('');
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [urdfImportOpen, setUrdfImportOpen] = useState(false);
+  const [urdfImportStep, setUrdfImportStep] = useState<'upload' | 'preview'>('upload');
+  const [pendingUrdfTopology, setPendingUrdfTopology] = useState<TopologyNode[] | null>(null);
+  const [pendingUrdfFileName, setPendingUrdfFileName] = useState('');
+  const [urdfImportError, setUrdfImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // HeroUI modals render in a portal, so the robot tokens must also be available on the document root.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    Object.entries(ROBOT_THEME_VARS[activeTheme]).forEach(([key, value]) => {
+      document.documentElement.style.setProperty(key, value);
+    });
+  }, [activeTheme]);
 
   const selectedNode = useMemo(
     () => findTopologyNode(topology, selectedId) ?? topology[0] ?? null,
@@ -3824,24 +3837,58 @@ export function RobotComponentLibrary({ themeMode }: { themeMode?: ThemeMode }) 
     setAddDialogOpen(false);
   }
 
-  function importUrdf(event: React.ChangeEvent<HTMLInputElement>) {
+  function openUrdfImport() {
+    setUrdfImportStep('upload');
+    setPendingUrdfTopology(null);
+    setPendingUrdfFileName('');
+    setUrdfImportError(null);
+    setUrdfImportOpen(true);
+  }
+
+  function stageUrdfImport(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
+    setUrdfImportError(null);
     const reader = new FileReader();
     reader.onload = () => {
       try {
         const { links, joints } = parseUrdf(String(reader.result));
         const parsed = urdfToTopology(links, joints);
-        if (parsed.length) {
-          setTopology(parsed);
-          setSelectedId(parsed[0].id);
-        }
-      } catch {
-        // Import keeps the current editable tree when the file cannot be parsed.
+        if (!parsed.length) throw new Error('未识别到 Link 或 Joint 结构');
+        setPendingUrdfTopology(parsed);
+        setPendingUrdfFileName(file.name);
+      } catch (error) {
+        setPendingUrdfTopology(null);
+        setPendingUrdfFileName('');
+        setUrdfImportError(error instanceof Error ? error.message : 'URDF 文件解析失败');
       }
     };
+    reader.onerror = () => setUrdfImportError('文件读取失败');
     reader.readAsText(file);
+  }
+
+  function confirmUrdfImport() {
+    if (!pendingUrdfTopology?.length) return;
+    setTopology(pendingUrdfTopology);
+    setSelectedId(pendingUrdfTopology[0].id);
+    setUrdfImportOpen(false);
+  }
+
+  function renderUrdfPreview(nodes: TopologyNode[], depth = 0) {
+    return nodes.map(node => {
+      const meta = topologyKindMeta(node.kind);
+      return (
+        <div key={node.id}>
+          <div className="component-library-import-preview__node" style={{ paddingLeft: 14 + depth * 18 }}>
+            <span className="component-library-import-preview__branch">{depth ? '└' : '•'}</span>
+            <span className="component-library-import-preview__name">{node.label}</span>
+            <span className="component-library-import-preview__kind">{meta.label}</span>
+          </div>
+          {node.children?.length ? renderUrdfPreview(node.children, depth + 1) : null}
+        </div>
+      );
+    });
   }
 
   return (
@@ -3875,6 +3922,25 @@ export function RobotComponentLibrary({ themeMode }: { themeMode?: ThemeMode }) 
         .component-library-tree .hero-topology-node-button:focus-visible { outline: 2px solid var(--robot-accent-border); outline-offset: 2px; border-radius: 4px; }
         .component-library-right { min-height: 0; display: flex; flex-direction: column; gap: var(--robot-section-gap); }
         .component-library-right .hero-topology-param-panel { flex: 1; }
+        .component-library-import-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+        .component-library-import-step { min-height: 40px; padding: 0 12px; display: flex; align-items: center; gap: 8px; border-radius: var(--robot-control-radius); background: var(--robot-soft); color: var(--robot-muted); font-size: 14px; font-weight: 500; }
+        .component-library-import-step[data-active="true"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+        .component-library-import-step__index { width: 20px; height: 20px; display: inline-grid; place-items: center; border-radius: 999px; background: currentColor; color: var(--robot-surface); font-size: 12px; font-weight: 700; }
+        .component-library-import-upload { min-height: 164px; padding: 24px; display: grid; place-items: center; align-content: center; gap: 8px; border: 1px dashed var(--robot-border-strong); border-radius: var(--robot-inner-radius); background: var(--robot-soft); color: var(--robot-muted); cursor: pointer; text-align: center; }
+        .component-library-import-upload:hover { border-color: var(--robot-accent-border); background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+        .component-library-import-upload strong { color: var(--robot-heading); font-size: 14px; font-weight: 600; }
+        .component-library-import-upload span { font-size: 12px; }
+        .component-library-import-file { min-height: 40px; margin-top: 12px; padding: 0 12px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--robot-border); border-radius: var(--robot-control-radius); background: var(--robot-surface); color: var(--robot-text); font-size: 14px; }
+        .component-library-import-file__name { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .component-library-import-file__status { padding: 2px 8px; border-radius: 999px; background: var(--robot-success-soft); color: var(--robot-success); font-size: 12px; font-weight: 600; }
+        .component-library-import-error { margin: 10px 0 0; color: var(--robot-danger); font-size: 12px; line-height: 18px; }
+        .component-library-import-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .component-library-import-summary span { min-height: 28px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--robot-soft); color: var(--robot-muted); font-size: 12px; }
+        .component-library-import-preview { max-height: 320px; overflow: auto; border: 1px solid var(--robot-border); border-radius: var(--robot-inner-radius); background: var(--robot-surface); padding: 8px 0; }
+        .component-library-import-preview__node { min-height: 34px; padding-right: 12px; display: flex; align-items: center; gap: 8px; color: var(--robot-text); font-size: 14px; }
+        .component-library-import-preview__branch { width: 12px; color: var(--robot-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .component-library-import-preview__name { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .component-library-import-preview__kind { padding: 2px 8px; border-radius: 999px; background: var(--robot-accent-soft); color: var(--robot-accent-text); font-size: 12px; }
         @media (max-width: 1240px) { .component-library-grid { grid-template-columns: 300px minmax(380px, 1fr); overflow-y: auto; } .component-library-right { grid-column: 1 / -1; min-height: 680px; display: grid; grid-template-columns: 1fr 1fr; } }
         @media (max-width: 760px) { .component-library-grid { grid-template-columns: minmax(0, 1fr); } .component-library-right { grid-column: auto; display: flex; } }
       `}</style>
@@ -3926,9 +3992,9 @@ export function RobotComponentLibrary({ themeMode }: { themeMode?: ThemeMode }) 
           <section className="component-library-card component-library-tree">
             <header className="component-library-card__header">
               <h2 style={{ flex: 1 }}>模型结构</h2>
-              <input ref={fileInputRef} type="file" accept=".urdf,.xml" onChange={importUrdf} style={{ display: 'none' }} />
+              <input ref={fileInputRef} type="file" accept=".urdf,.xml" onChange={stageUrdfImport} style={{ display: 'none' }} />
               <button type="button" className="hero-detail-tool-button" data-icon-only="true" aria-label="新增根 Link" title="新增根 Link" onClick={() => openAdd()}><Plus size={16} /></button>
-              <button type="button" className="hero-detail-tool-button" data-icon-only="true" aria-label="导入 URDF" title="导入 URDF" onClick={() => fileInputRef.current?.click()}><FileCode2 size={16} /></button>
+              <button type="button" className="hero-detail-tool-button" data-icon-only="true" aria-label="导入 URDF" title="导入 URDF" onClick={openUrdfImport}><FileCode2 size={16} /></button>
             </header>
             <div className="component-library-tree__body">
               <TopologyTree
@@ -3952,6 +4018,44 @@ export function RobotComponentLibrary({ themeMode }: { themeMode?: ThemeMode }) 
       </ArcoModal>
       <ArcoModal open={deleteTargetId !== null} onOpenChange={open => { if (!open) setDeleteTargetId(null); }} scope="robot" status="danger" title="删除结构节点" size="sm" footer={<><ArcoButton scope="robot" onClick={() => setDeleteTargetId(null)}>取消</ArcoButton><ArcoButton scope="robot" type="primary" status="danger" onClick={() => { if (deleteTargetId) { setTopology(current => removeTopologyNode(current, deleteTargetId)); setSelectedId('base_link'); } setDeleteTargetId(null); }}>删除</ArcoButton></>}>
         <p style={{ margin: 0, color: 'var(--robot-muted)', fontSize: 14 }}>确认删除该结构节点吗？其下级节点会一并移除。</p>
+      </ArcoModal>
+      <ArcoModal
+        open={urdfImportOpen}
+        onOpenChange={open => { if (!open) setUrdfImportOpen(false); }}
+        scope="robot"
+        title="导入 URDF"
+        size="md"
+        footer={urdfImportStep === 'upload' ? <>
+          <ArcoButton scope="robot" onClick={() => setUrdfImportOpen(false)}>取消</ArcoButton>
+          <ArcoButton scope="robot" type="primary" disabled={!pendingUrdfTopology?.length} onClick={() => setUrdfImportStep('preview')}>下一步</ArcoButton>
+        </> : <>
+          <ArcoButton scope="robot" onClick={() => setUrdfImportStep('upload')}>重新上传</ArcoButton>
+          <ArcoButton scope="robot" type="primary" onClick={confirmUrdfImport}>确认导入</ArcoButton>
+        </>}
+      >
+        <div className="component-library-import-steps" aria-label="导入步骤">
+          <div className="component-library-import-step" data-active={urdfImportStep === 'upload'}><span className="component-library-import-step__index">1</span>上传文件</div>
+          <div className="component-library-import-step" data-active={urdfImportStep === 'preview'}><span className="component-library-import-step__index">2</span>预览结构</div>
+        </div>
+        {urdfImportStep === 'upload' ? <>
+          <button type="button" className="component-library-import-upload" onClick={() => fileInputRef.current?.click()}>
+            <FileUp size={22} />
+            <strong>选择 URDF 文件</strong>
+            <span>支持 .urdf、.xml 文件，解析后进入结构预览</span>
+          </button>
+          {pendingUrdfFileName ? <div className="component-library-import-file"><FileCode2 size={16} color="var(--robot-accent)" /><span className="component-library-import-file__name">{pendingUrdfFileName}</span><span className="component-library-import-file__status">已解析</span></div> : null}
+          {urdfImportError ? <p className="component-library-import-error">{urdfImportError}</p> : null}
+        </> : pendingUrdfTopology ? (() => {
+          const nodes = flattenTopology(pendingUrdfTopology);
+          const links = nodes.filter(node => node.kind === 'link').length;
+          const joints = nodes.filter(node => node.kind === 'joint').length;
+          const meshes = nodes.filter(node => node.kind === 'mesh').length;
+          return <>
+            <div className="component-library-import-file"><FileCode2 size={16} color="var(--robot-accent)" /><span className="component-library-import-file__name">{pendingUrdfFileName}</span><span className="component-library-import-file__status">等待导入</span></div>
+            <div className="component-library-import-summary"><span>{links} 个 Link</span><span>{joints} 个 Joint</span><span>{meshes} 个 Mesh</span></div>
+            <div className="component-library-import-preview">{renderUrdfPreview(pendingUrdfTopology)}</div>
+          </>;
+        })() : null}
       </ArcoModal>
     </div>
   );
