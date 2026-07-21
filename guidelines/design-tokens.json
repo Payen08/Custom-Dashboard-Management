@@ -1,0 +1,178 @@
+{
+  "version": "1.1.7",
+  "name": "Product Design Tokens",
+  "description": "Frontend handoff source of truth. Values are theme-aware; component tokens reference semantic tokens by path.",
+  "theme": {
+    "light": {
+      "color": {
+        "page": "#F0F0F0",
+        "layout": "#F8F9FA",
+        "surface": "#FFFFFF",
+        "surfaceRaised": "#FFFFFF",
+        "soft": "#FAFAFA",
+        "border": "#DDDDDD",
+        "borderStrong": "#DDDDDD",
+        "heading": "#333333",
+        "text": "#666666",
+        "muted": "#999999",
+        "icon": "#4E4E4E",
+        "brand": "#241F7D",
+        "accent": "#241F7D",
+        "accentContrast": "#FFFFFF",
+        "accentSoft": "#EDEFFF",
+        "focus": "#CAD9FF",
+        "info": "#241F7D",
+        "infoSoft": "#EBE9F9",
+        "success": "#00910E",
+        "successSoft": "#E9F1E7",
+        "warning": "#C68700",
+        "warningSoft": "#FFF8EA",
+        "danger": "#C00F0C",
+        "dangerSoft": "#F9E7E7",
+        "overlay": "rgba(15,15,17,0.42)"
+      },
+      "shadow": {
+        "xs": "0 1px 2px rgba(51,51,51,0.06)",
+        "card": "0 18px 44px -32px rgba(15,23,42,0.35)",
+        "overlay": "0 18px 48px -18px rgba(15,23,42,0.30), 0 4px 12px rgba(15,23,42,0.06)",
+        "dialog": "0 24px 72px -24px rgba(15,23,42,0.38)"
+      }
+    },
+    "dark": {
+      "color": {
+        "page": "#0F0F11",
+        "layout": "#151517",
+        "surface": "#222226",
+        "surfaceRaised": "#2A2A2E",
+        "soft": "#1B1B1E",
+        "border": "#36363C",
+        "borderStrong": "#5E5E5E",
+        "heading": "#F3F3F4",
+        "text": "#B9B9BF",
+        "muted": "#8E9098",
+        "icon": "#AAAAAA",
+        "brand": "#4F46E5",
+        "accent": "#AFC2FF",
+        "accentContrast": "#FFFFFF",
+        "accentSoft": "#261F36",
+        "focus": "#4F46E5",
+        "info": "#878BFF",
+        "infoSoft": "#26213F",
+        "success": "#39D353",
+        "successSoft": "#14351D",
+        "warning": "#E6A23C",
+        "warningSoft": "#3A2A12",
+        "danger": "#FF5C5C",
+        "dangerSoft": "#3A1717",
+        "overlay": "rgba(0,0,0,0.64)"
+      },
+      "shadow": {
+        "xs": "0 1px 2px rgba(0,0,0,0.24)",
+        "card": "0 18px 44px -32px rgba(0,0,0,0.52)",
+        "overlay": "0 18px 48px -18px rgba(0,0,0,0.64), 0 4px 12px rgba(0,0,0,0.24)",
+        "dialog": "0 24px 72px -24px rgba(0,0,0,0.72)"
+      }
+    }
+  },
+  "shared": {
+    "typography": {
+      "fontFamilySans": "PingFang SC, Noto Sans SC, Microsoft YaHei, sans-serif",
+      "fontFamilyMono": "SFMono-Regular, Consolas, Liberation Mono, monospace",
+      "fontSize": { "10": 10, "12": 12, "14": 14, "16": 16, "18": 18, "20": 20, "24": 24 },
+      "fontWeight": { "regular": 400, "medium": 500, "semibold": 600, "bold": 700 },
+      "lineHeight": { "tight": 1.25, "normal": 1.5, "relaxed": 1.7 }
+    },
+    "spacing": { "0": 0, "1": 4, "2": 8, "3": 12, "4": 16, "5": 20, "6": 24, "8": 32, "10": 40, "12": 48, "16": 64 },
+    "radius": { "none": 0, "xs": 6, "sm": 8, "button": 8, "control": 10, "inner": 12, "card": 16, "overlay": 16, "pill": 999 },
+    "opacity": { "disabled": 0.45, "muted": 0.64, "hover": 0.08, "pressed": 0.14, "overlay": 0.42 },
+    "motion": {
+      "duration": { "fast": "120ms", "mid": "160ms", "slow": "240ms", "loading": "800ms" },
+      "ease": { "in": "cubic-bezier(0.4,0,1,1)", "out": "cubic-bezier(0.16,1,0.3,1)", "inOut": "cubic-bezier(0.2,0,0,1)", "linear": "linear" }
+    },
+    "zIndex": { "base": 0, "sticky": 20, "dropdown": 50, "drawer": 60, "modal": 70, "modalPopover": 75, "toast": 80, "tooltip": 90 },
+    "layout": {
+      "contentMaxWidth": 1680,
+      "pagePadding": { "desktop": 24, "tablet": 20, "mobile": 16 },
+      "gridColumns": { "desktop": 12, "mobile": 4 },
+      "gap": { "desktop": 16, "tablet": 12, "mobile": 12 },
+      "navigationWidth": { "desktop": 232, "tablet": 208, "mobile": "100%" },
+      "sidebarWidth": { "desktop": 292, "tablet": 272, "mobile": "100%" },
+      "detailSidebarWidth": { "desktop": 320, "tablet": 300, "mobile": "100%" },
+      "breakpoint": { "mobileMax": 767, "tabletMax": 1199, "minimumViewport": 320 }
+    },
+    "control": {
+      "height": { "xs": 24, "sm": 28, "md": 36, "lg": 40 },
+      "buttonHeight": { "xs": 24, "sm": 32, "md": 40 },
+      "fieldHeight": 40,
+      "icon": { "sm": 14, "md": 16 },
+      "paddingInline": { "sm": 10, "md": 14 },
+      "table": { "headerHeight": 44, "rowHeight": 52 },
+      "tag": { "smHeight": 20, "mdHeight": 24, "paddingInline": 8 }
+    }
+  },
+  "state": {
+    "hover": { "background": "{theme.color.soft}", "border": "{theme.color.borderStrong}" },
+    "pressed": { "background": "color-mix({theme.color.accent} 12%, {theme.color.surface})", "border": "{theme.color.accent}" },
+    "selected": { "background": "{theme.color.accentSoft}", "border": "{theme.color.accent}", "text": "{theme.color.accent}" },
+    "focus": { "ring": "{theme.color.focus}", "ringWidth": 2, "ringOffset": 2 },
+    "disabled": { "background": "{theme.color.soft}", "text": "{theme.color.muted}", "opacity": 0.45 },
+    "readonly": { "background": "{theme.color.soft}", "text": "{theme.color.heading}" },
+    "error": { "border": "{theme.color.danger}", "ring": "color-mix({theme.color.danger} 28%, transparent)" },
+    "success": { "background": "{theme.color.successSoft}", "border": "{theme.color.success}", "text": "{theme.color.success}" }
+  },
+  "components": {
+    "button": {
+      "height": { "xs": 24, "sm": 32, "md": 40 },
+      "radius": "{shared.radius.button}",
+      "paddingInline": 15,
+      "iconGap": 8,
+      "primary": { "background": "{theme.color.accent}", "text": "{theme.color.accentContrast}", "border": "{theme.color.accent}", "hover": "color-mix({theme.color.accent} 88%, {theme.color.surface})", "pressed": "color-mix({theme.color.accent} 76%, #000)" },
+      "default": { "background": "{theme.color.surface}", "text": "{theme.color.heading}", "border": "{theme.color.border}", "hoverBorder": "{theme.color.accent}" },
+      "disabled": { "background": "{state.disabled.background}", "text": "{state.disabled.text}" }
+    },
+    "input": {
+      "height": 40,
+      "radius": "{shared.radius.control}",
+      "paddingInline": 11,
+      "background": "{theme.color.surface}",
+      "text": "{theme.color.heading}",
+      "placeholder": "{theme.color.muted}",
+      "border": "{theme.color.border}",
+      "hoverBorder": "{theme.color.borderStrong}",
+      "focusBorder": "{theme.color.accent}",
+      "errorBorder": "{state.error.border}",
+      "readonly": { "background": "{state.readonly.background}", "text": "{state.readonly.text}" }
+    },
+    "select": {
+      "height": 40,
+      "radius": "{shared.radius.control}",
+      "option": { "hoverBackground": "{state.hover.background}", "pressedBackground": "{state.pressed.background}", "selectedBackground": "{state.selected.background}", "selectedText": "{state.selected.text}" }
+    },
+    "checkbox": {
+      "controlSize": 16,
+      "radius": "{shared.radius.xs}",
+      "background": "{theme.color.surface}",
+      "border": "{theme.color.borderStrong}",
+      "checked": { "background": "{theme.color.accent}", "border": "{theme.color.accent}", "indicator": "{theme.color.accentContrast}" },
+      "disabled": { "background": "{state.disabled.background}", "indicator": "{state.disabled.text}" }
+    },
+    "table": {
+      "headerHeight": 44,
+      "rowHeight": 52,
+      "headerBackground": "{theme.color.soft}",
+      "border": "{theme.color.border}",
+      "row": { "hoverBackground": "{state.hover.background}", "pressedBackground": "{state.pressed.background}", "selectedBackground": "{state.selected.background}", "selectedText": "{state.selected.text}" }
+    },
+    "tabs": { "hoverBackground": "{state.hover.background}", "pressedBackground": "{state.pressed.background}", "selectedText": "{state.selected.text}", "indicator": "{theme.color.accent}" },
+    "menu": { "hoverBackground": "{state.hover.background}", "pressedBackground": "{state.pressed.background}", "selectedBackground": "{state.selected.background}", "selectedText": "{state.selected.text}" },
+    "tag": { "height": { "sm": 20, "md": 24 }, "paddingInline": 8, "radius": "{shared.radius.pill}", "border": 0 },
+    "overlay": {
+      "tooltip": { "maxWidth": 280 },
+      "popover": { "minWidth": 240, "maxWidth": 420 },
+      "drawer": { "width": 420 },
+      "toast": { "width": 360 },
+      "notification": { "width": 420 },
+      "modal": { "width": { "sm": 420, "md": 560, "lg": 720, "xl": 900 }, "maxWidth": "calc(100vw - 48px)", "maxHeight": "calc(100vh - 48px)", "radius": "{shared.radius.overlay}", "headerPadding": "22px 24px 10px", "bodyPadding": "16px 24px 20px", "footerPadding": "0 24px 22px" }
+    }
+  }
+}

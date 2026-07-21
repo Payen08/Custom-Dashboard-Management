@@ -63,7 +63,7 @@ function scopeVars(scope: ArcoScope): CssVars {
     '--arcoui-danger-soft': `var(--${prefix}-danger-soft)`,
     '--arcoui-danger-border': `var(--${prefix}-danger-border)`,
     '--arcoui-overlay': scope === 'robot' ? 'var(--robot-overlay)' : 'var(--app-overlay)',
-    '--arcoui-shadow': scope === 'robot' ? 'var(--robot-dialog-shadow)' : '0 18px 56px var(--app-shadow-color)',
+    '--arcoui-shadow': scope === 'robot' ? 'var(--robot-dialog-shadow)' : 'var(--ds-shadow-dialog)',
     '--arcoui-shadow-color': scope === 'robot' ? 'var(--robot-shadow-color)' : 'var(--app-shadow-color)',
   };
 }
@@ -281,13 +281,16 @@ export const ArcoTextInput = forwardRef<HTMLInputElement, ArcoInputProps>(functi
   scope = 'app',
   className,
   style,
+  readOnly,
   ...props
 }, ref) {
   return (
     <InputRoot
       ref={ref}
-      className={cx('arcoui-input', className)}
+      className={cx('arcoui-input', readOnly && 'is-readonly', className)}
       style={{ ...scopeVars(scope), ...style }}
+      readOnly={readOnly}
+      aria-readonly={readOnly || undefined}
       {...props}
     />
   );
@@ -301,13 +304,16 @@ export const ArcoTextArea = forwardRef<HTMLTextAreaElement, ArcoTextAreaProps>(f
   scope = 'app',
   className,
   style,
+  readOnly,
   ...props
 }, ref) {
   return (
     <TextAreaRoot
       ref={ref}
-      className={cx('arcoui-input arcoui-textarea', className)}
+      className={cx('arcoui-input arcoui-textarea', readOnly && 'is-readonly', className)}
       style={{ ...scopeVars(scope), ...style }}
+      readOnly={readOnly}
+      aria-readonly={readOnly || undefined}
       {...props}
     />
   );
@@ -325,6 +331,7 @@ export const ArcoSelect = forwardRef<HTMLSelectElement, ArcoSelectProps>(functio
   value,
   defaultValue,
   disabled,
+  readOnly,
   onChange,
   name,
   required,
@@ -350,6 +357,7 @@ export const ArcoSelect = forwardRef<HTMLSelectElement, ArcoSelectProps>(functio
       selectedKey={value == null ? undefined : String(value)}
       defaultSelectedKey={defaultValue == null ? undefined : String(defaultValue)}
       isDisabled={disabled}
+      isReadOnly={readOnly}
       name={name}
       isRequired={required}
       autoFocus={autoFocus}
@@ -357,14 +365,14 @@ export const ArcoSelect = forwardRef<HTMLSelectElement, ArcoSelectProps>(functio
       onSelectionChange={key => onChange?.({ target: { value: String(key) } } as React.ChangeEvent<HTMLSelectElement>)}
       style={{ ...scopeVars(scope), ...style }}
     >
-      <SelectTrigger className={cx('arcoui-input arcoui-select', className)}>
+      <SelectTrigger className={cx('arcoui-input arcoui-select', readOnly && 'is-readonly', className)} aria-readonly={readOnly || undefined}>
         <SelectValue />
         <SelectIndicator />
       </SelectTrigger>
-      <SelectPopover>
-        <ListBoxRoot>
+      <SelectPopover className="arcoui-select-popover">
+        <ListBoxRoot className="arcoui-select-listbox">
           {options.map(option => (
-            <ListBoxItemRoot key={option.value} id={option.value} isDisabled={option.disabled} textValue={String(option.label)}>
+            <ListBoxItemRoot className="arcoui-select-option" key={option.value} id={option.value} isDisabled={option.disabled} textValue={String(option.label)}>
               {option.label}
             </ListBoxItemRoot>
           ))}
@@ -387,6 +395,7 @@ export function ArcoCheckbox({
   checked,
   defaultChecked,
   disabled,
+  readOnly,
   onChange,
   name,
   required,
@@ -400,9 +409,11 @@ export function ArcoCheckbox({
       isSelected={checked}
       defaultSelected={defaultChecked}
       isDisabled={disabled}
+      isReadOnly={readOnly}
       isRequired={required}
       autoFocus={autoFocus}
       name={name}
+      aria-readonly={readOnly || undefined}
       aria-label={ariaLabel ?? (typeof label === 'string' ? label : undefined)}
       onChange={isSelected => onChange?.({ target: { checked: isSelected } } as React.ChangeEvent<HTMLInputElement>)}
     >

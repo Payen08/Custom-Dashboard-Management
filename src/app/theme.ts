@@ -198,7 +198,7 @@ function robotVars(palette: ThemePalette, mode: ThemeMode): Record<string, strin
     '--robot-shadow': 'none',
     '--robot-shadow-color': mode === 'dark' ? 'rgba(0,0,0,0.32)' : 'rgba(51,51,51,0.10)',
     '--robot-shadow-soft': mode === 'dark' ? '0 1px 2px rgba(0,0,0,0.24)' : '0 1px 2px rgba(51,51,51,0.06)',
-    '--robot-dialog-shadow': mode === 'dark' ? '0 18px 56px rgba(0,0,0,0.48)' : '0 18px 56px rgba(51,51,51,0.16)',
+    '--robot-dialog-shadow': 'var(--ds-shadow-dialog)',
     '--robot-overlay': mode === 'dark' ? 'rgba(0,0,0,0.64)' : 'rgba(15,15,17,0.42)',
     '--robot-input-bg': palette.fillAlter,
     '--robot-success': palette.success,

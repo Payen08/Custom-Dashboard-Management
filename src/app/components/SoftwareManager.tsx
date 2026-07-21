@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Check, Copy, Edit3, Plus, Search, Trash2 } from 'lucide-react';
-import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTextArea, ArcoTextInput } from './HeroUI';
+import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTextArea, ArcoTextInput } from './ProductUI';
 import { INITIAL_SOFTWARE_PRODUCTS, type SoftwareProduct } from '../softwareProducts';
 
 type FormData = Pick<SoftwareProduct, 'name' | 'description'>;
@@ -75,14 +75,14 @@ export function SoftwareManager({
   }
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: 'var(--app-page-padding)', background: 'var(--app-bg)', overflow: 'hidden', boxSizing: 'border-box' }}>
+    <div className="ds-page ds-page--list">
       {/* Header + Search row */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20, flexShrink: 0, gap: 20 }}>
+      <div className="ds-page__header ds-page-header">
         <div style={{ minWidth: 0 }}>
           <h1 style={{ color: 'var(--app-heading)', fontSize: 20, fontWeight: 600, margin: 0, lineHeight: 1.3 }}>软件产品</h1>
           <p style={{ color: 'var(--app-muted)', fontSize: 12, margin: '4px 0 0', fontWeight: 400 }}>管理系统中已登记的软件产品信息与标识码</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <div className="ds-page-toolbar">
           <div style={{ position: 'relative', width: 312 }}>
             <Search size={14} color="var(--app-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
             <ArcoTextInput
@@ -100,11 +100,11 @@ export function SoftwareManager({
       </div>
 
       {/* Table */}
-      <div style={{ minHeight: 0, maxHeight: 'calc(100vh - 176px)', flexShrink: 1, borderRadius: 'var(--app-card-radius)', border: '1px solid var(--app-border)', background: 'var(--app-surface)', overflow: 'hidden', boxShadow: 'var(--ds-shadow-xs)' }}>
-        <div style={{ maxHeight: 'calc(100vh - 176px)', overflow: 'auto' }}>
+      <div className="ds-table-surface">
+        <div className="ds-table-scroll">
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
-              <tr style={{ height: 44, borderBottom: '1px solid var(--app-border)', position: 'sticky', top: 0, zIndex: 1, background: 'var(--app-soft)' }}>
+              <tr className="ds-table-header" style={{ height: 44, borderBottom: '1px solid var(--app-border)', position: 'sticky', top: 0, background: 'var(--app-soft)' }}>
                 <th style={{ textAlign: 'left', padding: '0 16px', color: 'var(--app-muted)', fontWeight: 500, fontSize: 12 }}>软件产品名称</th>
                 <th style={{ textAlign: 'left', padding: '0 16px', color: 'var(--app-muted)', fontWeight: 500, fontSize: 12 }}>描述</th>
                 <th style={{ textAlign: 'left', padding: '0 16px', color: 'var(--app-muted)', fontWeight: 500, fontSize: 12 }}>Key</th>
@@ -114,13 +114,11 @@ export function SoftwareManager({
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: '56px 20px', textAlign: 'center', color: 'var(--app-muted)', fontSize: 14 }}>
-                    {query.trim() ? '未找到匹配的软件产品' : '暂无软件产品，点击"新增软件产品"开始添加'}
-                  </td>
+                  <td colSpan={4}><div className="ds-empty">{query.trim() ? '未找到匹配的软件产品' : '暂无软件产品，点击“新增”开始添加'}</div></td>
                 </tr>
               ) : (
                 filtered.map(item => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid var(--app-border)', transition: 'background 0.15s ease' }}>
+                  <tr className="ds-table-row" key={item.id} style={{ borderBottom: '1px solid var(--app-border)' }}>
                     <td style={{ height: 60, padding: '0 16px' }}>
                       <span style={{ color: 'var(--app-heading)', fontWeight: 500, fontSize: 14 }}>{item.name}</span>
                     </td>
@@ -129,17 +127,11 @@ export function SoftwareManager({
                     </td>
                     <td style={{ height: 60, padding: '0 16px' }}>
                       <button
+                        type="button"
+                        className="ds-copy-key"
+                        data-state={copiedKey === item.key ? 'success' : undefined}
                         onClick={() => handleCopy(item.key)}
                         title="点击复制 Key"
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: copiedKey === item.key ? 'var(--app-success-soft)' : 'var(--app-accent-soft)',
-                          color: copiedKey === item.key ? 'var(--app-success)' : 'var(--app-accent)',
-                          fontSize: 12, fontWeight: 500, padding: '4px 12px', borderRadius: 8,
-                          border: copiedKey === item.key ? '1px solid var(--app-border)' : '1px solid var(--app-accent-border)',
-                          fontFamily: 'SF Mono, Monaco, monospace',
-                          cursor: 'pointer', transition: 'all 0.15s ease',
-                        }}
                       >
                         {item.key}
                         {copiedKey === item.key ? <Check size={12} /> : <Copy size={11} />}

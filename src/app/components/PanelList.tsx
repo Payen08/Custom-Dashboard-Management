@@ -1,9 +1,15 @@
 import { useState } from 'react';
 import { Plus, MoreHorizontal, LayoutGrid, Pencil, Copy, Trash2, Download, Search } from 'lucide-react';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { type HomepageScheme } from '../shared';
-import { ArcoButton, ArcoModal, ArcoTag, ArcoTextInput } from './HeroUI';
+import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTag, ArcoTextInput } from './ProductUI';
 import { ComponentManagerDialog } from './ComponentManagerDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
 interface PanelListProps {
   schemes: HomepageScheme[];
@@ -74,17 +80,7 @@ export function PanelList({
 
   return (
     <div
-      className="shrink-0 flex flex-col"
-      style={{
-        width: 344,
-        height: '100%',
-        margin: 0,
-        background: 'var(--app-surface)',
-        border: '1px solid var(--app-border)',
-        borderRadius: 16,
-        boxShadow: '0 18px 44px -32px var(--app-shadow-color)',
-        overflow: 'hidden',
-      }}
+      className="ds-page__sidebar ds-homepage-list"
     >
       {/* Header */}
       <div style={{ padding: '24px 16px 18px', borderBottom: '1px solid var(--app-border)' }}>
@@ -114,7 +110,16 @@ export function PanelList({
           return (
             <div
               key={scheme.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`选择首页方案：${scheme.name}`}
               onClick={() => onSelectScheme(scheme.id)}
+              onKeyDown={event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onSelectScheme(scheme.id);
+                }
+              }}
               className="group relative cursor-pointer"
               style={{
                 minHeight: 114,
@@ -123,7 +128,7 @@ export function PanelList({
                 borderRadius: 16,
                 background: active ? 'var(--app-accent-soft)' : 'var(--app-surface)',
                 border: active ? '2px solid var(--app-accent)' : '1px solid transparent',
-                transition: 'background 0.12s ease, border-color 0.12s ease',
+                transition: 'background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out), border-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out)',
                 position: 'relative',
                 boxSizing: 'border-box',
               }}
@@ -151,70 +156,41 @@ export function PanelList({
                   <ArcoTag tone="accent">{schemeTag(scheme)}</ArcoTag>
                 </div>
 
-                <DropdownMenu.Root>
-                  <DropdownMenu.Trigger asChild>
-                    <button
-                      onClick={e => e.stopPropagation()}
-                      className="opacity-0 group-hover:opacity-100 rounded p-0.5 transition-opacity shrink-0"
-                      style={{ color: 'var(--app-muted)', marginTop: 2, opacity: active ? 1 : undefined }}
-                    >
-                      <MoreHorizontal size={18} />
-                    </button>
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                      className="z-50 rounded-md py-1.5"
-                      style={{
-                        background: 'var(--app-surface)',
-                        border: '1px solid var(--app-border)',
-                        minWidth: 150,
-                        boxShadow: '0 4px 16px var(--app-shadow-color)',
-                      }}
-                      align="end"
-                      sideOffset={4}
-                    >
-                      {[
-                        { icon: Pencil,   label: '重命名', action: () => openRename(scheme.id),        danger: false, disabled: false },
-                        { icon: Copy,     label: '复制方案', action: () => handleCopy(scheme.id),        danger: false, disabled: false },
-                        { icon: Download, label: '导出首页', action: () => onExportScheme(scheme.id),    danger: false, disabled: false },
-                        { icon: Trash2,   label: '删除首页', action: () => openDelete(scheme.id),        danger: true,  disabled: !canDelete },
-                      ].map(({ icon: Icon, label, action, danger, disabled }) => (
-                        <DropdownMenu.Item
-                          key={label}
-                          disabled={disabled}
-                          onSelect={event => {
-                            if (disabled) { event.preventDefault(); return; }
-                            action();
-                          }}
-                          className="flex items-center gap-2.5 px-3 py-1.5 cursor-pointer outline-none mx-1 rounded"
-                          style={{
-                            color: danger ? 'var(--app-danger)' : 'var(--app-text)',
-                            fontSize: 12,
-                            opacity: disabled ? 0.45 : 1,
-                            cursor: disabled ? 'not-allowed' : 'pointer',
-                          }}
-                        >
-                          <Icon size={13} />
-                          {label}
-                        </DropdownMenu.Item>
-                      ))}
-                    </DropdownMenu.Content>
-                  </DropdownMenu.Portal>
-                </DropdownMenu.Root>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <ArcoIconButton
+                      type="text"
+                      size="small"
+                      icon={<MoreHorizontal size={16} />}
+                      aria-label={`${scheme.name}的更多操作`}
+                      title="更多操作"
+                      onClick={event => event.stopPropagation()}
+                      className="ds-context-menu-trigger group-hover:opacity-100"
+                      style={{ marginTop: 2, opacity: active ? 1 : undefined }}
+                    />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" sideOffset={8} className="ds-context-menu">
+                    <DropdownMenuItem className="ds-context-menu__item" onSelect={() => openRename(scheme.id)}>
+                      <Pencil size={16} />重命名
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="ds-context-menu__item" onSelect={() => handleCopy(scheme.id)}>
+                      <Copy size={16} />复制方案
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="ds-context-menu__item" onSelect={() => onExportScheme(scheme.id)}>
+                      <Download size={16} />导出首页
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="ds-context-menu__separator" />
+                    <DropdownMenuItem className="ds-context-menu__item" variant="destructive" disabled={!canDelete} onSelect={() => openDelete(scheme.id)}>
+                      <Trash2 size={16} />删除首页
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           );
         })}
         {filteredSchemes.length === 0 && (
-          <div style={{
-            borderRadius: 16,
-            background: 'var(--app-soft)',
-            border: '1px dashed var(--app-border-strong)',
-            color: 'var(--app-muted)',
-            fontSize: 14,
-            textAlign: 'center',
-            padding: '28px 16px',
-          }}>
+          <div className="ds-empty" style={{ minHeight: 0, border: '1px dashed var(--app-border-strong)', background: 'var(--app-soft)' }}>
             未找到匹配的首页
           </div>
         )}

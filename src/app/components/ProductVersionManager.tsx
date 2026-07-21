@@ -20,7 +20,7 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
-import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTag, ArcoTextArea, ArcoTextInput } from './HeroUI';
+import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTag, ArcoTextArea, ArcoTextInput } from './ProductUI';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -349,12 +349,12 @@ function EditableCombobox({
           onClick={() => setOpen(current => !current)}
           style={{ position: 'absolute', top: 4, right: 4, width: 32, height: 32, border: 0, borderRadius: 8, background: 'transparent', color: 'var(--app-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >
-          <ChevronDown size={16} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 160ms ease' }} />
+          <ChevronDown size={16} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out)' }} />
         </button>
       </div>
 
       {open && (
-        <div role="listbox" style={{ position: 'absolute', zIndex: 30, top: 'calc(100% + 6px)', left: 0, right: 0, maxHeight: 224, overflowY: 'auto', padding: 6, border: '1px solid var(--app-border)', borderRadius: 12, background: 'var(--app-surface)', boxShadow: 'var(--ds-shadow-card)' }}>
+        <div role="listbox" style={{ position: 'absolute', zIndex: 'var(--ds-z-dropdown)', top: 'calc(100% + 6px)', left: 0, right: 0, maxHeight: 224, overflowY: 'auto', padding: 6, border: '1px solid var(--app-border)', borderRadius: 12, background: 'var(--app-surface)', boxShadow: 'var(--ds-shadow-card)' }}>
           {visibleOptions.map(option => {
             const selected = option.label.trim().toLowerCase() === keyword;
             return (
@@ -479,16 +479,16 @@ export function CategoryTree({
             <MoreHorizontal size={15} />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" sideOffset={8} className="heroui-tree-menu">
-          <DropdownMenuItem className="heroui-tree-menu__item" onSelect={() => onNodeAction({ ...actionBase, action: 'add' })}>
+        <DropdownMenuContent align="end" sideOffset={8} className="ds-context-menu">
+          <DropdownMenuItem className="ds-context-menu__item" onSelect={() => onNodeAction({ ...actionBase, action: 'add' })}>
             <Plus size={16} strokeWidth={1.8} />
             <span data-slot="label">新增</span>
           </DropdownMenuItem>
-          <DropdownMenuItem className="heroui-tree-menu__item" onSelect={() => onNodeAction({ ...actionBase, action: 'edit' })}>
+          <DropdownMenuItem className="ds-context-menu__item" onSelect={() => onNodeAction({ ...actionBase, action: 'edit' })}>
             <Pencil size={16} strokeWidth={1.8} />
             <span data-slot="label">编辑</span>
           </DropdownMenuItem>
-          <DropdownMenuItem className="heroui-tree-menu__item" variant="destructive" onSelect={() => onNodeAction({ ...actionBase, action: 'delete' })}>
+          <DropdownMenuItem className="ds-context-menu__item" variant="destructive" onSelect={() => onNodeAction({ ...actionBase, action: 'delete' })}>
             <Trash2 size={16} strokeWidth={1.8} />
             <span data-slot="label">删除</span>
           </DropdownMenuItem>
@@ -561,14 +561,14 @@ export function CategoryTree({
 
                           if (!onSelectBrand) {
                             return (
-                              <div key={brand.id} className={`taxonomy-tree-node product-tree-item${active ? ' is-active' : ''}`}>
+                              <div key={brand.id} className={`taxonomy-tree-node product-tree-item${active ? ' is-selected' : ''}`}>
                                 <div className="product-tree-main" style={rowStyle} title={brand.name}>{content}</div>
                               </div>
                             );
                           }
 
                           return (
-                            <div key={brand.id} className={`taxonomy-tree-node product-tree-item${active ? ' is-active' : ''}`}>
+                            <div key={brand.id} className={`taxonomy-tree-node product-tree-item${active ? ' is-selected' : ''}`}>
                               <button
                                 type="button"
                                 className="product-tree-main"
@@ -1045,11 +1045,11 @@ function RelatedSoftwarePicker({
               ? selectedOptions.map(option => option.name).join('、')
               : `${selectedOptions[0].name}等 ${selectedOptions.length} 项`}
         </span>
-        <ChevronDown size={16} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 160ms ease' }} />
+        <ChevronDown size={16} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out)' }} />
       </button>
 
       {open && !disabled && (
-        <div style={{ position: 'absolute', zIndex: 30, top: 'calc(100% + 6px)', left: 0, right: 0, border: '1px solid var(--app-border)', borderRadius: 12, background: 'var(--app-surface)', boxShadow: 'var(--ds-shadow-card)', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', zIndex: 'var(--ds-z-dropdown)', top: 'calc(100% + 6px)', left: 0, right: 0, border: '1px solid var(--app-border)', borderRadius: 12, background: 'var(--app-surface)', boxShadow: 'var(--ds-shadow-card)', overflow: 'hidden' }}>
           <div style={{ position: 'relative', padding: 8, borderBottom: '1px solid var(--app-border)' }}>
             <Search size={16} color="var(--app-muted)" style={{ position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
             <ArcoTextInput
@@ -1741,18 +1741,8 @@ export function ProductVersionManager() {
   }
 
   return (
-    <div style={{
-      height: '100%',
-      minHeight: 0,
-      display: 'flex',
-      gap: 'var(--app-section-gap)',
-      padding: 'var(--app-page-padding)',
-      background: 'var(--app-bg)',
-      overflow: 'hidden',
-      boxSizing: 'border-box',
-    }}>
-      <aside style={{
-        width: 292,
+    <div className="ds-page ds-page--split">
+      <aside className="ds-page__sidebar" style={{
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
@@ -1791,10 +1781,7 @@ export function ProductVersionManager() {
         </div>
       </aside>
 
-      <main style={{
-        flex: 1,
-        minWidth: 0,
-        minHeight: 0,
+      <main className="ds-page__content product-version-content" style={{
         display: 'flex',
         flexDirection: 'column',
         borderRadius: 'var(--app-card-radius)',
@@ -1803,8 +1790,7 @@ export function ProductVersionManager() {
         boxShadow: CARD_SHADOW,
         overflow: 'hidden',
       }}>
-        <header style={{
-          flexShrink: 0,
+        <header className="ds-page__header" style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -1861,7 +1847,7 @@ export function ProductVersionManager() {
           </div>
         </header>
 
-        <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 18, background: 'var(--app-soft)' }}>
+        <div className="ds-page__scroll" style={{ padding: 18, background: 'var(--app-soft)' }}>
           {!brand ? (
             <div style={{ textAlign: 'center', padding: '72px 0', color: 'var(--app-muted)', fontSize: 14 }}>
               <Layers size={40} style={{ margin: '0 auto 12px', color: 'var(--app-subtle)' }} />

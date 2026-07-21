@@ -1,6 +1,6 @@
 import { X, Trash2, Settings2 } from 'lucide-react';
 import { type PlacedItem, type ComponentDef, COMPONENT_DEFS, COMPONENT_PROPS, GRID_COLS, GRID_ROWS, type PropField } from '../shared';
-import { ArcoButton, ArcoField, ArcoIconButton, ArcoSelect, ArcoTag, ArcoTextInput } from './HeroUI';
+import { ArcoButton, ArcoField, ArcoIconButton, ArcoSelect, ArcoTag, ArcoTextInput } from './ProductUI';
 
 interface Props {
   item: PlacedItem | null;
@@ -61,7 +61,7 @@ function ToggleField({ field, value, onChange }: {
         style={{
           width: 40, height: 22, borderRadius: 99, border: 'none', cursor: 'pointer',
           background: value ? 'var(--app-accent)' : 'var(--app-border-strong)',
-          position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+          position: 'relative', transition: 'background-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out)', flexShrink: 0,
         }}
       >
         <div style={{
@@ -70,7 +70,7 @@ function ToggleField({ field, value, onChange }: {
           background: 'var(--app-surface)',
           left: value ? 21 : 3,
           boxShadow: '0 1px 3px var(--app-shadow-color)',
-          transition: 'left 0.2s',
+          transition: 'left var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out)',
         }} />
       </button>
     </div>

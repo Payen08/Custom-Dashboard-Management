@@ -20,7 +20,7 @@
   outline: none;
   box-sizing: border-box;
   box-shadow: none;
-  transition: background var(--ds-duration-normal, 160ms) ease, border-color var(--ds-duration-normal, 160ms) ease, color var(--ds-duration-normal, 160ms) ease, opacity var(--ds-duration-normal, 160ms) ease, box-shadow var(--ds-duration-normal, 160ms) ease, transform var(--ds-duration-normal, 160ms) ease;
+  transition: background var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease), border-color var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease), color var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease), opacity var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease), box-shadow var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease), transform var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease);
 }
 
 .arcoui-button[data-size="mini"] {
@@ -36,7 +36,7 @@
 }
 
 .arcoui-button[data-size="large"] {
-  height: var(--ds-button-height-lg, 40px);
+  height: var(--ds-button-height-md, 40px);
   padding: 0 var(--ds-space-4, 16px);
   font-size: var(--ds-font-size-14, 14px);
 }
@@ -197,10 +197,29 @@
   border-color: transparent;
 }
 
+/* Pressed is transient feedback. Persistent states use selected/checked semantics instead. */
+.arcoui-button:not(:disabled):active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.arcoui-button[data-type="primary"][data-status="normal"]:not(:disabled):active {
+  background: var(--ds-button-primary-bg-pressed, var(--arcoui-accent));
+  border-color: var(--ds-button-primary-bg-pressed, var(--arcoui-accent));
+}
+
+.arcoui-button[data-type="default"][data-status="normal"]:not(:disabled):active,
+.arcoui-button[data-type="outline"][data-status="normal"]:not(:disabled):active,
+.arcoui-button[data-type="secondary"][data-status="normal"]:not(:disabled):active,
+.arcoui-button[data-type="text"][data-status="normal"]:not(:disabled):active {
+  background: var(--ds-state-pressed-bg, var(--arcoui-neutral-soft));
+  border-color: var(--ds-state-pressed-border, var(--arcoui-accent));
+}
+
 .arcoui-button:focus-visible,
 .arcoui-input:focus-visible,
 .arcoui-upload:focus-within,
-.arcoui-checkbox:focus-visible {
+.arcoui-checkbox-row:focus-visible {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--arcoui-accent) 24%, transparent);
   border-color: var(--arcoui-accent);
 }
@@ -218,13 +237,20 @@
   border-radius: 999px;
   border: 2px solid currentColor;
   border-right-color: transparent;
-  animation: arcoui-spin 0.8s linear infinite;
+  animation: arcoui-spin var(--ds-motion-duration-loading, 800ms) linear infinite;
 }
 
 @keyframes arcoui-spin {
   to {
     transform: rotate(360deg);
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcoui-button,
+  .arcoui-input,
+  .arcoui-upload { transition-duration: 0ms !important; }
+  .arcoui-spinner { animation: none; }
 }
 
 .arcoui-modal-overlay {
@@ -360,11 +386,26 @@
   padding: 0 var(--ds-space-3, 12px);
   outline: none;
   box-sizing: border-box;
-  transition: border-color var(--ds-duration-fast, 120ms) ease, box-shadow var(--ds-duration-fast, 120ms) ease, background var(--ds-duration-fast, 120ms) ease;
+  transition: border-color var(--ds-motion-duration-fast, 120ms) var(--ds-motion-ease-in-out, ease), box-shadow var(--ds-motion-duration-fast, 120ms) var(--ds-motion-ease-in-out, ease), background var(--ds-motion-duration-fast, 120ms) var(--ds-motion-ease-in-out, ease);
 }
 
 .arcoui-input:hover {
   background: color-mix(in srgb, var(--arcoui-soft) 72%, var(--arcoui-surface));
+}
+
+.arcoui-input.is-readonly,
+.arcoui-input[readonly],
+.arcoui-input[aria-readonly="true"] {
+  background: var(--ds-input-bg-readonly, var(--arcoui-soft));
+  color: var(--ds-input-text-readonly, var(--arcoui-heading));
+  cursor: default;
+}
+
+.arcoui-input.is-readonly:hover,
+.arcoui-input[readonly]:hover,
+.arcoui-input[aria-readonly="true"]:hover {
+  border-color: var(--arcoui-border);
+  background: var(--ds-input-bg-readonly, var(--arcoui-soft));
 }
 
 .arcoui-input::placeholder {
@@ -377,6 +418,60 @@
   align-items: center;
   justify-content: space-between;
   text-align: left;
+}
+
+.arcoui-select-popover {
+  /* The popover is portalled. It must sit above its owning modal. */
+  z-index: var(--ds-z-modal-popover) !important;
+  min-width: var(--trigger-width);
+  max-width: min(var(--ds-popover-max-width), calc(100vw - var(--ds-space-8)));
+  max-height: min(280px, var(--available-height, 280px));
+  overflow: auto;
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-overlay);
+  background: var(--ds-color-surface);
+  color: var(--ds-color-heading);
+  box-shadow: var(--ds-shadow-overlay);
+  outline: none;
+  transform-origin: var(--trigger-anchor-point);
+  animation: arcoui-select-enter var(--ds-motion-duration-mid) var(--ds-motion-ease-out);
+}
+
+.arcoui-select-listbox {
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  outline: none;
+}
+
+.arcoui-select-option {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  border-radius: var(--ds-radius-button);
+  padding: 0 var(--ds-space-3);
+  color: var(--ds-color-text);
+  font-size: var(--ds-font-size-14);
+  font-weight: var(--ds-font-weight-medium);
+  cursor: pointer;
+  outline: none;
+  transition: background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out), color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out);
+}
+
+.arcoui-select-option[data-hovered],
+.arcoui-select-option[data-focused] { background: var(--ds-select-option-bg-hover); color: var(--ds-color-heading); }
+.arcoui-select-option[data-pressed] { background: var(--ds-select-option-bg-pressed); }
+.arcoui-select-option[data-selected] { background: var(--ds-select-option-bg-selected); color: var(--ds-select-option-text-selected); }
+.arcoui-select-option[data-disabled] { opacity: var(--ds-opacity-disabled); cursor: not-allowed; }
+
+@keyframes arcoui-select-enter {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcoui-select-popover,
+  .arcoui-select-option { animation: none; transition: none; }
 }
 
 .arcoui-textarea {
@@ -407,26 +502,52 @@
   cursor: pointer;
 }
 
+.arcoui-checkbox-row[aria-readonly="true"] {
+  cursor: default;
+}
+
 .arcoui-checkbox {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
+  width: var(--ds-checkbox-control-size);
+  height: var(--ds-checkbox-control-size);
+  flex: 0 0 var(--ds-checkbox-control-size);
   display: inline-flex;
   cursor: pointer;
 }
 
 .arcoui-checkbox [data-slot="checkbox-control"] {
-  width: 16px;
-  height: 16px;
-  border: 1px solid var(--arcoui-border-strong);
+  width: var(--ds-checkbox-control-size);
+  height: var(--ds-checkbox-control-size);
+  border: 1px solid var(--ds-checkbox-border);
   border-radius: 4px;
-  background: var(--arcoui-surface);
+  background: var(--ds-checkbox-bg);
   box-sizing: border-box;
 }
 
+.arcoui-checkbox [data-slot="checkbox-indicator"] {
+  color: var(--ds-checkbox-indicator-checked) !important;
+}
+
+.arcoui-checkbox [data-slot="checkbox-indicator"] svg {
+  stroke: currentColor;
+}
+
 .arcoui-checkbox-row[data-selected] .arcoui-checkbox [data-slot="checkbox-control"] {
-  border-color: var(--arcoui-accent);
-  background: var(--arcoui-accent);
+  border-color: var(--ds-checkbox-border-checked);
+  background: var(--ds-checkbox-bg-checked);
+}
+
+.arcoui-checkbox-row[data-disabled] {
+  color: var(--ds-state-disabled-text);
+  cursor: not-allowed;
+}
+
+.arcoui-checkbox-row[data-disabled] .arcoui-checkbox [data-slot="checkbox-control"] {
+  border-color: transparent;
+  background: var(--ds-checkbox-bg-disabled);
+}
+
+.arcoui-checkbox-row[data-disabled] .arcoui-checkbox [data-slot="checkbox-indicator"] {
+  color: var(--ds-checkbox-indicator-disabled) !important;
 }
 
 .arcoui-upload {
@@ -441,7 +562,7 @@
   cursor: pointer;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: border-color var(--ds-motion-duration-fast, 120ms) var(--ds-motion-ease-in-out, ease), box-shadow var(--ds-motion-duration-fast, 120ms) var(--ds-motion-ease-in-out, ease), background var(--ds-motion-duration-fast, 120ms) var(--ds-motion-ease-in-out, ease);
 }
 
 .arcoui-upload:hover {

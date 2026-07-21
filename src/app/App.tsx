@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import {
-  Activity, ArrowLeft, ArrowRight, Bell, Box, CheckCircle2, ChevronRight, ClipboardList, Clock3, Cpu, Download, Eye, FileKey2, FileText,
+  Activity, ArrowLeft, ArrowRight, Bell, BookOpen, Box, CheckCircle2, ChevronRight, ClipboardList, Clock3, Cpu, Download, Eye, FileKey2, FileText,
   Home, LogOut, Moon, Package, PanelLeft, Pencil, RotateCcw, Save, Search, ShieldCheck, Sun, Trash2, User, Wand2,
 } from 'lucide-react';
 import { PanelList } from './components/PanelList';
@@ -13,10 +13,11 @@ import { RobotComponentLibrary, RobotModelManager } from './components/RobotMode
 import { ProductVersionManager } from './components/ProductVersionManager';
 import { SoftwareManager } from './components/SoftwareManager';
 import { InstallationRecordsManager } from './components/InstallationRecordsManager';
+import { DesignGuidelines } from './components/DesignGuidelines';
 import { WorkspaceLogin as WorkspaceLoginScreen } from './components/WorkspaceLogin';
 import { INITIAL_SOFTWARE_PRODUCTS, type SoftwareProduct } from './softwareProducts';
 import { useComponentCatalog } from './components/useComponentCatalog';
-import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTag } from './components/HeroUI';
+import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTag } from './components/ProductUI';
 import { APP_THEME_VARS, type ThemeMode } from './theme';
 import {
   type HomepageScheme, type PlacedItem,
@@ -26,7 +27,7 @@ import {
 
 const FONT = "'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
 
-type EditorNavKey = 'home' | 'status' | 'components' | 'records' | 'alerts' | 'settings' | 'apps' | 'products' | 'software' | 'installations';
+type EditorNavKey = 'home' | 'status' | 'components' | 'records' | 'alerts' | 'settings' | 'apps' | 'robotComponents' | 'products' | 'software' | 'installations' | 'guidelines';
 type AppThemeMode = ThemeMode;
 type WorkspaceProduct = 'login' | 'workspace' | 'software' | 'authorization' | 'machine';
 
@@ -126,7 +127,7 @@ function WorkspaceLauncher({
           cursor: pointer;
           display: flex;
           flex-direction: column;
-          transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+          transition: border-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), background-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), box-shadow var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out);
         }
         .workspace-product--primary {
           grid-column: span 7;
@@ -719,8 +720,10 @@ const EDITOR_NAV_META: Record<EditorNavKey, { label: string; description: string
   alerts: { label: '告警', description: '查看告警组件与消息配置' },
   settings: { label: '设置', description: '配置当前编辑器偏好' },
   apps: { label: '型号管理', description: '管理机器人型号、拓扑结构与模型导出' },
+  robotComponents: { label: '组件库', description: '管理机器人 3D 组件、结构与参数配置' },
   products: { label: '版本管理', description: '产品包与版本迭代发布管理' },
   software: { label: '软件产品', description: '管理软件产品信息、标识码与授权' },
+  guidelines: { label: '设计规范', description: '查看已发布 Token、组件状态与交付规范' },
 };
 
 // ── Edit mode props passed through to GlobalTopBar ─────
@@ -782,15 +785,7 @@ function EditorCanvasHeader({
   onExport: () => void;
 }) {
   return (
-    <div style={{
-      minHeight: 104,
-      padding: '20px 24px 16px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 16,
-      flexShrink: 0,
-    }}>
+    <div className="ds-homepage-editor__canvas-header">
       <div style={{ minWidth: 0 }}>
         <h2 style={{ color: 'var(--app-heading)', fontSize: 16, fontWeight: 600, lineHeight: 1.4, margin: 0 }}>编辑自定义首页面板</h2>
         <div style={{ marginTop: 6, color: 'var(--app-muted)', fontSize: 12 }}>
@@ -885,7 +880,7 @@ function GlobalTopBar({
             width: 32, height: 32, borderRadius: 8,
             border: 'none', background: 'transparent', color: textColor,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', transition: 'background 0.15s',
+            cursor: 'pointer', transition: 'background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out)',
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = hoverBg; }}
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
@@ -921,10 +916,11 @@ function EditorNavRail({
   const navItems = [
     { key: 'home' as const, icon: Home, label: '首页自定义' },
     { key: 'apps' as const, icon: FileText, label: '型号模板' },
-    { key: 'components' as const, icon: Box, label: '组件库' },
+    { key: 'robotComponents' as const, icon: Box, label: '组件库' },
     { key: 'products' as const, icon: Package, label: '版本管理' },
     { key: 'software' as const, icon: Cpu, label: '软件产品' },
     { key: 'installations' as const, icon: ClipboardList, label: '装机记录' },
+    { key: 'guidelines' as const, icon: BookOpen, label: '设计规范' },
     // 外设库、用户管理模块暂时隐藏，页面能力保留以便后续恢复。
   ];
 
@@ -948,7 +944,7 @@ function EditorNavRail({
           cursor: 'pointer',
           fontSize: 14,
           fontWeight: isActive ? 600 : 400,
-          transition: 'all 0.15s ease',
+          transition: 'background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out), color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out), opacity var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out)',
           position: 'relative',
         }}
         onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = hoverBg; }}
@@ -1610,7 +1606,7 @@ export default function App() {
     );
   }
 
-  if (!isCanvasPreview && activeEditorNav === 'apps') {
+  if (!isEditing && !isCanvasPreview && activeEditorNav === 'apps') {
     return (
       <AppShell
         active={activeEditorNav}
@@ -1624,7 +1620,7 @@ export default function App() {
     );
   }
 
-  if (!isCanvasPreview && activeEditorNav === 'components') {
+  if (!isEditing && !isCanvasPreview && activeEditorNav === 'robotComponents') {
     return (
       <AppShell
         active={activeEditorNav}
@@ -1638,7 +1634,7 @@ export default function App() {
     );
   }
 
-  if (!isCanvasPreview && activeEditorNav === 'products') {
+  if (!isEditing && !isCanvasPreview && activeEditorNav === 'products') {
     return (
       <AppShell
         active={activeEditorNav}
@@ -1652,7 +1648,7 @@ export default function App() {
     );
   }
 
-  if (!isCanvasPreview && activeEditorNav === 'software') {
+  if (!isEditing && !isCanvasPreview && activeEditorNav === 'software') {
     return (
       <AppShell
         active={activeEditorNav}
@@ -1666,7 +1662,7 @@ export default function App() {
     );
   }
 
-  if (!isCanvasPreview && activeEditorNav === 'installations') {
+  if (!isEditing && !isCanvasPreview && activeEditorNav === 'installations') {
     return (
       <AppShell
         active={activeEditorNav}
@@ -1676,6 +1672,20 @@ export default function App() {
         onWorkspace={returnToWorkspace}
       >
         <InstallationRecordsManager />
+      </AppShell>
+    );
+  }
+
+  if (!isEditing && !isCanvasPreview && activeEditorNav === 'guidelines') {
+    return (
+      <AppShell
+        active={activeEditorNav}
+        themeMode={robotThemeMode}
+        onThemeToggle={toggleRobotThemeMode}
+        onNavChange={handleShellNavChange}
+        onWorkspace={returnToWorkspace}
+      >
+        <DesignGuidelines themeMode={robotThemeMode} />
       </AppShell>
     );
   }
@@ -1692,7 +1702,7 @@ export default function App() {
         sidebarCollapsed
         hideTopBar
       >
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0, background: 'var(--app-bg)' }}>
+        <div className="ds-page ds-page--editor ds-homepage-editor">
           {!isCanvasPreview && activeScheme && (
             <EditorWorkspaceHeader
               scheme={activeScheme}
@@ -1701,7 +1711,7 @@ export default function App() {
               onSave={handleSave}
             />
           )}
-          <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: isCanvasPreview ? 0 : 'var(--app-section-gap)', padding: 'var(--app-page-padding)', overflow: 'hidden' }}>
+          <div className="ds-homepage-editor__workspace" style={{ gap: isCanvasPreview ? 0 : 'var(--app-section-gap)' }}>
           {!isCanvasPreview && (
             <>
               {activeEditorNav === 'components' ? (
@@ -1720,8 +1730,8 @@ export default function App() {
               )}
             </>
           )}
-          <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', background: 'var(--app-surface)', border: '1px solid var(--app-border)', borderRadius: 'var(--app-card-radius)', boxShadow: '0 16px 40px -34px var(--app-shadow-color)', overflow: 'hidden' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, overflow: 'hidden' }}>
+          <div className="ds-page__content ds-homepage-editor__canvas-shell">
+            <div className="ds-homepage-editor__canvas-body">
               {!isCanvasPreview && activeScheme && (
                 <EditorCanvasHeader
                   scheme={activeScheme}
@@ -1757,13 +1767,9 @@ export default function App() {
           </div>
           {isCanvasPreview && (
             <button
+              type="button"
+              className="ds-preview-exit"
               onClick={() => setIsCanvasPreview(false)}
-              style={{
-                position: 'fixed', left: '50%', bottom: 24, transform: 'translateX(-50%)', zIndex: 50,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 22px',
-                borderRadius: 99, background: 'var(--app-heading)', color: 'var(--app-surface)', border: 'none',
-                boxShadow: '0 4px 16px var(--app-shadow-color)', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              }}
             >
               <ArrowLeft size={15} />退出预览
             </button>
@@ -1788,15 +1794,7 @@ export default function App() {
       onNavChange={handleShellNavChange}
       onWorkspace={returnToWorkspace}
     >
-      <div style={{
-        height: '100%',
-        minHeight: 0,
-        display: 'flex',
-        gap: 16,
-        padding: 16,
-        background: 'var(--app-bg)',
-        overflow: 'hidden',
-      }}>
+      <div className="ds-page ds-page--split ds-homepage-preview">
         {activeEditorNav === 'home' ? (
           <PanelList
             schemes={schemes}
@@ -1820,27 +1818,9 @@ export default function App() {
           />
         )}
 
-        <main style={{
-          flex: 1,
-          minWidth: 0,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          padding: 24,
-          borderRadius: 16,
-          background: 'var(--app-surface)',
-          border: '1px solid var(--app-border)',
-          overflow: 'hidden',
-        }}>
+        <main className="ds-page__content ds-homepage-preview__content">
           {activeScheme && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              gap: 20,
-              marginBottom: 20,
-              flexShrink: 0,
-            }}>
+            <div className="ds-page__header ds-page-header" style={{ alignItems: 'flex-start', marginBottom: 20 }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, marginBottom: 8 }}>
                   <h1 style={{
@@ -1874,7 +1854,7 @@ export default function App() {
                 </p>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <div className="ds-page-toolbar">
                 <ArcoButton
                   onClick={() => requestDeleteScheme(activeScheme.id)}
                   disabled={!canDeleteScheme}
@@ -1900,15 +1880,7 @@ export default function App() {
             </div>
           )}
 
-          <div style={{
-            flex: 1,
-            minHeight: 0,
-            display: 'flex',
-            borderRadius: 16,
-            border: '1px solid var(--app-border-strong)',
-            background: 'var(--app-bg)',
-            overflow: 'hidden',
-          }}>
+          <div className="ds-homepage-preview__canvas">
             <CanvasArea
               componentDefs={catalogComponents}
               items={activeItems}

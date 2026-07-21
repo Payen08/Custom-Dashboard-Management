@@ -1,0 +1,117 @@
+/*
+ * Approved UI-kit adapter layer.
+ *
+ * Overrides required by the implementation library stay here so that the
+ * product design-system foundation remains library-agnostic. Use generic
+ * .ds-* class names at call sites; never expose a vendor name in page markup.
+ */
+
+.ds-context-menu {
+  z-index: var(--ds-z-dropdown) !important;
+  min-width: 168px !important;
+  padding: 6px !important;
+  border: 1px solid color-mix(in srgb, var(--ds-color-border) 72%, transparent) !important;
+  border-radius: var(--ds-radius-overlay) !important;
+  background: color-mix(in srgb, var(--ds-color-surface) 97%, transparent) !important;
+  color: var(--ds-color-heading) !important;
+  box-shadow: var(--ds-shadow-overlay) !important;
+  backdrop-filter: blur(14px);
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+  outline: none;
+  animation: ds-context-menu-enter var(--ds-motion-duration-mid) var(--ds-motion-ease-out);
+}
+
+.ds-context-menu__item {
+  min-height: 38px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  border-radius: var(--ds-radius-button) !important;
+  padding: 7px 10px !important;
+  color: var(--ds-color-text) !important;
+  font-size: var(--ds-font-size-14) !important;
+  font-weight: var(--ds-font-weight-medium) !important;
+  line-height: 20px !important;
+  cursor: pointer !important;
+  outline: none !important;
+  transition: background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out), color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out) !important;
+}
+
+.ds-context-menu__item svg { width: var(--ds-control-icon-md) !important; height: var(--ds-control-icon-md) !important; color: var(--ds-color-muted) !important; }
+.ds-context-menu__item[data-highlighted],
+.ds-context-menu__item:focus { background: var(--ds-menu-item-bg-hover) !important; color: var(--ds-color-heading) !important; }
+.ds-context-menu__item[data-highlighted] svg,
+.ds-context-menu__item:focus svg { color: var(--ds-color-heading) !important; }
+.ds-context-menu__item[data-variant='destructive'] { color: var(--ds-color-danger) !important; }
+.ds-context-menu__item[data-variant='destructive'] svg { color: var(--ds-color-danger) !important; }
+.ds-context-menu__item[data-variant='destructive'][data-highlighted],
+.ds-context-menu__item[data-variant='destructive']:focus { background: var(--ds-color-danger-soft) !important; color: var(--ds-color-danger) !important; }
+
+.ds-context-menu__separator {
+  height: 1px !important;
+  margin: 5px 4px !important;
+  background: color-mix(in srgb, var(--ds-color-border) 76%, transparent) !important;
+}
+
+.ds-context-menu-trigger { opacity: 0; }
+.ds-context-menu-trigger:focus-visible,
+.ds-context-menu-trigger[data-state='open'] { opacity: 1; }
+@media (hover: none) { .ds-context-menu-trigger { opacity: 1; } }
+
+@keyframes ds-context-menu-enter {
+  from { opacity: 0; transform: scale(0.96) translateY(-2px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-context-menu__item { transition: none !important; }
+  .ds-context-menu { animation: none; }
+}
+
+/* Native toast adapter: the component owns queueing, focus and dismissal;
+   this layer applies the product's published semantic tokens. */
+.ds-toast-region {
+  position: fixed !important;
+  top: var(--ds-space-4) !important;
+  right: var(--ds-space-4) !important;
+  z-index: var(--ds-z-toast) !important;
+  width: min(var(--ds-toast-width), calc(100vw - var(--ds-space-8))) !important;
+  pointer-events: none !important;
+}
+
+.ds-toast-region [data-slot='toast'] {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-overlay);
+  background: var(--ds-color-surface);
+  color: var(--ds-color-heading);
+  box-shadow: var(--ds-shadow-overlay);
+  pointer-events: auto;
+}
+
+.ds-toast-region [data-slot='toast'][class*='accent'] { border-color: color-mix(in srgb, var(--ds-color-accent) 42%, var(--ds-color-border)); background: var(--ds-color-accent-soft); }
+.ds-toast-region [data-slot='toast'][class*='success'] { border-color: color-mix(in srgb, var(--ds-color-success) 42%, var(--ds-color-border)); background: var(--ds-state-success-bg); }
+.ds-toast-region [data-slot='toast'][class*='warning'] { border-color: color-mix(in srgb, var(--ds-color-warning) 42%, var(--ds-color-border)); background: var(--ds-color-warning-soft); }
+.ds-toast-region [data-slot='toast'][class*='danger'] { border-color: color-mix(in srgb, var(--ds-color-danger) 42%, var(--ds-color-border)); background: var(--ds-color-danger-soft); }
+
+.ds-toast-region [data-slot='toast-indicator'] { display: flex; flex: 0 0 auto; color: var(--ds-color-accent); }
+.ds-toast-region [data-slot='toast-title'] { min-width: 0; color: var(--ds-color-heading); font-size: var(--ds-font-size-14); font-weight: var(--ds-font-weight-medium); line-height: 20px; }
+.ds-toast-region [data-slot='toast-content'] { min-width: 0; flex: 1 1 auto; }
+.ds-toast-region [data-slot='toast-close'] { position: absolute; top: calc(var(--ds-space-1) * -1); right: calc(var(--ds-space-1) * -1); width: 20px; height: 20px; display: grid; place-items: center; border: 1px solid var(--ds-color-border); border-radius: var(--ds-radius-pill); background: var(--ds-color-surface-raised); color: var(--ds-color-muted); box-shadow: var(--ds-shadow-xs); cursor: pointer; }
+.ds-toast-region [data-slot='toast-close']:hover { background: var(--ds-state-hover-bg); color: var(--ds-color-heading); }
+.ds-toast-region [data-slot='toast-close']:focus-visible { outline: var(--ds-state-focus-ring-width) solid var(--ds-state-focus-ring); outline-offset: var(--ds-state-focus-ring-offset); }
+.ds-toast-region [data-slot='toast-action-button'] { flex: 0 0 auto; }
+
+@media (max-width: 767px) {
+  .ds-toast-region { right: var(--ds-space-4) !important; left: var(--ds-space-4) !important; width: auto !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-toast-region [data-slot='toast-close'] { transition: none; }
+}

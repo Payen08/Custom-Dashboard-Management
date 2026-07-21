@@ -5,7 +5,7 @@ import {
 import { type ComponentDef } from '../shared';
 import {
   ArcoButton, ArcoIconButton, ArcoModal, ArcoTag, ArcoTextArea, ArcoTextInput,
-} from './HeroUI';
+} from './ProductUI';
 import { useComponentCatalog } from './useComponentCatalog';
 
 type CatalogFilter = 'all' | 'system' | 'custom';

@@ -5,7 +5,7 @@ import {
   type PlacedItem, type DragItem, type ComponentDef,
   COMPONENT_DEFS, GRID_COLS, GRID_ROWS, CELL_W, CELL_H, CANVAS_W, CANVAS_H, isFree,
 } from '../shared';
-import { ArcoButton, ArcoTag } from './HeroUI';
+import { ArcoButton, ArcoTag } from './ProductUI';
 
 // ── Widget renderers (faithful to dashboard screenshot) ───────────────────────
 

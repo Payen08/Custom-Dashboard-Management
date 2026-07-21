@@ -13,7 +13,7 @@ import {
   ArcoSelect,
   ArcoTextArea,
   ArcoTextInput,
-} from './HeroUI';
+} from './ProductUI';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -173,6 +173,74 @@ const STATUS_META: Record<PublishStatus, { label: string; color: string; bg: str
 };
 
 const DEFAULT_ORIGIN: OriginPose = { x: 0, y: 0, z: 0, rx: 0, ry: 0, rz: 0 };
+
+interface HardwareComponentOption {
+  id: string;
+  name: string;
+  brand: string;
+  kind: DeviceKind;
+}
+
+interface HardwareComponentCategory {
+  kind: DeviceKind;
+  label: string;
+  options: HardwareComponentOption[];
+}
+
+const HARDWARE_COMPONENT_CATALOG: HardwareComponentCategory[] = [
+  {
+    kind: 'chassis',
+    label: '底盘',
+    options: [
+      { id: 'hw-xiangong-chassis', name: '仙工底盘', brand: '仙工', kind: 'chassis' },
+      { id: 'hw-standard-chassis', name: '标准移动底盘', brand: '墨影', kind: 'chassis' },
+      { id: 'hw-heavy-chassis', name: '重型AGV底盘', brand: '墨影', kind: 'chassis' },
+      { id: 'hw-omni-chassis', name: '全向移动底盘', brand: '仙工', kind: 'chassis' },
+    ],
+  },
+  {
+    kind: 'base',
+    label: '底座',
+    options: [
+      { id: 'hw-mobile-base', name: '移动底座', brand: '墨影', kind: 'base' },
+      { id: 'hw-fixed-base', name: '固定底座', brand: '墨影', kind: 'base' },
+      { id: 'hw-lift-base', name: '升降底座', brand: '仙工', kind: 'base' },
+    ],
+  },
+  {
+    kind: 'arm',
+    label: '机械臂',
+    options: [
+      { id: 'hw-jaka-arm', name: '节卡机械臂', brand: '节卡', kind: 'arm' },
+      { id: 'hw-aubo-arm', name: '遨博机械臂', brand: '遨博', kind: 'arm' },
+      { id: 'hw-elite-arm', name: '埃斯顿机械臂', brand: '埃斯顿', kind: 'arm' },
+      { id: 'hw-yuejiang-arm', name: '越疆机械臂', brand: '越疆', kind: 'arm' },
+      { id: 'hw-siling-arm', name: '思灵机械臂', brand: '思灵', kind: 'arm' },
+      { id: 'hw-rokae-arm', name: '珞石机械臂', brand: '珞石', kind: 'arm' },
+      { id: 'hw-dahuan-arm', name: '大族机械臂', brand: '大族', kind: 'arm' },
+      { id: 'hw-kawasaki-arm', name: '川崎机械臂', brand: '川崎', kind: 'arm' },
+    ],
+  },
+  {
+    kind: 'tool',
+    label: '末端工具',
+    options: [
+      { id: 'hw-electric-gripper', name: '电动夹爪', brand: '墨影', kind: 'tool' },
+      { id: 'hw-pneumatic-gripper', name: '气动夹爪', brand: '仙工', kind: 'tool' },
+      { id: 'hw-adaptive-gripper', name: '自适应夹爪', brand: '节卡', kind: 'tool' },
+      { id: 'hw-vacuum-gripper', name: '真空吸盘', brand: '墨影', kind: 'tool' },
+      { id: 'hw-weld-tool', name: '焊枪', brand: '埃斯顿', kind: 'tool' },
+    ],
+  },
+];
+
+function findCatalogOption(id: string): HardwareComponentOption | undefined {
+  for (const cat of HARDWARE_COMPONENT_CATALOG) {
+    const found = cat.options.find(o => o.id === id);
+    if (found) return found;
+  }
+  return undefined;
+}
 const DEFAULT_AXIS: Vector3 = { x: 0, y: 0, z: 1 };
 const DEFAULT_LIMIT: JointLimit = { lower: -180, upper: 180, effort: 80, velocity: 1.2 };
 const DEFAULT_MESH_SCALE: Vector3 = { x: 1, y: 1, z: 1 };
@@ -189,7 +257,7 @@ function robotThemeVars(mode: ThemeMode): React.CSSProperties {
   return ROBOT_THEME_VARS[mode] as React.CSSProperties;
 }
 
-function HeroButton({
+function RobotButton({
   children,
   variant = 'secondary',
   size = 'md',
@@ -213,7 +281,7 @@ function HeroButton({
   return (
     <button
       type="button"
-      className="hero-detail-button"
+      className="robot-detail-button"
       data-variant={variant}
       data-size={size}
       data-icon-only={isIconOnly ? 'true' : 'false'}
@@ -228,14 +296,14 @@ function HeroButton({
   );
 }
 
-function HeroChip({
+function RobotChip({
   children,
   tone = 'default',
 }: {
   children: React.ReactNode;
   tone?: 'default' | 'accent' | 'success' | 'danger';
 }) {
-  return <span className="hero-detail-chip" data-tone={tone}>{children}</span>;
+  return <span className="robot-detail-chip" data-tone={tone}>{children}</span>;
 }
 
 const SOFTWARE_PACKAGE_SLOTS: SoftwarePackageSlot[] = ['controller', 'armDriver', 'endEffector', 'powerDriver', 'perception'];
@@ -1353,7 +1421,7 @@ function inputStyle(): React.CSSProperties {
     padding: '0 12px',
     outline: 'none',
     boxSizing: 'border-box',
-    transition: 'border-color 0.15s ease',
+    transition: 'border-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out)',
   };
 }
 
@@ -1441,8 +1509,8 @@ function RobotScene({
   const reach = model.pose.reach;
 
   return (
-    <section className="hero-detail-card hero-scene-card">
-      <div className="hero-scene-content" style={{ background: 'var(--robot-scene-bg)' }}>
+    <section className="robot-detail-card robot-scene-card">
+      <div className="robot-scene-content" style={{ background: 'var(--robot-scene-bg)' }}>
         <svg viewBox="0 0 720 430" preserveAspectRatio="xMidYMid slice" style={{ width: '100%', height: '100%', display: 'block' }}>
           <defs>
             <linearGradient id="robot-space-bg" x1="0" y1="0" x2="0" y2="1">
@@ -1520,23 +1588,23 @@ function RobotScene({
           </g>
         </svg>
 
-        <div className="hero-scene-status">
+        <div className="robot-scene-status">
           3D预览 <span /> {model.id.replace('robot-', '').toUpperCase()}
         </div>
 
-        <div className="hero-scene-telemetry" aria-hidden="true">
+        <div className="robot-scene-telemetry" aria-hidden="true">
           {['J1  -0.292748', 'J2  -0.292748', 'J3  -0.292748', 'J4  -0.292748', 'J5  -0.292748', 'J6  -0.292748', 'X / Y / Z', '-0.292748 / -0.292748 / -0.292748', 'RX / RY / RZ', '-0.292748 / -0.292748 / -0.292748'].map((line, index) => (
             <span key={`${index}-${line}`}>{line}</span>
           ))}
         </div>
 
-        <button type="button" className="hero-scene-export" onClick={onExport}>
+        <button type="button" className="robot-scene-export" onClick={onExport}>
           <FileCode2 size={17} />
           <span>导出</span>
         </button>
 
-        <div className="hero-scene-tool-dock" aria-label="3D 场景工具">
-          <button type="button" data-active={editing ? 'true' : 'false'} onClick={readOnly ? onReadOnlyAttempt : onToggleEditing} aria-label={editing ? '结束编辑' : '开始编辑'} title={readOnly ? '取消发布后可编辑模型' : editing ? '结束编辑' : '开始编辑'}>
+        <div className="robot-scene-tool-dock" aria-label="3D 场景工具">
+          <button type="button" data-selected={editing ? 'true' : 'false'} aria-pressed={editing} onClick={readOnly ? onReadOnlyAttempt : onToggleEditing} aria-label={editing ? '结束编辑' : '开始编辑'} title={readOnly ? '取消发布后可编辑模型' : editing ? '结束编辑' : '开始编辑'}>
             <SlidersHorizontal size={17} />
           </button>
           <button type="button" aria-label="模型视图" title="模型视图"><Box size={17} /></button>
@@ -1717,7 +1785,7 @@ function TopologyTreeRow({
           : !isEditing
             ? isDragging ? 'grabbing' : 'grab'
             : 'default',
-        transition: 'background 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease',
+        transition: 'background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out), box-shadow var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out), opacity var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out)',
       }}
     >
       {hasChildren ? (
@@ -1752,7 +1820,7 @@ function TopologyTreeRow({
       ) : (
         <button
           type="button"
-          className="hero-topology-node-button"
+          className="robot-topology-node-button"
           onClick={() => onSelect(node.id)}
           onDoubleClick={event => { event.stopPropagation(); readOnly ? onReadOnlyAttempt() : onStartEdit(); }}
           style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, background: 'none', border: 'none', padding: 0, color: 'var(--robot-text)', cursor: 'pointer', textAlign: 'left' }}
@@ -1769,22 +1837,22 @@ function TopologyTreeRow({
               <MoreHorizontal size={15} />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" sideOffset={8} collisionPadding={12} className="heroui-tree-menu">
+          <DropdownMenuContent align="end" sideOffset={8} collisionPadding={12} className="ds-context-menu">
             {childActions.map(action => (
-              <DropdownMenuItem key={action.kind} className="heroui-tree-menu__item" onSelect={() => readOnly ? onReadOnlyAttempt() : onAddChild?.(node.id, action.kind)}>
+              <DropdownMenuItem key={action.kind} className="ds-context-menu__item" onSelect={() => readOnly ? onReadOnlyAttempt() : onAddChild?.(node.id, action.kind)}>
                 {action.kind === 'mesh' ? <Box size={15} /> : <Plus size={15} />}
                 新增{action.label}
               </DropdownMenuItem>
             ))}
-            <DropdownMenuItem className="heroui-tree-menu__item" onSelect={readOnly ? onReadOnlyAttempt : onStartEdit}><Pencil size={15} />重命名</DropdownMenuItem>
-            <DropdownMenuSeparator className="heroui-tree-menu__separator" />
-            <DropdownMenuItem className="heroui-tree-menu__item" variant="destructive" disabled={!readOnly && deleteDisabled} onSelect={() => readOnly ? onReadOnlyAttempt() : onDelete?.(node.id)}><Trash2 size={15} />删除节点</DropdownMenuItem>
+            <DropdownMenuItem className="ds-context-menu__item" onSelect={readOnly ? onReadOnlyAttempt : onStartEdit}><Pencil size={15} />重命名</DropdownMenuItem>
+            <DropdownMenuSeparator className="ds-context-menu__separator" />
+            <DropdownMenuItem className="ds-context-menu__item" variant="destructive" disabled={!readOnly && deleteDisabled} onSelect={() => readOnly ? onReadOnlyAttempt() : onDelete?.(node.id)}><Trash2 size={15} />删除节点</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>}
       </div>
 
       {isOver && dropPreview && (
-        <span aria-live="polite" style={{ position: 'absolute', right: 6, bottom: -18, zIndex: 5, padding: '2px 6px', borderRadius: 999, background: dropPreview.valid ? 'var(--robot-accent-soft)' : 'var(--robot-danger-soft)', color: dropPreview.valid ? 'var(--robot-accent-text)' : 'var(--robot-danger)', fontSize: 10, fontWeight: 600, pointerEvents: 'none' }}>
+        <span aria-live="polite" style={{ position: 'absolute', right: 6, bottom: -18, zIndex: 'var(--ds-z-sticky)', padding: '2px 6px', borderRadius: 999, background: dropPreview.valid ? 'var(--robot-accent-soft)' : 'var(--robot-danger-soft)', color: dropPreview.valid ? 'var(--robot-accent-text)' : 'var(--robot-danger)', fontSize: 10, fontWeight: 600, pointerEvents: 'none' }}>
           {dropPreview.valid ? (dropPreview.position === 'inside' ? '移动到节点下' : '调整顺序') : '此处不可放置'}
         </span>
       )}
@@ -1956,7 +2024,7 @@ function TopologyParamPanel({
   }
 
   return (
-    <section className="hero-topology-param-panel" style={{ position: 'relative', background: 'var(--robot-surface)', border: '1px solid var(--robot-border)', borderRadius: 'var(--robot-card-radius)', overflow: 'hidden', boxShadow: 'var(--robot-shadow)', flexShrink: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+    <section className="robot-topology-param-panel" style={{ position: 'relative', background: 'var(--robot-surface)', border: '1px solid var(--robot-border)', borderRadius: 'var(--robot-card-radius)', overflow: 'hidden', boxShadow: 'var(--robot-shadow)', flexShrink: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       <div style={{ minHeight: 64, padding: '12px 16px', borderBottom: '1px solid var(--robot-border)', display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{
           borderRadius: 999,
@@ -1990,7 +2058,7 @@ function TopologyParamPanel({
         </button>
       </div>
 
-      <fieldset className="hero-topology-param-body" style={{ minWidth: 0, margin: 0, padding: 12, border: 0, display: 'grid', gap: 12 }}>
+      <fieldset className="robot-topology-param-body" style={{ minWidth: 0, margin: 0, padding: 12, border: 0, display: 'grid', gap: 12 }}>
         <div>
           <div style={{ color: 'var(--robot-muted)', fontSize: 12, fontWeight: 600, marginBottom: 7 }}>位置 xyz</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
@@ -2016,19 +2084,20 @@ function TopologyParamPanel({
         </div>
 
         {node.kind === 'mesh' && (
-          <div className="hero-link-mesh-card">
+          <div className="robot-link-mesh-card">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ color: 'var(--robot-heading)', fontSize: 12, fontWeight: 600 }}>Mesh 几何资源</span>
               <span style={{ color: 'var(--robot-subtle)', fontSize: 10 }}>{mesh.filename ? '已配置' : '未配置'}</span>
             </div>
 
-            <div className="hero-link-mesh-tabs" aria-label="Mesh 类型">
+            <div className="robot-link-mesh-tabs" aria-label="Mesh 类型">
               {(['visual', 'collision'] as const).map(role => (
                 <button
                   key={role}
                   type="button"
-                  className="hero-link-mesh-tab"
-                  data-active={(node.meshRole ?? 'visual') === role}
+                  className="robot-link-mesh-tab"
+                  data-selected={(node.meshRole ?? 'visual') === role}
+                  aria-pressed={(node.meshRole ?? 'visual') === role}
                   onClick={() => onChange({ meshRole: role })}
                 >
                   {role === 'visual' ? 'Visual' : 'Collision'}
@@ -2045,7 +2114,7 @@ function TopologyParamPanel({
             />
             <label>
               <span style={{ color: 'var(--robot-muted)', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 5 }}>Mesh URI</span>
-              <div className="hero-link-mesh-file-row">
+              <div className="robot-link-mesh-file-row">
                 <ArcoTextInput
                   scope="robot"
                   value={mesh.filename}
@@ -2055,7 +2124,7 @@ function TopologyParamPanel({
                 />
                 <button
                   type="button"
-                  className="hero-link-mesh-file-button"
+                  className="robot-link-mesh-file-button"
                   aria-label={`选择 ${(node.meshRole ?? 'visual') === 'visual' ? 'Visual' : 'Collision'} Mesh 文件`}
                   title="选择 Mesh 文件"
                   onClick={() => meshInputRef.current?.click()}
@@ -2122,7 +2191,7 @@ function TopologyParamPanel({
           </>
         )}
       </fieldset>
-      {readOnly && <button type="button" className="hero-readonly-interceptor" onClick={onReadOnlyAttempt} aria-label="取消发布后编辑节点参数" />}
+      {readOnly && <button type="button" className="robot-readonly-interceptor" onClick={onReadOnlyAttempt} aria-label="取消发布后编辑节点参数" />}
     </section>
   );
 }
@@ -2175,7 +2244,7 @@ function DeviceStructureTree({
     });
   }
 
-  return <div className="hero-topology-tree-scroll">{renderNodes(nodes)}</div>;
+  return <div className="robot-topology-tree-scroll">{renderNodes(nodes)}</div>;
 }
 
 function DeviceStructureParamPanel({
@@ -2192,12 +2261,12 @@ function DeviceStructureParamPanel({
   const meta = DEVICE_KIND_META[node.kind];
   const changeOrigin = (key: keyof OriginPose, value: string) => onChange({ ...node.origin, [key]: Number(value) || 0 });
   return (
-    <section className="hero-topology-param-panel" style={{ position: 'relative', background: 'var(--robot-surface)', border: '1px solid var(--robot-border)', borderRadius: 'var(--robot-card-radius)', overflow: 'hidden', boxShadow: 'var(--robot-shadow)', flexShrink: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+    <section className="robot-topology-param-panel" style={{ position: 'relative', background: 'var(--robot-surface)', border: '1px solid var(--robot-border)', borderRadius: 'var(--robot-card-radius)', overflow: 'hidden', boxShadow: 'var(--robot-shadow)', flexShrink: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       <div style={{ minHeight: 64, padding: '12px 16px', borderBottom: '1px solid var(--robot-border)', display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ borderRadius: 999, background: meta.background, color: meta.color, fontSize: 10, fontWeight: 600, padding: '3px 8px' }}>{meta.label}</span>
         <strong style={{ minWidth: 0, flex: 1, overflow: 'hidden', color: 'var(--robot-heading)', fontSize: 14, fontWeight: 600, textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.label}</strong>
       </div>
-      <div className="hero-topology-param-body" style={{ padding: 12, display: 'grid', gap: 12 }}>
+      <div className="robot-topology-param-body" style={{ padding: 12, display: 'grid', gap: 12 }}>
         {([
           ['位置 xyz', ['x', 'y', 'z'] as const, ['X', 'Y', 'Z']],
           ['旋转 xyz', ['rx', 'ry', 'rz'] as const, ['RX', 'RY', 'RZ']],
@@ -2215,7 +2284,7 @@ function DeviceStructureParamPanel({
           </div>
         ))}
       </div>
-      {readOnly && <button type="button" className="hero-readonly-interceptor" onClick={onReadOnlyAttempt} aria-label="取消发布后编辑设备参数" />}
+      {readOnly && <button type="button" className="robot-readonly-interceptor" onClick={onReadOnlyAttempt} aria-label="取消发布后编辑设备参数" />}
     </section>
   );
 }
@@ -2502,7 +2571,7 @@ function SoftwareVersionDialog({
                         padding: '0 10px',
                         cursor: 'pointer',
                         background: selectedSet.has(item.id) ? 'var(--robot-accent-soft)' : 'transparent',
-                        transition: 'background-color 180ms ease, border-color 180ms ease',
+                        transition: 'background-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), border-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out)',
                       }}
                     >
                       <ArcoCheckbox
@@ -2537,6 +2606,7 @@ export function RobotModelManager({
   const [modelDialogOpen, setModelDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [unpublishConfirmOpen, setUnpublishConfirmOpen] = useState(false);
   const [softwareDialogOpen, setSoftwareDialogOpen] = useState(false);
   const [selectedTopologyId, setSelectedTopologyId] = useState('base_link');
   const [selectedDeviceId, setSelectedDeviceId] = useState('xiangong-chassis');
@@ -2557,6 +2627,10 @@ export function RobotModelManager({
   const [newNodeLabel, setNewNodeLabel] = useState('');
   const [deleteTopologyTargetId, setDeleteTopologyTargetId] = useState<string | null>(null);
   const [urdfImportError, setUrdfImportError] = useState<string | null>(null);
+  const [componentPickerOpen, setComponentPickerOpen] = useState(false);
+  const [componentPickerKindIds, setComponentPickerKindIds] = useState<Set<string>>(new Set());
+  const [componentPickerBrands, setComponentPickerBrands] = useState<Set<string>>(new Set());
+  const [componentPickerSelection, setComponentPickerSelection] = useState<Set<string>>(new Set());
 
   const themeMode = controlledThemeMode ?? internalThemeMode;
   const softwareCatalog = useMemo(() => buildSoftwareVersionCatalog(), []);
@@ -2603,35 +2677,14 @@ export function RobotModelManager({
   function notifyPublishLock() {
     setPublishLockNotice(true);
     if (publishLockTimerRef.current !== null) window.clearTimeout(publishLockTimerRef.current);
-    publishLockTimerRef.current = window.setTimeout(() => setPublishLockNotice(false), 2600);
+    publishLockTimerRef.current = window.setTimeout(() => setPublishLockNotice(false), 4000);
   }
 
   const publishLockToast = publishLockNotice ? (
-    <div
-      role="status"
-      aria-live="polite"
-      style={{
-        position: 'fixed',
-        top: 68,
-        left: '50%',
-        zIndex: 90,
-        minHeight: 40,
-        padding: '0 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        border: '1px solid var(--robot-accent-border)',
-        borderRadius: 8,
-        background: 'var(--robot-surface)',
-        boxShadow: '0 10px 30px rgba(15, 23, 42, 0.14)',
-        color: 'var(--robot-heading)',
-        fontSize: 14,
-        fontWeight: 500,
-        transform: 'translateX(-50%)',
-      }}
-    >
-      <LockKeyhole size={16} color="var(--robot-accent)" />
-      当前型号已发布，请先取消发布后再编辑
+    <div className="ds-global-notice" data-tone="warning" role="status" aria-live="polite">
+      <span className="ds-global-notice__indicator"><LockKeyhole size={16} /></span>
+      <span className="ds-global-notice__message">当前型号已发布，请先取消发布后再编辑</span>
+      <ArcoIconButton type="text" size="small" icon={<X size={14} />} aria-label="关闭提示" title="关闭" onClick={() => setPublishLockNotice(false)} className="ds-global-notice__close" />
     </div>
   ) : null;
 
@@ -2652,6 +2705,26 @@ export function RobotModelManager({
     >
       <p style={{ color: 'var(--robot-muted)', fontSize: 14, lineHeight: 1.7, margin: '0 0 18px' }}>
         确认删除「{(deleteTargetId ? models.find(m => m.id === deleteTargetId) : activeModel)?.name ?? '此型号'}」吗？删除后该型号的拓扑结构、外设配置与导出配置会一并移除。
+      </p>
+    </ArcoModal>
+  );
+
+  const unpublishModal = (
+    <ArcoModal
+      open={unpublishConfirmOpen}
+      onOpenChange={setUnpublishConfirmOpen}
+      scope="robot"
+      title="取消发布型号"
+      size="sm"
+      footer={(
+        <>
+          <ArcoButton scope="robot" onClick={() => setUnpublishConfirmOpen(false)}>取消</ArcoButton>
+          <ArcoButton scope="robot" type="primary" onClick={confirmUnpublish}>确认取消发布</ArcoButton>
+        </>
+      )}
+    >
+      <p style={{ color: 'var(--robot-muted)', fontSize: 14, lineHeight: 1.7, margin: '0 0 18px' }}>
+        取消发布后，「{activeModel?.name ?? '此型号'}」将恢复为可编辑状态；后续修改不会自动同步到已发布版本。确定要取消发布吗？
       </p>
     </ArcoModal>
   );
@@ -2680,7 +2753,7 @@ export function RobotModelManager({
           color: 'var(--robot-text)',
           boxSizing: 'border-box',
           overflow: 'hidden',
-          transition: 'background 0.22s ease, color 0.22s ease',
+          transition: 'background-color var(--ds-motion-duration-slow) var(--ds-motion-ease-in-out), color var(--ds-motion-duration-slow) var(--ds-motion-ease-in-out)',
         }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--robot-section-gap)', flexShrink: 0, gap: 'var(--robot-section-gap)' }}>
@@ -2699,14 +2772,14 @@ export function RobotModelManager({
                 onChange={e => setSearchQuery((e.target as HTMLInputElement).value)}
                 style={{ width: 260 }}
               />
-              <HeroButton variant="primary" onPress={openCreateDialog}>
+              <RobotButton variant="primary" onPress={openCreateDialog}>
                 <Plus size={14} />新建型号
-              </HeroButton>
+              </RobotButton>
             </div>
           </div>
 
           <style>{`
-            .hero-detail-button {
+            .robot-detail-button {
               min-height: 40px;
               padding: 0 14px;
               display: inline-flex;
@@ -2722,19 +2795,19 @@ export function RobotModelManager({
               font-weight: 600;
               white-space: nowrap;
               cursor: pointer;
-              transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, opacity 180ms ease;
+              transition: color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), background-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), border-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), opacity var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out);
             }
-            .hero-detail-button[data-size="sm"] { min-height: 32px; padding: 0 12px; border-radius: var(--ds-radius-button); font-size: 14px; }
-            .hero-detail-button[data-icon-only="true"] { width: 40px !important; padding: 0; }
-            .hero-detail-button[data-icon-only="true"][data-size="sm"] { width: 32px !important; padding: 0; }
-            .hero-detail-button[data-variant="primary"] { background: var(--robot-brand); color: var(--robot-accent-contrast); }
-            .hero-detail-button[data-variant="secondary"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
-            .hero-detail-button[data-variant="tertiary"] { border-color: var(--robot-border-strong); background: var(--robot-surface); }
-            .hero-detail-button[data-variant="ghost"] { background: transparent; color: var(--robot-text); }
-            .hero-detail-button[data-variant="danger"] { background: var(--robot-danger-soft); color: var(--robot-danger); }
-            .hero-detail-button:hover { opacity: 0.86; }
-            .hero-detail-button:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
-            .hero-detail-chip {
+            .robot-detail-button[data-size="sm"] { min-height: 32px; padding: 0 12px; border-radius: var(--ds-radius-button); font-size: 14px; }
+            .robot-detail-button[data-icon-only="true"] { width: 40px !important; padding: 0; }
+            .robot-detail-button[data-icon-only="true"][data-size="sm"] { width: 32px !important; padding: 0; }
+            .robot-detail-button[data-variant="primary"] { background: var(--robot-brand); color: var(--robot-accent-contrast); }
+            .robot-detail-button[data-variant="secondary"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+            .robot-detail-button[data-variant="tertiary"] { border-color: var(--robot-border-strong); background: var(--robot-surface); }
+            .robot-detail-button[data-variant="ghost"] { background: transparent; color: var(--robot-text); }
+            .robot-detail-button[data-variant="danger"] { background: var(--robot-danger-soft); color: var(--robot-danger); }
+            .robot-detail-button:hover { opacity: 0.86; }
+            .robot-detail-button:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
+            .robot-detail-chip {
               max-width: 100%;
               min-height: 24px;
               padding: 2px 9px;
@@ -2749,9 +2822,9 @@ export function RobotModelManager({
               font-weight: 600;
               white-space: nowrap;
             }
-            .hero-detail-chip[data-tone="accent"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
-            .hero-detail-chip[data-tone="success"] { background: var(--robot-success-soft); color: var(--robot-success); }
-            .hero-detail-chip[data-tone="danger"] { background: var(--robot-danger-soft); color: var(--robot-danger); }
+            .robot-detail-chip[data-tone="accent"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+            .robot-detail-chip[data-tone="success"] { background: var(--robot-success-soft); color: var(--robot-success); }
+            .robot-detail-chip[data-tone="danger"] { background: var(--robot-danger-soft); color: var(--robot-danger); }
             .model-library-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 2px 20px; }
             .model-library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); align-content: start; gap: 16px; }
             .model-library-card {
@@ -2761,7 +2834,7 @@ export function RobotModelManager({
               border-radius: var(--robot-card-radius);
               background: var(--robot-surface);
               box-shadow: var(--robot-shadow-soft);
-              transition: border-color 180ms ease, box-shadow 180ms ease;
+              transition: border-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), box-shadow var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out);
             }
             .model-library-card:hover {
               border-color: var(--robot-accent-border);
@@ -2804,7 +2877,7 @@ export function RobotModelManager({
               .model-card-preview { height: 176px; }
             }
             @media (prefers-reduced-motion: reduce) {
-              .model-library-card, .hero-detail-button { transition: none; }
+              .model-library-card, .robot-detail-button { transition: none; }
             }
           `}</style>
 
@@ -2828,7 +2901,7 @@ export function RobotModelManager({
                               <h2 className="model-card-title">{model.name}</h2>
                               <p className="model-card-type">{model.type}</p>
                             </div>
-                            <HeroChip tone={model.status === 'published' ? 'success' : 'default'}>{status.label}</HeroChip>
+                            <RobotChip tone={model.status === 'published' ? 'success' : 'default'}>{status.label}</RobotChip>
                           </div>
                           <div className="model-card-stats">
                             <div className="model-card-stat"><span>版本</span><strong>{model.version}</strong></div>
@@ -2840,7 +2913,7 @@ export function RobotModelManager({
                       <footer className="model-card-footer">
                         <span className="model-card-updated">更新于 {model.updatedAt}</span>
                         <div className="model-card-actions">
-                          <HeroButton
+                          <RobotButton
                             variant="ghost"
                             size="sm"
                             isIconOnly
@@ -2857,8 +2930,8 @@ export function RobotModelManager({
                             }}
                           >
                             <Pencil size={14} />
-                          </HeroButton>
-                          <HeroButton
+                          </RobotButton>
+                          <RobotButton
                             variant="danger"
                             size="sm"
                             isIconOnly
@@ -2874,7 +2947,7 @@ export function RobotModelManager({
                             }}
                           >
                             <Trash2 size={14} />
-                          </HeroButton>
+                          </RobotButton>
                         </div>
                       </footer>
                     </article>
@@ -3003,6 +3076,91 @@ export function RobotModelManager({
     }));
   }
 
+  function handleAddComponentToDevice() {
+    if (!activeModel || modelReadOnly) { notifyPublishLock(); return; }
+    if (componentPickerSelection.size === 0) return;
+
+    const selectedOptions = HARDWARE_COMPONENT_CATALOG
+      .flatMap(cat => cat.options)
+      .filter(opt => componentPickerSelection.has(opt.id));
+
+    let updated = activeDeviceStructure;
+    for (const opt of selectedOptions) {
+      const newNode: DeviceStructureNode = {
+        id: `comp-${Date.now()}-${opt.id}`,
+        label: opt.name,
+        kind: opt.kind,
+        origin: { ...DEFAULT_ORIGIN },
+      };
+      if (!selectedDeviceNode || selectedDeviceNode.id === 'mcr-platform') {
+        updated = [...updated, newNode];
+      } else {
+        updated = updateDeviceStructureNode(updated, selectedDeviceNode.id, {
+          children: [...((findDeviceStructureNode(updated, selectedDeviceNode.id)?.children) ?? []), newNode],
+        });
+      }
+    }
+    setDeviceStructures(current => ({ ...current, [activeModel.id]: updated }));
+    setComponentPickerOpen(false);
+    resetComponentPicker();
+  }
+
+  function resetComponentPicker() {
+    setComponentPickerKindIds(new Set());
+    setComponentPickerBrands(new Set());
+    setComponentPickerSelection(new Set());
+  }
+
+  function openComponentPicker() {
+    if (modelReadOnly) { notifyPublishLock(); return; }
+    resetComponentPicker();
+    // Default: select all kinds
+    setComponentPickerKindIds(new Set(HARDWARE_COMPONENT_CATALOG.map(c => c.kind)));
+    setComponentPickerOpen(true);
+  }
+
+  function togglePickerKind(kindId: string) {
+    setComponentPickerKindIds(prev => {
+      const n = new Set(prev);
+      n.has(kindId) ? n.delete(kindId) : n.add(kindId);
+      return n;
+    });
+    setComponentPickerBrands(new Set());
+    setComponentPickerSelection(new Set());
+  }
+
+  function togglePickerBrand(brand: string) {
+    setComponentPickerBrands(prev => {
+      const n = new Set(prev);
+      n.has(brand) ? n.delete(brand) : n.add(brand);
+      return n;
+    });
+    setComponentPickerSelection(new Set());
+  }
+
+  function togglePickerOption(optId: string) {
+    setComponentPickerSelection(prev => {
+      const n = new Set(prev);
+      n.has(optId) ? n.delete(optId) : n.add(optId);
+      return n;
+    });
+  }
+
+  // Derived: filtered options based on kind + brand selections
+  const filteredPickerOptions = HARDWARE_COMPONENT_CATALOG
+    .filter(cat => componentPickerKindIds.has(cat.kind))
+    .flatMap(cat => cat.options)
+    .filter(opt => componentPickerBrands.size === 0 || componentPickerBrands.has(opt.brand));
+
+  const availablePickerBrands = (() => {
+    const brands = new Set<string>();
+    for (const cat of HARDWARE_COMPONENT_CATALOG) {
+      if (!componentPickerKindIds.has(cat.kind)) continue;
+      for (const opt of cat.options) brands.add(opt.brand);
+    }
+    return [...brands].sort();
+  })();
+
   function openCreateDialog() {
     setDraft({
       name: '新建机器人型号',
@@ -3067,11 +3225,24 @@ export function RobotModelManager({
   }
 
   function togglePublish() {
+    if (activeModel.status === 'published') {
+      setUnpublishConfirmOpen(true);
+      return;
+    }
     setEditingScene(false);
     setSoftwareDialogOpen(false);
     setAddNodeDialogOpen(false);
     setDeleteTopologyTargetId(null);
-    updateActive({ status: activeModel.status === 'published' ? 'draft' : 'published' });
+    updateActive({ status: 'published' });
+  }
+
+  function confirmUnpublish() {
+    setUnpublishConfirmOpen(false);
+    setEditingScene(false);
+    setSoftwareDialogOpen(false);
+    setAddNodeDialogOpen(false);
+    setDeleteTopologyTargetId(null);
+    updateActive({ status: 'draft' });
   }
 
   function confirmDelete() {
@@ -3118,11 +3289,11 @@ export function RobotModelManager({
       color: 'var(--robot-text)',
       boxSizing: 'border-box',
       overflow: 'hidden',
-      transition: 'background 0.22s ease, color 0.22s ease',
+      transition: 'background-color var(--ds-motion-duration-slow) var(--ds-motion-ease-in-out), color var(--ds-motion-duration-slow) var(--ds-motion-ease-in-out)',
     }}>
       {publishLockToast}
       <style>{`
-        .hero-detail-card {
+        .robot-detail-card {
           width: 100%;
           height: 100%;
           min-width: 0;
@@ -3135,7 +3306,7 @@ export function RobotModelManager({
           background: var(--robot-surface);
           box-shadow: var(--robot-shadow-soft);
         }
-        .hero-detail-card-header {
+        .robot-detail-card-header {
           min-height: 68px;
           padding: 12px 16px;
           display: flex;
@@ -3144,7 +3315,7 @@ export function RobotModelManager({
           flex-shrink: 0;
           border-bottom: 1px solid var(--robot-border);
         }
-        .hero-detail-card-title {
+        .robot-detail-card-title {
           flex: 1;
           margin: 0;
           color: var(--robot-heading);
@@ -3152,7 +3323,7 @@ export function RobotModelManager({
           line-height: 24px;
           font-weight: 600;
         }
-        .hero-detail-button {
+        .robot-detail-button {
           min-height: 40px;
           padding: 0 16px;
           display: inline-flex;
@@ -3168,19 +3339,19 @@ export function RobotModelManager({
           font-weight: 500;
           white-space: nowrap;
           cursor: pointer;
-          transition: background 150ms ease, border-color 150ms ease, opacity 150ms ease;
+          transition: background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out), border-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out), opacity var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out);
         }
-        .hero-detail-button:hover { background: var(--robot-neutral-soft); }
-        .hero-detail-button:active { opacity: 0.88; }
-        .hero-detail-button:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
-        .hero-detail-button[data-variant="primary"] { background: var(--robot-brand); color: var(--robot-accent-contrast); }
-        .hero-detail-button[data-variant="primary"]:hover { background: var(--robot-accent); }
-        .hero-detail-button[data-variant="secondary"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
-        .hero-detail-button[data-variant="tertiary"] { border-color: var(--robot-border); background: transparent; }
-        .hero-detail-button[data-variant="ghost"] { background: transparent; }
-        .hero-detail-button[data-variant="danger"] { background: var(--robot-danger-soft); color: var(--robot-danger); }
-        .hero-detail-button[data-icon-only="true"] { width: 40px !important; padding: 0; }
-        .hero-detail-button:disabled { cursor: not-allowed; opacity: 0.45; }
+        .robot-detail-button:hover { background: var(--robot-neutral-soft); }
+        .robot-detail-button:active { opacity: 0.88; }
+        .robot-detail-button:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
+        .robot-detail-button[data-variant="primary"] { background: var(--robot-brand); color: var(--robot-accent-contrast); }
+        .robot-detail-button[data-variant="primary"]:hover { background: var(--robot-accent); }
+        .robot-detail-button[data-variant="secondary"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+        .robot-detail-button[data-variant="tertiary"] { border-color: var(--robot-border); background: transparent; }
+        .robot-detail-button[data-variant="ghost"] { background: transparent; }
+        .robot-detail-button[data-variant="danger"] { background: var(--robot-danger-soft); color: var(--robot-danger); }
+        .robot-detail-button[data-icon-only="true"] { width: 40px !important; padding: 0; }
+        .robot-detail-button:disabled { cursor: not-allowed; opacity: 0.45; }
         .software-config-edit {
           width: 32px;
           height: 32px;
@@ -3193,13 +3364,13 @@ export function RobotModelManager({
           background: transparent;
           color: var(--robot-muted);
           cursor: pointer;
-          transition: color 180ms ease, background-color 180ms ease;
+          transition: color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), background-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out);
         }
         .software-config-edit:hover { color: var(--robot-accent-text); background: var(--robot-accent-soft); }
         .software-config-edit:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
         .software-config-edit:disabled,
-        .hero-detail-tool-button:disabled { cursor: not-allowed; opacity: 0.4; pointer-events: none; }
-        .hero-detail-chip {
+        .robot-detail-tool-button:disabled { cursor: not-allowed; opacity: 0.4; pointer-events: none; }
+        .robot-detail-chip {
           max-width: 100%;
           min-height: 24px;
           padding: 2px 10px;
@@ -3216,12 +3387,12 @@ export function RobotModelManager({
           overflow: hidden;
           text-overflow: ellipsis;
         }
-        .hero-detail-chip[data-tone="accent"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
-        .hero-detail-chip[data-tone="success"] { background: var(--robot-success-soft); color: var(--robot-success); }
-        .hero-status-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: 99px; background: currentColor; }
-        .hero-detail-chip[data-tone="danger"] { background: var(--robot-danger-soft); color: var(--robot-heading); }
-        .hero-info-card { height: auto; flex: 0 0 auto; display: flex; flex-direction: column; }
-        .hero-info-header {
+        .robot-detail-chip[data-tone="accent"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+        .robot-detail-chip[data-tone="success"] { background: var(--robot-success-soft); color: var(--robot-success); }
+        .robot-status-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: 99px; background: currentColor; }
+        .robot-detail-chip[data-tone="danger"] { background: var(--robot-danger-soft); color: var(--robot-heading); }
+        .robot-info-card { height: auto; flex: 0 0 auto; display: flex; flex-direction: column; }
+        .robot-info-header {
           min-height: 84px;
           padding: 16px;
           display: flex;
@@ -3230,7 +3401,7 @@ export function RobotModelManager({
           flex-shrink: 0;
           border-bottom: 1px solid var(--robot-border);
         }
-        .hero-model-back {
+        .robot-model-back {
           width: 44px;
           height: 44px;
           display: grid;
@@ -3242,12 +3413,12 @@ export function RobotModelManager({
           background: var(--robot-soft);
           color: var(--robot-heading);
           cursor: pointer;
-          transition: background-color 180ms ease, border-color 180ms ease;
+          transition: background-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), border-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out);
         }
-        .hero-model-back:hover { border-color: var(--robot-accent-border); background: var(--robot-neutral-soft); }
-        .hero-model-back:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
-        .hero-model-heading { min-width: 0; flex: 1; }
-        .hero-model-heading h2 {
+        .robot-model-back:hover { border-color: var(--robot-accent-border); background: var(--robot-neutral-soft); }
+        .robot-model-back:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
+        .robot-model-heading { min-width: 0; flex: 1; }
+        .robot-model-heading h2 {
           margin: 0;
           overflow: hidden;
           color: var(--robot-heading);
@@ -3257,7 +3428,7 @@ export function RobotModelManager({
           text-overflow: ellipsis;
           white-space: nowrap;
         }
-        .hero-model-heading p {
+        .robot-model-heading p {
           margin: 0;
           overflow: hidden;
           color: var(--robot-muted);
@@ -3266,14 +3437,14 @@ export function RobotModelManager({
           text-overflow: ellipsis;
           white-space: nowrap;
         }
-        .hero-info-content {
+        .robot-info-content {
           padding: 16px;
           display: flex;
           flex-direction: column;
           gap: 14px;
           flex-shrink: 0;
         }
-        .hero-model-description {
+        .robot-model-description {
           display: -webkit-box;
           margin: 0;
           overflow: hidden;
@@ -3283,15 +3454,15 @@ export function RobotModelManager({
           -webkit-box-orient: vertical;
           -webkit-line-clamp: 2;
         }
-        .hero-homepage-row { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--robot-muted); font-size: 14px; }
-        .hero-homepage-row > span:first-child { flex-shrink: 0; }
-        .hero-model-actions { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
-        .hero-updated-at { color: var(--robot-subtle); font-size: 12px; line-height: 18px; }
-        .hero-software-card { min-height: 0; flex: 1; }
-        .hero-software-section { min-height: 0; flex: 1; overflow: hidden; }
-        .hero-scene-card { min-height: 0; padding: 16px; }
-        .hero-scene-content { position: relative; min-height: 520px; flex: 1; overflow: hidden; border-radius: 12px; }
-        .hero-scene-status {
+        .robot-homepage-row { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--robot-muted); font-size: 14px; }
+        .robot-homepage-row > span:first-child { flex-shrink: 0; }
+        .robot-model-actions { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
+        .robot-updated-at { color: var(--robot-subtle); font-size: 12px; line-height: 18px; }
+        .robot-software-card { min-height: 0; flex: 1; }
+        .robot-software-section { min-height: 0; flex: 1; overflow: hidden; }
+        .robot-scene-card { min-height: 0; padding: 16px; }
+        .robot-scene-content { position: relative; min-height: 520px; flex: 1; overflow: hidden; border-radius: 12px; }
+        .robot-scene-status {
           position: absolute;
           left: 24px;
           top: 24px;
@@ -3308,8 +3479,8 @@ export function RobotModelManager({
           font-weight: 600;
           backdrop-filter: blur(10px);
         }
-        .hero-scene-status > span { width: 3px; height: 3px; border-radius: 99px; background: currentColor; }
-        .hero-scene-telemetry {
+        .robot-scene-status > span { width: 3px; height: 3px; border-radius: 99px; background: currentColor; }
+        .robot-scene-telemetry {
           position: absolute;
           left: 24px;
           top: 68px;
@@ -3322,7 +3493,7 @@ export function RobotModelManager({
           letter-spacing: 0;
           pointer-events: none;
         }
-        .hero-scene-export {
+        .robot-scene-export {
           position: absolute;
           right: 24px;
           top: 24px;
@@ -3340,11 +3511,11 @@ export function RobotModelManager({
           font-size: 12px;
           cursor: pointer;
           backdrop-filter: blur(12px);
-          transition: background-color 180ms ease;
+          transition: background-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out);
         }
-        .hero-scene-export:hover { background: rgba(255,255,255,0.18); }
-        .hero-scene-export:focus-visible { outline: 3px solid rgba(255,255,255,0.24); outline-offset: 2px; }
-        .hero-scene-tool-dock {
+        .robot-scene-export:hover { background: rgba(255,255,255,0.18); }
+        .robot-scene-export:focus-visible { outline: 3px solid rgba(255,255,255,0.24); outline-offset: 2px; }
+        .robot-scene-tool-dock {
           position: absolute;
           left: 24px;
           bottom: 24px;
@@ -3356,16 +3527,16 @@ export function RobotModelManager({
           background: rgba(18,18,18,0.78);
           backdrop-filter: blur(12px);
         }
-        .hero-scene-tool-dock button { width: 36px; height: 36px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: transparent; color: rgba(255,255,255,0.78); cursor: pointer; }
-        .hero-scene-tool-dock button:hover,
-        .hero-scene-tool-dock button[data-active="true"] { background: var(--robot-brand); color: #fff; }
-        .hero-scene-tool-dock button:disabled { cursor: not-allowed; opacity: 0.4; }
-        .hero-scene-tool-dock button:disabled:hover { background: transparent; color: rgba(255,255,255,0.78); }
-        .hero-topology-card { min-height: 0; flex: 1 1 50%; }
-        .hero-topology-node-button:focus { outline: none; }
-        .hero-topology-node-button:focus-visible { border-radius: 6px; outline: 2px solid var(--robot-accent-border); outline-offset: 2px; }
-        .hero-topology-content { min-height: 0; padding: 12px 16px 16px; display: flex; flex: 1; flex-direction: column; overflow: hidden; }
-        .hero-topology-tree-scroll {
+        .robot-scene-tool-dock button { width: 36px; height: 36px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: transparent; color: rgba(255,255,255,0.78); cursor: pointer; }
+        .robot-scene-tool-dock button:hover,
+        .robot-scene-tool-dock button[data-selected="true"] { background: var(--robot-brand); color: #fff; }
+        .robot-scene-tool-dock button:disabled { cursor: not-allowed; opacity: 0.4; }
+        .robot-scene-tool-dock button:disabled:hover { background: transparent; color: rgba(255,255,255,0.78); }
+        .robot-topology-card { min-height: 0; flex: 1 1 50%; }
+        .robot-topology-node-button:focus { outline: none; }
+        .robot-topology-node-button:focus-visible { border-radius: 6px; outline: 2px solid var(--robot-accent-border); outline-offset: 2px; }
+        .robot-topology-content { min-height: 0; padding: 12px 16px 16px; display: flex; flex: 1; flex-direction: column; overflow: hidden; }
+        .robot-topology-tree-scroll {
           min-height: 132px;
           flex: 1 1 0;
           overflow-y: auto;
@@ -3374,8 +3545,8 @@ export function RobotModelManager({
           padding-right: 4px;
           scrollbar-gutter: stable;
         }
-        .hero-topology-param-panel { min-height: 0; flex: 1 1 50%; }
-        .hero-topology-param-body {
+        .robot-topology-param-panel { min-height: 0; flex: 1 1 50%; }
+        .robot-topology-param-body {
           min-height: 0;
           flex: 1;
           align-content: start;
@@ -3384,7 +3555,7 @@ export function RobotModelManager({
           overscroll-behavior: contain;
           scrollbar-gutter: stable;
         }
-        .hero-readonly-interceptor {
+        .robot-readonly-interceptor {
           position: absolute;
           inset: 64px 0 0;
           z-index: 5;
@@ -3393,17 +3564,17 @@ export function RobotModelManager({
           background: transparent;
           cursor: pointer;
         }
-        .hero-readonly-interceptor:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: -4px; }
-        .hero-link-mesh-card { display: grid; gap: 12px; padding: 10px; border: 1px solid var(--robot-border); border-radius: var(--robot-inner-radius); background: var(--robot-soft); }
-        .hero-link-mesh-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; border-radius: 10px; background: var(--robot-neutral-soft); }
-        .hero-link-mesh-tab { height: 28px; border: 0; border-radius: 8px; background: transparent; color: var(--robot-muted); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
-        .hero-link-mesh-tab[data-active="true"] { background: var(--robot-surface); color: var(--robot-accent-text); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08); }
-        .hero-link-mesh-file-row { display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 8px; }
-        .hero-link-mesh-file-button { width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 1px solid var(--robot-border-strong); border-radius: var(--robot-control-radius); background: var(--robot-surface); color: var(--robot-muted); cursor: pointer; }
-        .hero-link-mesh-file-button:hover { border-color: var(--robot-accent-border); background: var(--robot-accent-soft); color: var(--robot-accent-text); }
-        .hero-link-mesh-file-button:focus-visible, .hero-link-mesh-tab:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
-        .hero-import-error { margin: 16px 16px 0; padding: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: var(--robot-inner-radius); background: var(--robot-danger-soft); color: var(--robot-heading); font-size: 12px; }
-        .hero-detail-tool-button {
+        .robot-readonly-interceptor:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: -4px; }
+        .robot-link-mesh-card { display: grid; gap: 12px; padding: 10px; border: 1px solid var(--robot-border); border-radius: var(--robot-inner-radius); background: var(--robot-soft); }
+        .robot-link-mesh-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; border-radius: 10px; background: var(--robot-neutral-soft); }
+        .robot-link-mesh-tab { height: 28px; border: 0; border-radius: 8px; background: transparent; color: var(--robot-muted); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .robot-link-mesh-tab[data-selected="true"] { background: var(--robot-surface); color: var(--robot-accent-text); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08); }
+        .robot-link-mesh-file-row { display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 8px; }
+        .robot-link-mesh-file-button { width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 1px solid var(--robot-border-strong); border-radius: var(--robot-control-radius); background: var(--robot-surface); color: var(--robot-muted); cursor: pointer; }
+        .robot-link-mesh-file-button:hover { border-color: var(--robot-accent-border); background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+        .robot-link-mesh-file-button:focus-visible, .robot-link-mesh-tab:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
+        .robot-import-error { margin: 16px 16px 0; padding: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: var(--robot-inner-radius); background: var(--robot-danger-soft); color: var(--robot-heading); font-size: 12px; }
+        .robot-detail-tool-button {
           height: 40px;
           padding: 0 12px;
           display: inline-flex;
@@ -3419,18 +3590,18 @@ export function RobotModelManager({
           font-size: 14px;
           font-weight: 500;
           cursor: pointer;
-          transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+          transition: color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), background-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), border-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out);
         }
-        .hero-detail-tool-button:hover,
-        .hero-detail-tool-button[data-active="true"] {
+        .robot-detail-tool-button:hover,
+        .robot-detail-tool-button[data-selected="true"] {
           border-color: var(--robot-accent-border);
           background: var(--robot-accent-soft);
           color: var(--robot-accent-text);
         }
-        .hero-detail-tool-button[data-icon-only="true"] { width: 40px; padding: 0; }
-        .hero-detail-tool-button:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
-        .hero-detail-model-menu { min-width: 184px !important; }
-        .hero-detail-button[data-state="open"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+        .robot-detail-tool-button[data-icon-only="true"] { width: 40px; padding: 0; }
+        .robot-detail-tool-button:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: 2px; }
+        .robot-detail-model-menu { min-width: 184px !important; }
+        .robot-detail-button[data-state="open"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
         .robot-detail-main { overflow: hidden; }
         .robot-detail-grid {
           display: grid;
@@ -3463,55 +3634,55 @@ export function RobotModelManager({
         {/* Content grid: 3 columns */}
         <div className="robot-detail-grid">
           <div className="robot-detail-left">
-            <section className="hero-detail-card hero-info-card">
-            <header className="hero-info-header">
-              <button type="button" className="hero-model-back" onClick={() => setActiveId(null)} aria-label="返回型号库" title="返回型号库">
+            <section className="robot-detail-card robot-info-card">
+            <header className="robot-info-header">
+              <button type="button" className="robot-model-back" onClick={() => setActiveId(null)} aria-label="返回型号库" title="返回型号库">
                 <ArrowLeft size={20} />
               </button>
-              <div className="hero-model-heading">
+              <div className="robot-model-heading">
                 <h2>{activeModel.name}</h2>
                 <p>{activeModel.type}</p>
               </div>
-              <HeroChip tone={activeModel.status === 'published' ? 'success' : 'default'}>
-                <span className="hero-status-dot" />
+              <RobotChip tone={activeModel.status === 'published' ? 'success' : 'default'}>
+                <span className="robot-status-dot" />
                 {STATUS_META[activeModel.status].label}
-              </HeroChip>
+              </RobotChip>
             </header>
 
-            <div className="hero-info-content">
+            <div className="robot-info-content">
               {activeModel.description && (
-                <p className="hero-model-description">{activeModel.description}</p>
+                <p className="robot-model-description">{activeModel.description}</p>
               )}
 
-              <div className="hero-homepage-row">
+              <div className="robot-homepage-row">
                 <span>关联首页</span>
                 {activeModel.homepageSchemeId ? (
-                  <HeroChip tone="accent">
+                  <RobotChip tone="accent">
                     <LayoutGrid size={14} />
                     {INITIAL_SCHEMES.find(s => s.id === activeModel.homepageSchemeId)?.name ?? activeModel.homepageSchemeId}
-                  </HeroChip>
+                  </RobotChip>
                 ) : (
                   <span>未指定</span>
                 )}
               </div>
 
-              <div className="hero-model-actions">
-                <HeroButton variant="primary" fullWidth title={modelReadOnly ? '取消发布后可编辑信息' : '编辑信息'} onPress={modelReadOnly ? notifyPublishLock : openEditDialog}>
+              <div className="robot-model-actions">
+                <RobotButton variant="primary" fullWidth title={modelReadOnly ? '取消发布后可编辑信息' : '编辑信息'} onPress={modelReadOnly ? notifyPublishLock : openEditDialog}>
                   <Pencil size={16} />编辑信息
-                </HeroButton>
-                <HeroButton variant={activeModel.status === 'published' ? 'tertiary' : 'primary'} fullWidth onPress={togglePublish}>
+                </RobotButton>
+                <RobotButton variant={activeModel.status === 'published' ? 'tertiary' : 'primary'} fullWidth onPress={togglePublish}>
                   <CheckCircle2 size={16} />{activeModel.status === 'published' ? '取消发布' : '发布'}
-                </HeroButton>
+                </RobotButton>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button type="button" className="hero-detail-button" data-variant="ghost" data-icon-only="true" aria-label="更多型号操作"><MoreHorizontal size={18} /></button>
+                    <button type="button" className="robot-detail-button" data-variant="ghost" data-icon-only="true" aria-label="更多型号操作"><MoreHorizontal size={18} /></button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" sideOffset={8} collisionPadding={12} className="heroui-tree-menu hero-detail-model-menu">
-                    <DropdownMenuItem className="heroui-tree-menu__item" onSelect={exportUrdf}><FileCode2 size={16} />导出 URDF</DropdownMenuItem>
-                    <DropdownMenuItem className="heroui-tree-menu__item" onSelect={exportJson}><FileJson size={16} />导出 JSON</DropdownMenuItem>
-                    <DropdownMenuSeparator className="heroui-tree-menu__separator" />
+                  <DropdownMenuContent align="end" sideOffset={8} collisionPadding={12} className="ds-context-menu robot-detail-model-menu">
+                    <DropdownMenuItem className="ds-context-menu__item" onSelect={exportUrdf}><FileCode2 size={16} />导出 URDF</DropdownMenuItem>
+                    <DropdownMenuItem className="ds-context-menu__item" onSelect={exportJson}><FileJson size={16} />导出 JSON</DropdownMenuItem>
+                    <DropdownMenuSeparator className="ds-context-menu__separator" />
                     <DropdownMenuItem
-                      className="heroui-tree-menu__item"
+                      className="ds-context-menu__item"
                       variant="destructive"
                       disabled={!modelReadOnly && models.length <= 1}
                       onSelect={() => {
@@ -3529,8 +3700,8 @@ export function RobotModelManager({
             </div>
             </section>
 
-            <section className="hero-detail-card hero-software-card">
-              <div className="hero-software-section">
+            <section className="robot-detail-card robot-software-card">
+              <div className="robot-software-section">
               <SoftwareVersionPanel
                 catalog={softwareCatalog}
                 selectionIds={activeModel.softwareSelectionIds}
@@ -3553,11 +3724,17 @@ export function RobotModelManager({
           />
 
           <div className="robot-detail-right">
-            <section className="hero-detail-card hero-topology-card robot-topology-card">
-            <header className="hero-detail-card-header">
-              <h3 className="hero-detail-card-title">设备结构</h3>
+            <section className="robot-detail-card robot-topology-card robot-topology-card">
+            <header className="robot-detail-card-header">
+              <h3 className="robot-detail-card-title">设备结构</h3>
+              <ArcoIconButton
+                scope="robot"
+                icon={<Plus size={16} />}
+                title="从硬件目录添加"
+                onClick={openComponentPicker}
+              />
             </header>
-            <div className="hero-topology-content">
+            <div className="robot-topology-content">
               <DeviceStructureTree nodes={activeDeviceStructure} selectedId={selectedDeviceNode?.id ?? ''} onSelect={setSelectedDeviceId} />
             </div>
             </section>
@@ -3729,7 +3906,120 @@ export function RobotModelManager({
             )}
       </ArcoModal>
 
+      {/* Component Picker Dialog — multi-column cascading multi-select */}
+      <ArcoModal
+        open={componentPickerOpen}
+        onOpenChange={(open) => { setComponentPickerOpen(open); if (!open) resetComponentPicker(); }}
+        scope="robot"
+        title="从硬件目录添加组件"
+        width={720}
+        footer={(
+          <>
+            <ArcoButton scope="robot" onClick={() => { setComponentPickerOpen(false); resetComponentPicker(); }}>取消</ArcoButton>
+            <ArcoButton scope="robot" type="primary" disabled={componentPickerSelection.size === 0} onClick={handleAddComponentToDevice}>
+              添加（{componentPickerSelection.size} 个组件）
+            </ArcoButton>
+          </>
+        )}
+      >
+        <div style={{ display: 'grid', gridTemplateColumns: '180px 140px 1fr', gap: 1, background: 'var(--robot-border)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--robot-border)' }}>
+          {/* Col 1: 组件类型 — 多选 */}
+          <div style={{ background: 'var(--robot-surface)', padding: 10 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--robot-muted)', padding: '4px 8px', marginBottom: 6 }}>组件类型</div>
+            {HARDWARE_COMPONENT_CATALOG.map(cat => {
+              const checked = componentPickerKindIds.has(cat.kind);
+              const count = cat.options.length;
+              return (
+                <label key={cat.kind} style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 7, cursor: 'pointer',
+                  background: checked ? 'var(--robot-accent-soft)' : 'transparent', marginBottom: 3,
+                }}>
+                  <input type="checkbox" checked={checked} onChange={() => togglePickerKind(cat.kind)}
+                    style={{ accentColor: 'var(--robot-accent)', width: 14, height: 14, flexShrink: 0 }} />
+                  <span style={{ flex: 1, color: checked ? 'var(--robot-accent-text)' : 'var(--robot-text)', fontSize: 13, fontWeight: checked ? 600 : 400 }}>
+                    {cat.label}
+                  </span>
+                  <span style={{ color: 'var(--robot-muted)', fontSize: 10 }}>{count}</span>
+                </label>
+              );
+            })}
+          </div>
+
+          {/* Col 2: 品牌 — 多选（cascaded from kinds） */}
+          <div style={{ background: 'var(--robot-surface)', padding: 10 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--robot-muted)', padding: '4px 8px', marginBottom: 6 }}>品牌筛选</div>
+            {availablePickerBrands.map(brand => {
+              const checked = componentPickerBrands.has(brand);
+              const count = filteredPickerOptions.filter(o => o.brand === brand).length;
+              if (componentPickerBrands.size > 0 && !checked && count === 0) return null;
+              return (
+                <label key={brand} style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 7, cursor: 'pointer',
+                  background: checked ? 'var(--robot-accent-soft)' : 'transparent', marginBottom: 3,
+                }}>
+                  <input type="checkbox" checked={checked} onChange={() => togglePickerBrand(brand)}
+                    style={{ accentColor: 'var(--robot-accent)', width: 14, height: 14, flexShrink: 0 }} />
+                  <span style={{ flex: 1, color: checked ? 'var(--robot-accent-text)' : 'var(--robot-text)', fontSize: 13, fontWeight: checked ? 600 : 400 }}>
+                    {brand}
+                  </span>
+                  <span style={{ color: 'var(--robot-muted)', fontSize: 10 }}>{count}</span>
+                </label>
+              );
+            })}
+            {availablePickerBrands.length === 0 && (
+              <div style={{ color: 'var(--robot-muted)', fontSize: 12, padding: 12, textAlign: 'center' }}>请先选择类型</div>
+            )}
+          </div>
+
+          {/* Col 3: 组件型号 — 多选（cascaded from kinds + brands） */}
+          <div style={{ background: 'var(--robot-surface)', padding: 10 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--robot-muted)', padding: '4px 8px', marginBottom: 6 }}>
+              组件型号（{filteredPickerOptions.length} 个）
+            </div>
+            <div style={{ maxHeight: 340, overflowY: 'auto' }}>
+              {filteredPickerOptions.length > 0 ? filteredPickerOptions.map(opt => {
+                const checked = componentPickerSelection.has(opt.id);
+                const meta = DEVICE_KIND_META[opt.kind];
+                return (
+                  <label key={opt.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 7, cursor: 'pointer',
+                    background: checked ? 'var(--robot-accent-soft)' : 'transparent', marginBottom: 3,
+                  }}>
+                    <input type="checkbox" checked={checked} onChange={() => togglePickerOption(opt.id)}
+                      style={{ accentColor: 'var(--robot-accent)', width: 14, height: 14, flexShrink: 0 }} />
+                    <span style={{
+                      width: 8, height: 8, borderRadius: 99,
+                      background: meta.color, flexShrink: 0,
+                    }} />
+                    <span style={{ flex: 1, color: checked ? 'var(--robot-accent-text)' : 'var(--robot-heading)', fontSize: 13, fontWeight: checked ? 600 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {opt.name}
+                    </span>
+                    <span style={{
+                      borderRadius: 999, padding: '2px 7px', fontSize: 10, fontWeight: 500,
+                      background: 'var(--robot-soft)', color: 'var(--robot-muted)', flexShrink: 0,
+                    }}>
+                      {opt.brand}
+                    </span>
+                    <span style={{
+                      borderRadius: 999, padding: '2px 7px', fontSize: 10, fontWeight: 500,
+                      background: meta.background, color: meta.color, flexShrink: 0,
+                    }}>
+                      {meta.label}
+                    </span>
+                  </label>
+                );
+              }) : (
+                <div style={{ color: 'var(--robot-muted)', fontSize: 12, padding: 20, textAlign: 'center' }}>
+                  请选择组件类型和品牌
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </ArcoModal>
+
       {deleteModal}
+      {unpublishModal}
     </div>
   );
 }
@@ -3796,7 +4086,7 @@ export function RobotComponentLibrary({ themeMode }: { themeMode?: ThemeMode }) 
   const [urdfImportError, setUrdfImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // HeroUI modals render in a portal, so the robot tokens must also be available on the document root.
+  // UI-kit modals render in a portal, so the robot tokens must also be available on the document root.
   useEffect(() => {
     if (typeof document === 'undefined') return;
     Object.entries(ROBOT_THEME_VARS[activeTheme]).forEach(([key, value]) => {
@@ -3918,13 +4208,13 @@ export function RobotComponentLibrary({ themeMode }: { themeMode?: ThemeMode }) 
         .component-library-scene__telemetry { position: absolute; top: 56px; left: 18px; color: var(--robot-hud-text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; line-height: 18px; opacity: 0.84; }
         .component-library-tree { min-height: 0; display: flex; flex-direction: column; }
         .component-library-tree__body { min-height: 0; flex: 1; overflow: hidden; }
-        .component-library-tree .hero-topology-tree-scroll { height: 100%; overflow-y: auto; padding: 10px 12px; }
-        .component-library-tree .hero-topology-node-button:focus-visible { outline: 2px solid var(--robot-accent-border); outline-offset: 2px; border-radius: 4px; }
+        .component-library-tree .robot-topology-tree-scroll { height: 100%; overflow-y: auto; padding: 10px 12px; }
+        .component-library-tree .robot-topology-node-button:focus-visible { outline: 2px solid var(--robot-accent-border); outline-offset: 2px; border-radius: 4px; }
         .component-library-right { min-height: 0; display: flex; flex-direction: column; gap: var(--robot-section-gap); }
-        .component-library-right .hero-topology-param-panel { flex: 1; }
+        .component-library-right .robot-topology-param-panel { flex: 1; }
         .component-library-import-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
         .component-library-import-step { min-height: 40px; padding: 0 12px; display: flex; align-items: center; gap: 8px; border-radius: var(--robot-control-radius); background: var(--robot-soft); color: var(--robot-muted); font-size: 14px; font-weight: 500; }
-        .component-library-import-step[data-active="true"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
+        .component-library-import-step[data-selected="true"] { background: var(--robot-accent-soft); color: var(--robot-accent-text); }
         .component-library-import-step__index { width: 20px; height: 20px; display: inline-grid; place-items: center; border-radius: 999px; background: currentColor; color: var(--robot-surface); font-size: 12px; font-weight: 700; }
         .component-library-import-upload { min-height: 164px; padding: 24px; display: grid; place-items: center; align-content: center; gap: 8px; border: 1px dashed var(--robot-border-strong); border-radius: var(--robot-inner-radius); background: var(--robot-soft); color: var(--robot-muted); cursor: pointer; text-align: center; }
         .component-library-import-upload:hover { border-color: var(--robot-accent-border); background: var(--robot-accent-soft); color: var(--robot-accent-text); }
@@ -3993,8 +4283,8 @@ export function RobotComponentLibrary({ themeMode }: { themeMode?: ThemeMode }) 
             <header className="component-library-card__header">
               <h2 style={{ flex: 1 }}>模型结构</h2>
               <input ref={fileInputRef} type="file" accept=".urdf,.xml" onChange={stageUrdfImport} style={{ display: 'none' }} />
-              <button type="button" className="hero-detail-tool-button" data-icon-only="true" aria-label="新增根 Link" title="新增根 Link" onClick={() => openAdd()}><Plus size={16} /></button>
-              <button type="button" className="hero-detail-tool-button" data-icon-only="true" aria-label="导入 URDF" title="导入 URDF" onClick={openUrdfImport}><FileCode2 size={16} /></button>
+              <button type="button" className="robot-detail-tool-button" data-icon-only="true" aria-label="新增根 Link" title="新增根 Link" onClick={() => openAdd()}><Plus size={16} /></button>
+              <button type="button" className="robot-detail-tool-button" data-icon-only="true" aria-label="导入 URDF" title="导入 URDF" onClick={openUrdfImport}><FileCode2 size={16} /></button>
             </header>
             <div className="component-library-tree__body">
               <TopologyTree
@@ -4034,8 +4324,8 @@ export function RobotComponentLibrary({ themeMode }: { themeMode?: ThemeMode }) 
         </>}
       >
         <div className="component-library-import-steps" aria-label="导入步骤">
-          <div className="component-library-import-step" data-active={urdfImportStep === 'upload'}><span className="component-library-import-step__index">1</span>上传文件</div>
-          <div className="component-library-import-step" data-active={urdfImportStep === 'preview'}><span className="component-library-import-step__index">2</span>预览结构</div>
+          <div className="component-library-import-step" data-selected={urdfImportStep === 'upload'} aria-current={urdfImportStep === 'upload' ? 'step' : undefined}><span className="component-library-import-step__index">1</span>上传文件</div>
+          <div className="component-library-import-step" data-selected={urdfImportStep === 'preview'} aria-current={urdfImportStep === 'preview' ? 'step' : undefined}><span className="component-library-import-step__index">2</span>预览结构</div>
         </div>
         {urdfImportStep === 'upload' ? <>
           <button type="button" className="component-library-import-upload" onClick={() => fileInputRef.current?.click()}>

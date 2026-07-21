@@ -2,3 +2,7 @@
 @import './tailwind.css';
 @import './theme.css';
 @import './design-system.css';
+@import './adapters/ui-kit.css';
+@import './business/taxonomy-tree.css';
+@import './business/page-patterns.css';
+@import './business/design-guidelines.css';

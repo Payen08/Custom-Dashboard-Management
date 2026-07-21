@@ -1,12 +1,9 @@
 /*
- * Product Design System
+ * Product Design System — foundation layer
  *
- * Naming:
- *   --ds-*            shared design-system token
- *   --app-*           application semantic color token
- *   --robot-*         robot-workspace semantic color token
- *   .ds-*             shared layout, component, template or state primitive
- *   .taxonomy-tree-*  product taxonomy business component
+ * This file publishes shared tokens, page templates and interaction contracts.
+ * Third-party UI-kit overrides live in styles/adapters/; product business
+ * components live in styles/business/. Do not add either kind of rule here.
  */
 
 :root {
@@ -68,7 +65,7 @@
   --ds-space-12: 48px;
   --ds-space-16: 64px;
 
-  /* Shape */
+  /* Shape, elevation and motion */
   --ds-radius-none: 0;
   --ds-radius-xs: 6px;
   --ds-radius-sm: 8px;
@@ -78,29 +75,31 @@
   --ds-radius-card: 16px;
   --ds-radius-overlay: 16px;
   --ds-radius-pill: 999px;
-
-  /* Elevation */
   --ds-shadow-none: none;
   --ds-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
   --ds-shadow-sm: 0 6px 18px -12px rgba(15, 23, 42, 0.22);
   --ds-shadow-card: 0 18px 44px -32px rgba(15, 23, 42, 0.35);
   --ds-shadow-overlay: 0 18px 48px -18px rgba(15, 23, 42, 0.30), 0 4px 12px rgba(15, 23, 42, 0.06);
   --ds-shadow-dialog: 0 24px 72px -24px rgba(15, 23, 42, 0.38);
-
-  /* Opacity */
   --ds-opacity-disabled: 0.45;
   --ds-opacity-muted: 0.64;
   --ds-opacity-hover: 0.08;
   --ds-opacity-pressed: 0.14;
   --ds-opacity-overlay: 0.42;
-
-  /* Motion */
   --ds-duration-fast: 120ms;
   --ds-duration-normal: 160ms;
   --ds-duration-slow: 240ms;
   --ds-ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ds-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
   --ds-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  /* Public motion aliases. Keep the legacy duration/ease tokens for existing pages. */
+  --ds-motion-duration-fast: var(--ds-duration-fast);
+  --ds-motion-duration-mid: var(--ds-duration-normal);
+  --ds-motion-duration-slow: var(--ds-duration-slow);
+  --ds-motion-duration-loading: 800ms;
+  --ds-motion-ease-in: var(--ds-ease-exit);
+  --ds-motion-ease-out: var(--ds-ease-enter);
+  --ds-motion-ease-in-out: var(--ds-ease-standard);
 
   /* Layer */
   --ds-z-base: 0;
@@ -108,6 +107,7 @@
   --ds-z-dropdown: 50;
   --ds-z-drawer: 60;
   --ds-z-modal: 70;
+  --ds-z-modal-popover: 75;
   --ds-z-toast: 80;
   --ds-z-tooltip: 90;
 
@@ -119,10 +119,10 @@
   --ds-layout-detail-sidebar-width: 320px;
   --ds-layout-content-max-width: 1680px;
   --ds-layout-grid-columns: 12;
-  --ds-layout-grid-gap: 16px;
-  --ds-layout-module-gap: 16px;
+  --ds-layout-grid-gap: var(--ds-space-4);
+  --ds-layout-module-gap: var(--ds-space-4);
 
-  /* Base component metrics */
+  /* Shared control metrics */
   --ds-control-height-xs: 24px;
   --ds-control-height-sm: 28px;
   --ds-control-height-md: 36px;
@@ -130,18 +130,102 @@
   --ds-button-height-xs: 24px;
   --ds-button-height-sm: 32px;
   --ds-button-height-md: 40px;
-  --ds-button-height-lg: 40px;
   --ds-tag-height-sm: 20px;
   --ds-tag-height-md: 24px;
-  --ds-tag-padding-inline: 8px;
+  --ds-tag-padding-inline: var(--ds-space-2);
   --ds-field-height-md: 40px;
-  --ds-field-height-lg: 40px;
   --ds-control-padding-inline-sm: 10px;
   --ds-control-padding-inline-md: 14px;
   --ds-control-icon-sm: 14px;
   --ds-control-icon-md: 16px;
   --ds-table-header-height: 44px;
   --ds-table-row-height: 52px;
+
+  /* Interaction state tokens. Pressed is transient; Selected is persistent. */
+  --ds-state-hover-bg: var(--ds-color-soft);
+  --ds-state-hover-border: var(--ds-color-border-strong);
+  --ds-state-pressed-bg: color-mix(in srgb, var(--ds-color-accent) 12%, var(--ds-color-surface));
+  --ds-state-pressed-border: var(--ds-color-accent);
+  --ds-state-selected-bg: var(--ds-color-accent-soft);
+  --ds-state-selected-border: var(--ds-color-accent);
+  --ds-state-selected-text: var(--ds-color-accent);
+  --ds-state-focus-ring: var(--ds-color-focus);
+  --ds-state-focus-ring-width: 2px;
+  --ds-state-focus-ring-offset: 2px;
+  --ds-state-disabled-bg: var(--ds-color-soft);
+  --ds-state-disabled-text: var(--ds-color-muted);
+  --ds-state-readonly-bg: var(--ds-color-soft);
+  --ds-state-readonly-text: var(--ds-color-heading);
+  --ds-state-error-border: var(--ds-color-danger);
+  --ds-state-error-ring: color-mix(in srgb, var(--ds-color-danger) 28%, transparent);
+  --ds-state-success-bg: var(--ds-color-success-soft);
+  --ds-state-success-border: var(--ds-color-success);
+  --ds-state-success-text: var(--ds-color-success);
+
+  /* Button component tokens */
+  --ds-button-padding-inline: 15px;
+  --ds-button-icon-gap: var(--ds-space-2);
+  --ds-button-primary-bg: var(--ds-color-accent);
+  --ds-button-primary-bg-hover: color-mix(in srgb, var(--ds-color-accent) 88%, var(--ds-color-surface));
+  --ds-button-primary-bg-pressed: color-mix(in srgb, var(--ds-color-accent) 76%, #000);
+  --ds-button-primary-text: var(--ds-color-accent-contrast);
+  --ds-button-primary-border: var(--ds-color-accent);
+  --ds-button-default-bg: var(--ds-color-surface);
+  --ds-button-default-text: var(--ds-color-heading);
+  --ds-button-default-border: var(--ds-color-border);
+  --ds-button-default-border-hover: var(--ds-color-accent);
+  --ds-button-disabled-bg: var(--ds-state-disabled-bg);
+  --ds-button-disabled-text: var(--ds-state-disabled-text);
+
+  /* Input and Select component tokens */
+  --ds-input-bg: var(--ds-color-surface);
+  --ds-input-text: var(--ds-color-heading);
+  --ds-input-placeholder: var(--ds-color-muted);
+  --ds-input-border: var(--ds-color-border);
+  --ds-input-border-hover: var(--ds-color-border-strong);
+  --ds-input-border-focus: var(--ds-color-accent);
+  --ds-input-border-error: var(--ds-state-error-border);
+  --ds-input-bg-readonly: var(--ds-state-readonly-bg);
+  --ds-input-text-readonly: var(--ds-state-readonly-text);
+  --ds-input-padding-inline: 11px;
+  --ds-select-option-bg-hover: var(--ds-state-hover-bg);
+  --ds-select-option-bg-pressed: var(--ds-state-pressed-bg);
+  --ds-select-option-bg-selected: var(--ds-state-selected-bg);
+  --ds-select-option-text-selected: var(--ds-state-selected-text);
+
+  /* Checkbox component tokens */
+  --ds-checkbox-control-size: 16px;
+  --ds-checkbox-bg: var(--ds-color-surface);
+  --ds-checkbox-border: var(--ds-color-border-strong);
+  --ds-checkbox-bg-checked: var(--ds-color-accent);
+  --ds-checkbox-border-checked: var(--ds-color-accent);
+  --ds-checkbox-indicator-checked: var(--ds-color-accent-contrast);
+  --ds-checkbox-bg-disabled: var(--ds-state-disabled-bg);
+  --ds-checkbox-indicator-disabled: var(--ds-state-disabled-text);
+
+  /* Table, Tabs and Menu component tokens */
+  --ds-table-header-bg: var(--ds-color-soft);
+  --ds-table-border: var(--ds-color-border);
+  --ds-table-row-bg-hover: var(--ds-state-hover-bg);
+  --ds-table-row-bg-pressed: var(--ds-state-pressed-bg);
+  --ds-table-row-bg-selected: var(--ds-state-selected-bg);
+  --ds-table-row-text-selected: var(--ds-state-selected-text);
+  --ds-tabs-item-bg-hover: var(--ds-state-hover-bg);
+  --ds-tabs-item-bg-pressed: var(--ds-state-pressed-bg);
+  --ds-tabs-item-text-selected: var(--ds-state-selected-text);
+  --ds-tabs-indicator: var(--ds-color-accent);
+  --ds-menu-item-bg-hover: var(--ds-state-hover-bg);
+  --ds-menu-item-bg-pressed: var(--ds-state-pressed-bg);
+  --ds-menu-item-bg-selected: var(--ds-state-selected-bg);
+  --ds-menu-item-text-selected: var(--ds-state-selected-text);
+
+  /* Overlay component tokens */
+  --ds-tooltip-max-width: 280px;
+  --ds-popover-min-width: 240px;
+  --ds-popover-max-width: 420px;
+  --ds-drawer-width: 420px;
+  --ds-toast-width: 360px;
+  --ds-notification-width: 420px;
   --ds-modal-width-sm: 420px;
   --ds-modal-width-md: 560px;
   --ds-modal-width-lg: 720px;
@@ -156,9 +240,8 @@
   --ds-modal-body-padding-inline: 24px;
   --ds-modal-footer-padding: 0 24px 22px;
   --ds-modal-section-gap: 20px;
-  --ds-drawer-width: 420px;
 
-  /* Business component metrics */
+  /* Published business container metrics; component rules belong in business/. */
   --ds-device-card-min-height: 176px;
   --ds-status-card-min-height: 112px;
   --ds-data-panel-min-height: 240px;
@@ -167,16 +250,7 @@
   --ds-business-card-padding: 16px;
 }
 
-/*
- * Component contract
- * - Tags identify status, scope, version and counts. They use tonal fills only;
- *   borders are reserved for controls and containers, not metadata.
- * - Buttons use their semantic type: primary for the page's main action,
- *   secondary for supporting actions, text for inline actions, and outline for
- *   toolbars where a low-emphasis boundary improves scanning.
- */
-
-/* Responsive rules: keep internal scroll; reduce gaps before collapsing structure. */
+/* Responsive rules: reduce gaps before collapsing structure. */
 @media (max-width: 1199px) {
   :root {
     --ds-layout-page-padding: 20px;
@@ -184,8 +258,8 @@
     --ds-layout-navigation-width: 208px;
     --ds-layout-sidebar-width: 272px;
     --ds-layout-detail-sidebar-width: 300px;
-    --ds-layout-grid-gap: 14px;
-    --ds-layout-module-gap: 14px;
+    --ds-layout-grid-gap: var(--ds-space-3);
+    --ds-layout-module-gap: var(--ds-space-3);
   }
 }
 
@@ -197,8 +271,8 @@
     --ds-layout-sidebar-width: 100%;
     --ds-layout-detail-sidebar-width: 100%;
     --ds-layout-grid-columns: 4;
-    --ds-layout-grid-gap: 12px;
-    --ds-layout-module-gap: 12px;
+    --ds-layout-grid-gap: var(--ds-space-3);
+    --ds-layout-module-gap: var(--ds-space-3);
   }
 }
 
@@ -215,10 +289,20 @@
 }
 
 .ds-page--list,
+.ds-page--form,
+.ds-page--dashboard,
+.ds-page--workflow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-layout-module-gap);
+  overflow: hidden;
+}
+
 .ds-page--detail,
 .ds-page--config,
-.ds-page--dashboard,
-.ds-page--editor {
+.ds-page--workbench,
+.ds-page--editor,
+.ds-page--split {
   display: flex;
   gap: var(--ds-layout-module-gap);
   overflow: hidden;
@@ -227,21 +311,17 @@
 .ds-page__navigation,
 .ds-page__sidebar,
 .ds-page__content,
-.ds-page__aside {
-  min-width: 0;
-  min-height: 0;
-}
-
+.ds-page__aside { min-width: 0; min-height: 0; }
 .ds-page__navigation { width: var(--ds-layout-navigation-width); flex: 0 0 auto; }
 .ds-page__sidebar { width: var(--ds-layout-sidebar-width); flex: 0 0 auto; }
 .ds-page__aside { width: var(--ds-layout-detail-sidebar-width); flex: 0 0 auto; }
 .ds-page__content { flex: 1 1 auto; overflow: auto; }
-
-.ds-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--ds-layout-grid-columns), minmax(0, 1fr));
-  gap: var(--ds-layout-grid-gap);
-}
+.ds-page__header,
+.ds-page__toolbar,
+.ds-page__fixed-actions { flex: 0 0 auto; }
+.ds-page__scroll { min-width: 0; min-height: 0; flex: 1 1 auto; overflow: auto; }
+.ds-page__fixed-actions { position: sticky; bottom: 0; z-index: var(--ds-z-sticky); }
+.ds-grid { display: grid; grid-template-columns: repeat(var(--ds-layout-grid-columns), minmax(0, 1fr)); gap: var(--ds-layout-grid-gap); }
 
 /* Shared surfaces and business containers */
 .ds-card,
@@ -255,29 +335,37 @@
   color: var(--ds-color-heading, var(--app-heading));
 }
 
-.ds-card { border-radius: var(--ds-radius-card); box-shadow: var(--ds-shadow-card); }
+.ds-card { border-radius: var(--ds-radius-card); }
+.ds-card--elevated { box-shadow: var(--ds-shadow-card); }
 .ds-panel { border-radius: var(--ds-radius-card); overflow: hidden; }
 .ds-chart-container { min-height: var(--ds-chart-container-min-height); border-radius: var(--ds-radius-inner); padding: var(--ds-business-card-padding); }
 .ds-config-panel { width: var(--ds-config-panel-width); border-radius: var(--ds-radius-card); overflow: auto; }
 
-/* Shared state contract */
+/* Shared interaction contract. Component-specific state colors are never set here. */
 .ds-interactive {
   cursor: pointer;
   transition:
-    background-color var(--ds-duration-normal) var(--ds-ease-standard),
-    border-color var(--ds-duration-normal) var(--ds-ease-standard),
-    color var(--ds-duration-normal) var(--ds-ease-standard),
-    box-shadow var(--ds-duration-normal) var(--ds-ease-standard);
+    background-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out),
+    border-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out),
+    color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out),
+    box-shadow var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out),
+    transform var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out);
 }
 
-.ds-interactive:hover,
-.ds-interactive[data-state='hover'] { background: var(--ds-color-soft, var(--app-soft)); }
-.ds-interactive:active,
-.ds-interactive[data-state='active'] { background: var(--ds-color-accent-soft, var(--app-accent-soft)); }
-.ds-interactive:focus-visible { outline: 2px solid var(--ds-color-focus, var(--app-accent-border)); outline-offset: 2px; }
+.ds-interactive:focus-visible,
+.ds-interactive[data-state='focus'] {
+  outline: var(--ds-state-focus-ring-width) solid var(--ds-state-focus-ring);
+  outline-offset: var(--ds-state-focus-ring-offset);
+}
+
 .ds-interactive:disabled,
 .ds-interactive[aria-disabled='true'],
-.ds-interactive[data-state='disabled'] { opacity: var(--ds-opacity-disabled); cursor: not-allowed; pointer-events: none; }
+.ds-interactive[data-state='disabled'] {
+  opacity: var(--ds-opacity-disabled);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .ds-interactive[data-state='loading'] { cursor: progress; pointer-events: none; }
 
 .ds-empty,
@@ -296,267 +384,18 @@
 .ds-empty { color: var(--ds-color-muted, var(--app-muted)); }
 .ds-error { color: var(--ds-color-danger, var(--app-danger)); background: var(--ds-color-danger-soft, var(--app-danger-soft)); }
 
-/* Business component: product taxonomy tree */
-.taxonomy-tree {
-  padding: var(--ds-space-2) var(--ds-space-3) var(--ds-space-3);
-}
-
-.taxonomy-tree-section {
-  margin-bottom: var(--ds-space-1);
-}
-
-.taxonomy-tree-node {
-  height: 36px;
-  display: flex;
-  align-items: center;
-  border: 1px solid transparent;
-  border-radius: var(--ds-radius-sm);
-  background: transparent;
-  transition:
-    background-color var(--ds-duration-normal) var(--ds-ease-standard),
-    border-color var(--ds-duration-normal) var(--ds-ease-standard);
-}
-
-.taxonomy-tree-node:hover { background: var(--ds-color-soft); }
-.product-tree-item.is-active { background: var(--ds-color-accent-soft); }
-.taxonomy-tree-category {
-  position: relative;
-  height: 48px;
-}
-
-.taxonomy-tree-category-main,
-.taxonomy-tree-subcategory-main,
-.product-tree-main {
-  height: 100%;
-  min-width: 0;
-  flex: 1;
-  border: 0;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  color: var(--ds-color-text);
-  font: inherit;
-  font-size: var(--ds-font-size-14);
-  text-align: left;
-  cursor: pointer;
-}
-
-.taxonomy-tree-category-main {
-  gap: var(--ds-space-2);
-  padding: 0 var(--ds-space-2);
-  color: var(--ds-color-heading);
-  font-weight: var(--ds-font-weight-semibold);
-}
-
-.taxonomy-tree-category-main > svg {
-  margin-left: auto;
-  flex-shrink: 0;
-  color: var(--ds-color-muted);
-  transition: opacity var(--ds-duration-fast) var(--ds-ease-standard);
-}
-
-.taxonomy-tree-category .taxonomy-tree-action {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  margin: 0;
-  transform: translateY(-50%);
-}
-
-.taxonomy-tree-category:hover .taxonomy-tree-expand-icon,
-.taxonomy-tree-category:focus-within .taxonomy-tree-expand-icon {
-  opacity: 0;
-}
-
-.taxonomy-tree-folder {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border-radius: var(--ds-radius-control);
-  background: var(--ds-color-accent-soft);
-  color: var(--ds-color-accent);
-}
-
-.taxonomy-tree-category-children {
-  margin-left: 24px;
-  padding: 0 0 4px 12px;
-  border-left: 1px solid var(--ds-color-border);
-}
-
-.taxonomy-tree-subcategory-branch {
-  min-width: 0;
-}
-
-.taxonomy-tree-subcategory-main {
-  gap: var(--ds-space-2);
-  padding: 0 4px;
-  font-weight: var(--ds-font-weight-medium);
-}
-
-.taxonomy-tree-subcategory-main[aria-expanded='true'] {
-  color: var(--ds-color-accent);
-  font-weight: var(--ds-font-weight-semibold);
-}
-
-.taxonomy-tree-subcategory-main svg {
-  flex-shrink: 0;
-  color: var(--ds-color-muted);
-}
-
-.taxonomy-tree-brand-list {
-  margin-left: 12px;
-  padding: 0 0 2px 12px;
-  border-left: 1px solid var(--ds-color-border);
-}
-
-.product-tree-item {
-  margin: 0;
-}
-
-.product-tree-main {
-  gap: var(--ds-space-2);
-  padding: 0 4px 0 8px;
-}
-
-.product-tree-dot {
-  width: 8px;
-  height: 8px;
-  flex-shrink: 0;
-  border-radius: var(--ds-radius-pill);
-  background: var(--ds-color-muted);
-}
-
-.product-tree-item.is-active .product-tree-dot {
-  background: var(--ds-color-accent);
-}
-
-.taxonomy-tree-inline-add {
-  width: 100%;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  gap: var(--ds-space-2);
-  padding: 0 8px;
-  border: 0;
-  border-radius: var(--ds-radius-button);
-  background: transparent;
-  color: var(--ds-color-muted);
-  font: inherit;
-  font-size: var(--ds-font-size-14);
-  text-align: left;
-  cursor: pointer;
-  transition: background-color var(--ds-duration-fast) var(--ds-ease-standard), color var(--ds-duration-fast) var(--ds-ease-standard);
-}
-
-.taxonomy-tree-inline-add:hover {
-  background: var(--ds-color-soft);
-  color: var(--ds-color-accent);
-}
-
-.taxonomy-tree-add-subcategory {
-  margin-top: 0;
-  padding-left: 4px;
-}
-
-.taxonomy-tree-action {
-  width: var(--ds-button-height-sm);
-  height: var(--ds-button-height-sm);
-  margin-right: 0;
-  border: 0;
-  border-radius: var(--ds-radius-button);
-  background: transparent;
-  color: var(--ds-color-muted);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0;
-  transition:
-    opacity var(--ds-duration-normal) var(--ds-ease-standard),
-    background-color var(--ds-duration-normal) var(--ds-ease-standard),
-    color var(--ds-duration-normal) var(--ds-ease-standard);
-}
-
-.taxonomy-tree-node:hover .taxonomy-tree-action,
-.taxonomy-tree-node:focus-within .taxonomy-tree-action,
-.product-tree-item.is-active .taxonomy-tree-action { opacity: 1; }
-
-.taxonomy-tree-action:hover,
-.taxonomy-tree-action[data-state='open'] { opacity: 1; background: var(--ds-color-accent-soft); color: var(--ds-color-accent); }
-.taxonomy-tree-action:focus-visible { opacity: 1; outline: 2px solid var(--ds-color-focus); outline-offset: 1px; }
-
-/* Base component: HeroUI-aligned contextual menu */
-.heroui-tree-menu {
-  z-index: var(--ds-z-dropdown) !important;
-  min-width: 168px !important;
-  padding: 6px !important;
-  border: 1px solid color-mix(in srgb, var(--ds-color-border) 72%, transparent) !important;
-  border-radius: var(--ds-radius-overlay) !important;
-  background: color-mix(in srgb, var(--ds-color-surface) 97%, transparent) !important;
-  color: var(--ds-color-heading) !important;
-  box-shadow: var(--ds-shadow-overlay) !important;
-  backdrop-filter: blur(14px);
-  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
-  outline: none;
-  animation: ds-menu-enter var(--ds-duration-normal) var(--ds-ease-enter);
-}
-
-.heroui-tree-menu__item {
-  min-height: 38px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  border-radius: var(--ds-radius-button) !important;
-  padding: 7px 10px !important;
-  color: var(--ds-color-text) !important;
-  font-size: var(--ds-font-size-14) !important;
-  font-weight: var(--ds-font-weight-medium) !important;
-  line-height: 20px !important;
-  cursor: pointer !important;
-  outline: none !important;
-  transition: background-color var(--ds-duration-fast) var(--ds-ease-standard), color var(--ds-duration-fast) var(--ds-ease-standard) !important;
-}
-
-.heroui-tree-menu__item svg { width: var(--ds-control-icon-md) !important; height: var(--ds-control-icon-md) !important; color: var(--ds-color-muted) !important; }
-.heroui-tree-menu__item[data-highlighted],
-.heroui-tree-menu__item:focus { background: var(--ds-color-soft) !important; color: var(--ds-color-heading) !important; }
-.heroui-tree-menu__item[data-highlighted] svg,
-.heroui-tree-menu__item:focus svg { color: var(--ds-color-heading) !important; }
-.heroui-tree-menu__item[data-variant='destructive'] { color: var(--ds-color-danger) !important; }
-.heroui-tree-menu__item[data-variant='destructive'] svg { color: var(--ds-color-danger) !important; }
-.heroui-tree-menu__item[data-variant='destructive'][data-highlighted],
-.heroui-tree-menu__item[data-variant='destructive']:focus { background: var(--ds-color-danger-soft) !important; color: var(--ds-color-danger) !important; }
-
-.heroui-tree-menu__separator {
-  height: 1px !important;
-  margin: 5px 4px !important;
-  background: color-mix(in srgb, var(--ds-color-border) 76%, transparent) !important;
-}
-
-@keyframes ds-menu-enter {
-  from { opacity: 0; transform: scale(0.96) translateY(-2px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-@media (hover: none) {
-  .taxonomy-tree-action { opacity: 1; }
-}
-
 @media (max-width: 767px) {
   .ds-page--list,
   .ds-page--detail,
+  .ds-page--form,
   .ds-page--config,
   .ds-page--dashboard,
-  .ds-page--editor { flex-direction: column; overflow: auto; }
+  .ds-page--workflow,
+  .ds-page--workbench,
+  .ds-page--editor,
+  .ds-page--split { flex-direction: column; overflow: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ds-interactive,
-  .taxonomy-tree-node,
-  .taxonomy-tree-action,
-  .heroui-tree-menu__item { transition: none !important; }
-  .heroui-tree-menu { animation: none; }
+  .ds-interactive { transition: none !important; }
 }

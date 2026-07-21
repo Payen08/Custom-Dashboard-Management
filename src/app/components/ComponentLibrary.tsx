@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDrag } from 'react-dnd';
 import { ArrowLeft, BarChart2, Map, Factory, ListChecks, ChevronDown, ChevronRight, List, Search } from 'lucide-react';
 import { CATEGORIES, type ComponentDef } from '../shared';
-import { ArcoButton, ArcoIconButton, ArcoTag, ArcoTextInput } from './HeroUI';
+import { ArcoButton, ArcoIconButton, ArcoTag, ArcoTextInput } from './ProductUI';
 import { ComponentManagerDialog } from './ComponentManagerDialog';
 import { useComponentCatalog } from './useComponentCatalog';
 
@@ -42,7 +42,7 @@ function DraggableCard({ def, categoryId, compact = false }: { def: ComponentDef
   const meta = CATEGORY_META[categoryId];
   return (
     <div ref={drag as unknown as React.Ref<HTMLDivElement>}
-      style={{ background: isDragging ? 'var(--app-accent-soft)' : 'var(--app-surface)', border: '1px solid ' + (isDragging ? 'var(--app-accent)' : 'var(--app-border)'), borderRadius: 'var(--app-inner-radius)', padding: compact ? '10px 12px' : '12px 14px', cursor: 'grab', opacity: isDragging ? 0.5 : 1, boxShadow: isDragging ? '0 4px 20px var(--app-shadow-color)' : 'none', transition: 'border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease', userSelect: 'none' }}>
+      style={{ background: isDragging ? 'var(--app-accent-soft)' : 'var(--app-surface)', border: '1px solid ' + (isDragging ? 'var(--app-accent)' : 'var(--app-border)'), borderRadius: 'var(--app-inner-radius)', padding: compact ? '10px 12px' : '12px 14px', cursor: 'grab', opacity: isDragging ? 0.5 : 1, boxShadow: isDragging ? '0 4px 20px var(--app-shadow-color)' : 'none', transition: 'border-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), background-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), opacity var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out)', userSelect: 'none' }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
         <div style={{ width: 48, height: 48, borderRadius: 10, background: 'var(--app-soft)', border: '1px solid var(--app-border)', padding: 4, flexShrink: 0, overflow: 'hidden' }}>
           {THUMBNAILS[def.id] ?? <div style={{ width: '100%', height: '100%', background: meta.bg, borderRadius: 8 }} />}
@@ -96,7 +96,7 @@ export function ComponentLibrary({ onExit, title = '组件库', showBack = true,
           const isExpanded = expanded.has(cat.id);
           return (
             <div key={cat.id} style={{ marginBottom: 4 }}>
-              <button onClick={() => toggle(cat.id)} aria-expanded={isExpanded} style={{ width: '100%', height: 40, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 8, transition: 'background 0.15s ease' }}>
+              <button onClick={() => toggle(cat.id)} aria-expanded={isExpanded} style={{ width: '100%', height: 40, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 8, transition: 'background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ width: 26, height: 26, background: meta.bg, color: meta.color, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid ' + meta.border }}>{meta.icon}</div>
                   <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--app-heading)' }}>{cat.name}</span>

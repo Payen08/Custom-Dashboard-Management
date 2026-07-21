@@ -48,10 +48,10 @@ const SERVICE_FIELDS: Array<{
   helper: string;
   placeholder: string;
 }> = [
-  { key: 'BASE_URL', label: '后端服务地址', helper: 'BASE_URL', placeholder: '例如：http://10.10.30.196:8080' },
-  { key: 'MINIO_HOST', label: '文件服务地址', helper: 'MINIO_HOST', placeholder: '例如：http://10.10.30.196:9000' },
-  { key: 'NODE_BACKEND_HOST', label: '前端服务地址', helper: 'NODE_BACKEND_HOST', placeholder: '例如：http://10.10.30.196:3000' },
-  { key: 'MQTT_HOST', label: '消息队列地址', helper: 'MQTT_HOST', placeholder: '例如：mqtt://10.10.30.196:1883' },
+  { key: 'BASE_URL', label: '后端服务地址', helper: 'BASE_URL', placeholder: '例如：http://localhost:10882' },
+  { key: 'MINIO_HOST', label: '文件服务地址', helper: 'MINIO_HOST', placeholder: '例如：http://localhost:9000' },
+  { key: 'NODE_BACKEND_HOST', label: '前端服务地址', helper: 'NODE_BACKEND_HOST', placeholder: '例如：http://localhost:3000' },
+  { key: 'MQTT_HOST', label: '消息队列地址', helper: 'MQTT_HOST', placeholder: '例如：mqtt://localhost:1883' },
 ];
 
 function loadServiceConfig(): ServiceConfig {
@@ -290,7 +290,7 @@ export function WorkspaceLogin({
           color: var(--app-heading);
           font: inherit;
           font-size: 14px;
-          transition: border-color 160ms ease, box-shadow 160ms ease;
+          transition: border-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), box-shadow var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out);
         }
         .workspace-login__input:focus { border-color: var(--app-brand); box-shadow: 0 0 0 3px var(--app-accent-soft); }
         .workspace-login__input::placeholder { color: var(--app-subtle); }
@@ -417,15 +417,15 @@ export function WorkspaceLogin({
           color: var(--app-muted);
           cursor: pointer;
         }
-        .service-config__test[data-state="success"] { border-color: var(--app-success); background: var(--app-success-soft); color: var(--app-success); }
+        .service-config__test[data-state="success"] { border-color: var(--ds-state-success-border, var(--app-success)); background: var(--ds-state-success-bg, var(--app-success-soft)); color: var(--ds-state-success-text, var(--app-success)); }
         .service-config__test[data-state="error"] { border-color: var(--app-danger-border); background: var(--app-danger-soft); color: var(--app-danger); }
         .service-config__test svg[data-loading="true"] { animation: service-spin 800ms linear infinite; }
         .service-config__status { min-height: 18px; margin-top: 5px; color: var(--app-muted); font-size: 12px; line-height: 18px; }
-        .service-config__status[data-state="success"] { color: var(--app-success); }
+        .service-config__status[data-state="success"] { color: var(--ds-state-success-text, var(--app-success)); }
         .service-config__status[data-state="error"] { color: var(--app-danger); }
         .service-config__footer { margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
         .service-config__message { min-height: 20px; color: var(--app-muted); font-size: 12px; line-height: 20px; }
-        .service-config__message[data-tone="success"] { color: var(--app-success); }
+        .service-config__message[data-tone="success"] { color: var(--ds-state-success-text, var(--app-success)); }
         .service-config__message[data-tone="error"] { color: var(--app-danger); }
         .service-config__save { min-width: 120px; }
         @keyframes service-spin { to { transform: rotate(360deg); } }

@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import {
   ArcoButton, ArcoField, ArcoIconButton, ArcoModal, ArcoTag, ArcoTextArea, ArcoTextInput,
-} from './HeroUI';
+} from './ProductUI';
 
 interface SoftwareItem {
   name: string;
@@ -193,13 +193,13 @@ export function InstallationRecordsManager() {
   const handleTableScroll = (event: UIEvent<HTMLDivElement>) => updateScrollEdges(event.currentTarget);
 
   return (
-    <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: 'var(--app-page-padding)', background: 'var(--app-bg)', color: 'var(--app-text)', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20, flexShrink: 0, gap: 20 }}>
+    <div className="ds-page ds-page--list">
+      <div className="ds-page__header ds-page-header">
         <div style={{ minWidth: 0 }}>
           <h1 style={{ color: 'var(--app-heading)', fontSize: 20, fontWeight: 600, margin: 0, lineHeight: 1.3 }}>装机记录</h1>
           <p style={{ color: 'var(--app-muted)', fontSize: 12, margin: '4px 0 0', fontWeight: 400 }}>追踪机器人从软件出库到交付的安装版本、执行过程与责任人</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <div className="ds-page-toolbar">
           <div style={{ position: 'relative', width: 312 }}>
             <Search size={14} color="var(--app-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
             <ArcoTextInput value={query} onChange={event => setQuery(event.target.value)} placeholder="搜索" aria-label="搜索项目编号、项目名称、机器人编号或 IP" style={{ width: '100%', height: 40, padding: '0 12px 0 36px', fontSize: 14 }} />
@@ -209,15 +209,15 @@ export function InstallationRecordsManager() {
         </div>
       </div>
 
-      <div style={{ minHeight: 0, maxHeight: 'calc(100vh - 176px)', flexShrink: 1, borderRadius: 'var(--app-card-radius)', border: '1px solid var(--app-border)', background: 'var(--app-surface)', overflow: 'hidden', boxShadow: 'var(--ds-shadow-xs)' }}>
-        <div ref={tableScrollRef} onScroll={handleTableScroll} style={{ maxHeight: 'calc(100vh - 176px)', overflow: 'auto' }}>
+      <div className="ds-table-surface">
+        <div className="ds-table-scroll" ref={tableScrollRef} onScroll={handleTableScroll}>
           <table style={{ width: '100%', minWidth: 1220, borderCollapse: 'separate', borderSpacing: 0, fontSize: 14 }}>
             <thead><tr style={{ borderBottom: '1px solid var(--app-border)', background: 'var(--app-soft)', textAlign: 'left' }}>
               <th style={{ ...stickyFirstHeaderStyle, boxShadow: scrollEdges.left ? stickyLeftShadow : 'none' }}>项目编号</th>
               {['项目名称', '机器人编号', '机器人 IP', '型号', '软件出库时间', '流程编号', '描述', '操作人'].map(title => <th key={title} style={stickyHeaderStyle}>{title}</th>)}
               <th style={{ ...stickyLastHeaderStyle, boxShadow: scrollEdges.right ? stickyRightShadow : 'none' }}>操作</th>
             </tr></thead>
-            <tbody>{filteredRecords.length === 0 ? <tr><td colSpan={10} style={{ padding: '56px 20px', textAlign: 'center', color: 'var(--app-muted)', fontSize: 14 }}>未找到匹配的装机记录</td></tr> : filteredRecords.map(record => <tr key={record.id} style={{ color: 'var(--app-text)', borderBottom: '1px solid var(--app-border)' }}>
+            <tbody>{filteredRecords.length === 0 ? <tr><td colSpan={10}><div className="ds-empty">未找到匹配的装机记录</div></td></tr> : filteredRecords.map(record => <tr className="ds-table-row" key={record.id} style={{ color: 'var(--app-text)', borderBottom: '1px solid var(--app-border)' }}>
               <td style={{ ...stickyFirstCellStyle, boxShadow: scrollEdges.left ? stickyLeftShadow : 'none' }}><span style={{ color: 'var(--app-heading)', fontWeight: 500, fontSize: 14 }}>{record.projectCode}</span></td>
               <td style={recordCellStyle}>{record.projectName}</td>
               <td style={recordCellStyle}><span style={{ color: 'var(--app-heading)', fontWeight: 500, fontSize: 14 }}>{record.robotId}</span></td>
@@ -250,14 +250,14 @@ const stickyHeaderStyle: CSSProperties = {
   ...tableHeaderStyle,
   position: 'sticky',
   top: 0,
-  zIndex: 2,
+  zIndex: 'var(--ds-z-sticky)',
   background: 'var(--app-soft)',
   borderBottom: '1px solid var(--app-border)',
 };
 const stickyFirstHeaderStyle: CSSProperties = {
   ...stickyHeaderStyle,
   left: 0,
-  zIndex: 4,
+  zIndex: 'var(--ds-z-sticky)',
   width: 160,
   minWidth: 160,
   maxWidth: 160,
@@ -265,7 +265,7 @@ const stickyFirstHeaderStyle: CSSProperties = {
 const stickyLastHeaderStyle: CSSProperties = {
   ...stickyHeaderStyle,
   right: 0,
-  zIndex: 4,
+  zIndex: 'var(--ds-z-sticky)',
   width: 96,
   minWidth: 96,
   maxWidth: 96,
@@ -275,7 +275,7 @@ const stickyFirstCellStyle: CSSProperties = {
   ...recordCellStyle,
   position: 'sticky',
   left: 0,
-  zIndex: 1,
+  zIndex: 'var(--ds-z-base)',
   width: 160,
   minWidth: 160,
   maxWidth: 160,
@@ -285,7 +285,7 @@ const stickyLastCellStyle: CSSProperties = {
   ...recordCellStyle,
   position: 'sticky',
   right: 0,
-  zIndex: 1,
+  zIndex: 'var(--ds-z-base)',
   width: 96,
   minWidth: 96,
   maxWidth: 96,
@@ -311,17 +311,27 @@ function InstallationDetailModal({ record, onClose }: { record: InstallationReco
     footer={<ArcoButton onClick={onClose}>关闭</ArcoButton>}
   >
     {record && <div>
-      <HeroStatusTabs value={statusView} onChange={value => { setStatusView(value); setExpandedSoftwareName(null); }} />
+      <StatusTabs value={statusView} onChange={value => { setStatusView(value); setExpandedSoftwareName(null); }} />
       <SoftwareStatusList status={statusView} items={statusView === 'installed' ? record.installedSoftware : record.missingSoftware} activities={record.activities} expandedSoftwareName={expandedSoftwareName} onToggle={name => setExpandedSoftwareName(current => current === name ? null : name)} />
     </div>}
   </ArcoModal>;
 }
 
-function HeroStatusTabs({ value, onChange }: { value: 'installed' | 'missing'; onChange: (value: 'installed' | 'missing') => void }) {
-  return <div role="tablist" aria-label="安装状态" style={{ width: 216, marginBottom: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', padding: 4, borderRadius: 12, background: 'var(--app-neutral-soft)' }}>
-    {[{ key: 'installed' as const, label: '已安装' }, { key: 'missing' as const, label: '未安装' }].map(tab => {
+function StatusTabs({ value, onChange }: { value: 'installed' | 'missing'; onChange: (value: 'installed' | 'missing') => void }) {
+  const tabs = [{ key: 'installed' as const, label: '已安装' }, { key: 'missing' as const, label: '未安装' }];
+  const moveSelection = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const direction = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0;
+    const nextIndex = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : direction ? (index + direction + tabs.length) % tabs.length : null;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    onChange(tabs[nextIndex].key);
+    event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex]?.focus();
+  };
+
+  return <div className="ds-status-tabs" role="tablist" aria-label="安装状态" style={{ marginBottom: 20 }}>
+    {tabs.map((tab, index) => {
       const active = value === tab.key;
-      return <button key={tab.key} role="tab" aria-selected={active} onClick={() => onChange(tab.key)} style={{ height: 40, border: 'none', borderRadius: 8, background: active ? 'var(--app-surface)' : 'transparent', color: 'var(--app-heading)', fontSize: 14, fontWeight: active ? 600 : 500, cursor: 'pointer', boxShadow: active ? 'var(--ds-shadow-xs)' : 'none', transition: 'background var(--ds-duration-normal) var(--ds-ease-standard), box-shadow var(--ds-duration-normal) var(--ds-ease-standard)' }}>{tab.label}</button>;
+      return <button className="ds-status-tab" key={tab.key} role="tab" aria-selected={active} tabIndex={active ? 0 : -1} onClick={() => onChange(tab.key)} onKeyDown={event => moveSelection(event, index)}>{tab.label}</button>;
     })}
   </div>;
 }
@@ -333,8 +343,8 @@ function SoftwareStatusList({ status, items, activities, expandedSoftwareName, o
       const expanded = installed && item.name === expandedSoftwareName;
       const itemActivities = activities.filter(activity => activity.softwareName === item.name);
       return <div key={`${item.name}-${itemIndex}`} role="listitem" style={{ borderBottom: itemIndex < items.length - 1 ? '1px solid var(--app-border)' : 'none' }}>
-        {installed ? <button type="button" aria-expanded={expanded} onClick={() => onToggle(item.name)} style={{ width: '100%', minHeight: 64, padding: '0 28px', display: 'flex', alignItems: 'center', gap: 12, border: 'none', background: 'var(--app-surface)', color: 'var(--app-heading)', cursor: 'pointer', textAlign: 'left' }}>
-          <ChevronRight size={18} aria-hidden="true" style={{ flexShrink: 0, transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform var(--ds-duration-normal) var(--ds-ease-standard)' }} />
+        {installed ? <button className="ds-accordion-trigger" type="button" aria-expanded={expanded} onClick={() => onToggle(item.name)} style={{ width: '100%', minHeight: 64, padding: '0 28px', display: 'flex', alignItems: 'center', gap: 12, border: 'none', background: 'var(--app-surface)', color: 'var(--app-heading)', cursor: 'pointer', textAlign: 'left' }}>
+          <ChevronRight className="ds-accordion-trigger__icon" size={18} aria-hidden="true" style={{ flexShrink: 0, transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }} />
           <span style={{ fontSize: 14, fontWeight: 600 }}>{item.name}</span>
           <VersionPill>{item.version ?? '暂无版本'}</VersionPill>
         </button> : <div style={{ minHeight: 64, padding: '0 28px', display: 'flex', alignItems: 'center', gap: 12 }}>
