@@ -1,0 +1,9 @@
+{
+  "name": "digital-machine-design-system-spec",
+  "version": "1.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/validate.mjs"
+  }
+}

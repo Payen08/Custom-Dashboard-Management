@@ -203,6 +203,8 @@ components:
     padding: 0 7px
 ---
 
+> **非规范性背景资料。** 本文件记录 Ant Design 的默认设计语言，仅用于理解组件库来源。项目实现与验收必须以 `docs/ui-guidelines.md`、`tokens/design-tokens.json` 和 `components/component-specs.json` 为准；本文件中的默认蓝色、尺寸和组件示例不得直接进入业务代码。
+
 ## Overview
 
 This document describes the default light theme of **Ant Design v6**. The system follows semantic versioning: major releases (v5 → v6) signal an overhaul of the design language, while minor and patch releases keep this document stable. Refer to [CHANGELOG.en-US.md](https://github.com/ant-design/ant-design/blob/master/CHANGELOG.en-US.md) for the per-release token drift inside a major.
@@ -330,5 +332,4 @@ The primary theme configuration entry is `ConfigProvider`'s `theme` prop:
 5. **Token consumption and output.** Use `theme.useToken()` inside React and `theme.getDesignToken()` outside React to consume resolved tokens. Use `theme.cssVar` when CSS variables are needed, and `theme.zeroRuntime` with prebuilt or extracted CSS when runtime style generation must be disabled.
 
 For custom theme generation, keep Ant Design's interaction structure, density, state feedback, and component semantics first. Then change the smallest necessary seed set: usually `colorPrimary`, status colors, `borderRadius`, `fontFamily`, `fontSize`, and neutral surface bases. Brand pages may look distinct, but forms, tables, navigation, overlays, focus states, and validation feedback should still feel like Ant Design. Avoid generating custom CSS rules that bypass tokens, algorithms, `theme.components`, CSS variables, or extracted static styles; if a theme cannot be expressed through those official layers, treat that as a design-system extension rather than a one-off page style.
-
 

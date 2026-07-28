@@ -20,7 +20,8 @@ function filesUnder(directory) {
 }
 
 const foundation = read('src/styles/design-system.css');
-const guidelines = read('guidelines/Guidelines.md');
+const themeStyles = read('src/styles/theme.css');
+const guidelines = read('guidelines/docs/ui-guidelines.md');
 const adapter = read('src/styles/adapters/ui-kit.css');
 const business = read('src/styles/business/taxonomy-tree.css');
 const pagePatterns = read('src/styles/business/page-patterns.css');
@@ -36,11 +37,18 @@ const productUiSource = sourceFiles
   .filter((file) => file.startsWith('src/app/') && !file.startsWith('src/app/components/ui/') && file !== 'src/app/components/CanvasArea.tsx')
   .map(read)
   .join('\n');
-const handoffTokens = JSON.parse(read('guidelines/design-tokens.json'));
-const componentContracts = JSON.parse(read('guidelines/component-specs.json'));
+const handoffTokens = JSON.parse(read('guidelines/tokens/design-tokens.json'));
+const componentContracts = JSON.parse(read('guidelines/components/component-specs.json'));
 
 [
   '--ds-button-primary-bg',
+  '--ds-icon-size-xs',
+  '--ds-icon-stroke-width',
+  '--ds-search-height',
+  '--ds-radio-control-size',
+  '--ds-switch-width',
+  '--ds-number-height',
+  '--ds-pagination-item-size',
   '--ds-input-border-focus',
   '--ds-select-option-bg-selected',
   '--ds-checkbox-indicator-checked',
@@ -86,19 +94,40 @@ expect(/--ds-state-success-(?:bg|border|text)/.test(sourceContent), 'At least on
   expect(guidelines.includes(heading), `Guidelines is missing motion coverage: ${heading}`);
 });
 
-expect(handoffTokens.version === '1.1.7', 'Token handoff version must match the published token contract.');
+expect(handoffTokens.version === '1.2.0', 'Token handoff version must match the published token contract.');
 expect(handoffTokens.theme?.light?.color?.brand === '#241F7D', 'Token handoff is missing the light brand token.');
 expect(handoffTokens.theme?.dark?.color?.brand === '#4F46E5', 'Token handoff is missing the dark brand token.');
 expect(handoffTokens.components?.button?.height?.md === 40, 'Token handoff is missing the standard button height.');
+expect(handoffTokens.components?.button?.paddingInline?.md === 14, 'Token handoff is missing the published button padding matrix.');
+expect(handoffTokens.components?.button?.spinner?.size === 14, 'Token handoff is missing the button spinner specification.');
+expect(handoffTokens.components?.button?.primary?.hover?.background, 'Token handoff is missing the Primary hover specification.');
+expect(handoffTokens.components?.button?.secondary?.pressed?.border === '{state.pressed.border}', 'Token handoff is missing the Secondary pressed specification.');
+expect(handoffTokens.shared?.icon?.style?.includes('24 × 24 viewBox'), 'Token handoff is missing the icon viewBox contract.');
+expect(handoffTokens.shared?.icon?.size?.md === 16, 'Token handoff is missing the standard icon size scale.');
+expect(handoffTokens.components?.search?.height === 40, 'Token handoff is missing SearchInput dimensions.');
+expect(handoffTokens.components?.switch?.width === 36, 'Token handoff is missing Switch dimensions.');
+expect(handoffTokens.components?.pagination?.itemSize === 32, 'Token handoff is missing Pagination dimensions.');
 expect(handoffTokens.shared?.motion?.duration?.mid === '160ms', 'Token handoff is missing the standard motion duration.');
 expect(handoffTokens.state?.focus?.ringWidth === 2, 'Token handoff is missing the focus-ring contract.');
 expect(handoffTokens.shared?.zIndex?.modalPopover === 75, 'Token handoff is missing the modal-popover layer.');
 expect(handoffTokens.components?.checkbox?.checked?.indicator === '{theme.color.accentContrast}', 'Token handoff is missing the checked-checkbox contrast indicator.');
 expect(componentContracts.version === handoffTokens.version, 'Component contracts and token handoff must use the same published version.');
 expect(componentContracts.components?.length >= 15, 'Component contracts must cover the published baseline component set.');
-['Button', 'IconButton', 'Tag', 'Tabs', 'Menu / Dropdown', 'Input / TextArea', 'Select', 'Checkbox', 'Upload', 'Table', 'Modal', 'Drawer', 'Tooltip / Popover', 'Toast / Notification', 'Empty / Loading / Error'].forEach((name) => {
+['Button', 'ToggleButton', 'IconToggleButton', 'IconButton', 'Tag', 'Tabs', 'Pagination', 'Menu / Dropdown', 'Input / TextArea', 'SearchInput / SearchBar', 'InputNumber', 'Select', 'Radio', 'Switch', 'Checkbox', 'Upload', 'Table', 'Modal', 'Drawer', 'Tooltip / Popover', 'Toast / Notification', 'Empty / Loading / Error'].forEach((name) => {
   expect(componentContracts.components?.some((component) => component.name === name), `Component contracts is missing ${name}.`);
 });
+const buttonContract = componentContracts.components?.find((component) => component.name === 'Button');
+expect(JSON.stringify(buttonContract?.states) === JSON.stringify(['Default', 'Hover', 'Pressed', 'Focus', 'Disabled', 'Loading']), 'Button must not expose Selected or Danger as an interaction state.');
+['primary', 'secondary'].forEach((variant) => {
+  const rows = buttonContract?.stateMatrix?.[variant] ?? [];
+  expect(rows.length === 6, `Button ${variant} state matrix must include six states.`);
+  rows.forEach((row) => ['background', 'text', 'border', 'icon', 'shadow', 'focusRing', 'cursor', 'opacity', 'transition'].forEach((field) => {
+    expect(Boolean(row[field]), `Button ${variant} ${row.state ?? 'state'} must declare ${field}.`);
+  }));
+});
+expect(buttonContract?.metrics?.length >= 6, 'Button must publish internal metrics.');
+expect(buttonContract?.contentStructures?.length === 5, 'Button must publish all supported content structures.');
+expect(buttonContract?.selectedBoundary?.includes('ToggleButton'), 'Button must define the Selected boundary.');
 componentContracts.components?.forEach((component) => {
   expect(component.purpose && component.whenToUse && component.avoid, `${component.name} must declare purpose and usage boundaries.`);
   expect(Array.isArray(component.api) && component.api.length > 0, `${component.name} must declare component parameters.`);
@@ -135,10 +164,12 @@ expect(read('src/app/theme.ts').includes("'--robot-dialog-shadow': 'var(--ds-sha
 expect(/\.arcoui-checkbox \[data-slot="checkbox-indicator"\][\s\S]*?--ds-checkbox-indicator-checked/.test(sharedControls), 'Shared checkboxes must render a contrast checked indicator.');
 expect(read('src/app/App.tsx').includes("label: '设计规范'"), 'Digital Machine navigation must expose the Design Guidelines tab.');
 expect(read('src/app/components/DesignGuidelines.tsx').includes('复制完整 Token'), 'Design Guidelines must support copying the published token handoff.');
-expect(read('src/app/components/DesignGuidelines.tsx').includes("component-specs.json"), 'Design Guidelines must consume the published component contracts.');
+expect(read('src/app/components/DesignGuidelines.tsx').includes("components/component-specs.json"), 'Design Guidelines must consume the published component contracts.');
 expect(read('src/app/components/DesignGuidelines.tsx').includes('ComponentContractExplorer'), 'Design Guidelines must render component contract details.');
 expect(read('src/app/components/DesignGuidelines.tsx').includes('ComponentStylePreview'), 'Component contracts must include a live visual style preview.');
-expect(read('src/app/components/DesignGuidelines.tsx').includes("Guidelines.md?raw"), 'Design Guidelines must read the Guidelines.md source directly.');
+expect(read('src/app/components/DesignGuidelines.tsx').includes('ButtonSpecification'), 'Design Guidelines must render the Button state matrix and internal specification.');
+expect(read('src/app/components/DesignGuidelines.tsx').includes("icons: { title: '图标'"), 'Design Guidelines must publish the icon parameter reference.');
+expect(read('src/app/components/DesignGuidelines.tsx').includes("docs/ui-guidelines.md?raw"), 'Design Guidelines must read the published UI guideline source directly.');
 expect(read('src/app/components/DesignGuidelines.tsx').includes('GUIDELINE_SECTION_MAP'), 'Design Guidelines must map navigation topics to Guidelines.md sections.');
 expect(read('src/app/components/DesignGuidelines.tsx').includes('GuidelineSourceContent'), 'Design Guidelines must render the mapped Guidelines.md sections.');
 expect(read('src/app/components/DesignGuidelines.tsx').includes('ColorTokenGroups'), 'Design Guidelines must render the complete grouped color token reference.');
@@ -172,6 +203,11 @@ sourceFiles.forEach((file) => {
 });
 
 expect(/--ds-motion-duration-loading/.test(sharedControls), 'Shared loading indicators must consume the motion loading-duration token.');
+expect(guidelines.includes('### 11.5 图标规范'), 'Guidelines must provide a dedicated icon specification chapter.');
+expect(guidelines.includes('### 11.6 内容文案规范'), 'Guidelines must provide a dedicated content-writing chapter.');
+expect(themeStyles.includes('stroke-width: var(--ds-icon-stroke-width'), 'Approved linear icons must consume the published stroke-width token.');
+expect(sharedControls.includes('data-loading={loading ?') || read('src/app/components/ArcoLike.tsx').includes("data-loading={loading ? 'true' : undefined}"), 'Shared buttons must expose Loading state to their visual contract.');
+expect(read('src/app/components/ArcoLike.tsx').includes('ArcoToggleButton'), 'Shared controls must provide a dedicated ToggleButton primitive.');
 
 const diffCheck = spawnSync('git', ['diff', '--check'], { cwd: root, encoding: 'utf8' });
 expect(diffCheck.status === 0, `git diff --check failed: ${(diffCheck.stdout || diffCheck.stderr).trim()}`);

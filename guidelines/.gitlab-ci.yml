@@ -1,0 +1,9 @@
+image: node:20-alpine
+
+stages:
+  - validate
+
+validate-design-system:
+  stage: validate
+  script:
+    - npm run check

@@ -1,9 +1,9 @@
-import tokens from './design-tokens.json';
+import tokens from '../tokens/design-tokens.json';
 
 export type ProductThemeMode = 'light' | 'dark';
 
 /**
- * Copy this file and design-tokens.json into the frontend project, then pass
+ * Copy this file and tokens/design-tokens.json into the frontend project, then pass
  * createProductTheme(mode) to the application theme provider.
  *
  * The JSON file remains the source of truth. Do not add page-specific values

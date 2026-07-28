@@ -3,42 +3,59 @@
   --arcoui-button-color: var(--arcoui-heading);
   --arcoui-button-border: transparent;
   height: var(--ds-button-height-md, 40px);
-  padding: 0 var(--ds-control-padding-inline-md, 14px);
-  border: 1px solid var(--arcoui-button-border);
+  min-width: var(--ds-button-min-width-md, 64px);
+  padding: 0 var(--ds-button-padding-inline-md, 14px);
+  border: var(--ds-button-border-width, 1px) solid var(--arcoui-button-border);
   border-radius: var(--arcoui-button-radius, var(--ds-radius-button, 8px));
   background: var(--arcoui-button-bg);
   color: var(--arcoui-button-color);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  font-size: var(--ds-font-size-14, 14px);
-  font-weight: var(--ds-font-weight-semibold, 600);
-  line-height: 1;
+  gap: var(--ds-button-icon-gap, 8px);
+  font-size: var(--ds-button-font-size-md, var(--ds-font-size-14, 14px));
+  font-weight: var(--ds-button-font-weight, var(--ds-font-weight-semibold, 600));
+  line-height: var(--ds-button-line-height, 1);
   white-space: nowrap;
   cursor: pointer;
   outline: none;
   box-sizing: border-box;
   box-shadow: none;
-  transition: background var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease), border-color var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease), color var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease), opacity var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease), box-shadow var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease), transform var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease);
+  transition: background var(--ds-button-transition, var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease)), border-color var(--ds-button-transition, var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease)), color var(--ds-button-transition, var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease)), opacity var(--ds-button-transition, var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease)), box-shadow var(--ds-button-transition, var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease)), transform var(--ds-button-transition, var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease));
 }
 
 .arcoui-button[data-size="mini"] {
   height: var(--ds-button-height-xs, 24px);
-  padding: 0 var(--ds-space-2, 8px);
-  font-size: var(--ds-font-size-12, 12px);
+  min-width: var(--ds-button-min-width-xs, 48px);
+  padding: 0 var(--ds-button-padding-inline-xs, var(--ds-space-2, 8px));
+  font-size: var(--ds-button-font-size-xs, var(--ds-font-size-12, 12px));
+}
+
+.arcoui-button > svg {
+  width: var(--ds-button-icon-size-md, 16px);
+  height: var(--ds-button-icon-size-md, 16px);
+  flex: none;
+  color: currentColor;
+}
+
+.arcoui-button[data-size="mini"] > svg,
+.arcoui-button[data-size="small"] > svg {
+  width: var(--ds-button-icon-size-sm, 14px);
+  height: var(--ds-button-icon-size-sm, 14px);
 }
 
 .arcoui-button[data-size="small"] {
   height: var(--ds-button-height-sm, 32px);
-  padding: 0 var(--ds-control-padding-inline-sm, 10px);
-  font-size: var(--ds-font-size-12, 12px);
+  min-width: var(--ds-button-min-width-sm, 56px);
+  padding: 0 var(--ds-button-padding-inline-sm, var(--ds-control-padding-inline-sm, 10px));
+  font-size: var(--ds-button-font-size-sm, var(--ds-font-size-12, 12px));
 }
 
 .arcoui-button[data-size="large"] {
   height: var(--ds-button-height-md, 40px);
+  min-width: var(--ds-button-min-width-md, 64px);
   padding: 0 var(--ds-space-4, 16px);
-  font-size: var(--ds-font-size-14, 14px);
+  font-size: var(--ds-button-font-size-md, var(--ds-font-size-14, 14px));
 }
 
 .arcoui-button[data-long="true"] {
@@ -47,6 +64,7 @@
 
 .arcoui-button[data-icon-only="true"] {
   width: var(--ds-button-height-md, 40px);
+  min-width: 0;
   padding: 0;
 }
 
@@ -59,16 +77,22 @@
 }
 
 .arcoui-button[data-type="primary"] {
-  --arcoui-button-bg: var(--arcoui-accent);
-  --arcoui-button-color: var(--arcoui-accent-contrast);
-  --arcoui-button-border: var(--arcoui-accent);
-  box-shadow: 0 6px 14px -10px color-mix(in srgb, var(--arcoui-accent) 60%, transparent);
+  --arcoui-button-bg: var(--ds-button-primary-bg, var(--arcoui-accent));
+  --arcoui-button-color: var(--ds-button-primary-text, var(--arcoui-accent-contrast));
+  --arcoui-button-border: var(--ds-button-primary-border, var(--arcoui-accent));
+  box-shadow: var(--ds-button-primary-shadow, 0 6px 14px -10px color-mix(in srgb, var(--arcoui-accent) 60%, transparent));
 }
 
 .arcoui-button[data-type="secondary"] {
-  --arcoui-button-bg: var(--arcoui-accent-soft);
-  --arcoui-button-color: var(--arcoui-accent-text);
-  --arcoui-button-border: transparent;
+  --arcoui-button-bg: var(--ds-button-secondary-bg, var(--arcoui-accent-soft));
+  --arcoui-button-color: var(--ds-button-secondary-text, var(--arcoui-accent-text));
+  --arcoui-button-border: var(--ds-button-secondary-border, transparent);
+}
+
+.arcoui-button[data-toggle="true"][data-selected="true"] {
+  --arcoui-button-bg: var(--ds-state-selected-bg);
+  --arcoui-button-color: var(--ds-state-selected-text);
+  --arcoui-button-border: var(--ds-state-selected-border);
 }
 
 .arcoui-button[data-type="outline"] {
@@ -163,14 +187,19 @@
 }
 
 .arcoui-button[data-type="primary"]:not(:disabled):hover {
-  background: color-mix(in srgb, var(--arcoui-accent) 92%, #ffffff);
-  border-color: transparent;
-  box-shadow: 0 8px 18px -12px color-mix(in srgb, var(--arcoui-accent) 70%, transparent);
+  background: var(--ds-button-primary-bg-hover, color-mix(in srgb, var(--arcoui-accent) 92%, #ffffff));
+  border-color: var(--ds-button-primary-border, var(--arcoui-accent));
+  box-shadow: var(--ds-button-primary-shadow-hover, 0 8px 18px -12px color-mix(in srgb, var(--arcoui-accent) 70%, transparent));
 }
 
 .arcoui-button[data-type="secondary"]:not(:disabled):hover {
-  background: color-mix(in srgb, var(--arcoui-accent-soft) 76%, var(--arcoui-surface));
-  border-color: transparent;
+  background: var(--ds-button-secondary-bg-hover, color-mix(in srgb, var(--arcoui-accent-soft) 76%, var(--arcoui-surface)));
+  border-color: var(--ds-button-secondary-border, transparent);
+}
+
+.arcoui-button[data-toggle="true"][data-selected="true"]:not(:disabled):hover {
+  background: color-mix(in srgb, var(--ds-state-selected-bg) 82%, var(--ds-color-surface));
+  border-color: var(--ds-state-selected-border);
 }
 
 .arcoui-button[data-type="text"]:not(:disabled):hover {
@@ -210,9 +239,13 @@
 
 .arcoui-button[data-type="default"][data-status="normal"]:not(:disabled):active,
 .arcoui-button[data-type="outline"][data-status="normal"]:not(:disabled):active,
-.arcoui-button[data-type="secondary"][data-status="normal"]:not(:disabled):active,
 .arcoui-button[data-type="text"][data-status="normal"]:not(:disabled):active {
   background: var(--ds-state-pressed-bg, var(--arcoui-neutral-soft));
+  border-color: var(--ds-state-pressed-border, var(--arcoui-accent));
+}
+
+.arcoui-button[data-type="secondary"][data-status="normal"]:not(:disabled):active {
+  background: var(--ds-button-secondary-bg-pressed, var(--ds-state-pressed-bg, var(--arcoui-neutral-soft)));
   border-color: var(--ds-state-pressed-border, var(--arcoui-accent));
 }
 
@@ -224,18 +257,23 @@
   border-color: var(--arcoui-accent);
 }
 
-.arcoui-button:disabled {
+.arcoui-button:disabled:not([data-loading="true"]) {
+  --arcoui-button-bg: var(--ds-button-disabled-bg);
+  --arcoui-button-color: var(--ds-button-disabled-text);
+  --arcoui-button-border: var(--ds-button-disabled-border);
   opacity: var(--ds-opacity-disabled, 0.45);
   cursor: not-allowed;
   box-shadow: none;
   filter: none;
 }
 
+.arcoui-button[data-loading="true"] { cursor: progress; }
+
 .arcoui-spinner {
-  width: 13px;
-  height: 13px;
+  width: var(--ds-button-spinner-size, 14px);
+  height: var(--ds-button-spinner-size, 14px);
   border-radius: 999px;
-  border: 2px solid currentColor;
+  border: var(--ds-button-spinner-border-width, 2px) solid currentColor;
   border-right-color: transparent;
   animation: arcoui-spin var(--ds-motion-duration-loading, 800ms) linear infinite;
 }

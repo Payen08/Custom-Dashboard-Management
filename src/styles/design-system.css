@@ -130,6 +130,33 @@
   --ds-button-height-xs: 24px;
   --ds-button-height-sm: 32px;
   --ds-button-height-md: 40px;
+  --ds-button-min-width-xs: 48px;
+  --ds-button-min-width-sm: 56px;
+  --ds-button-min-width-md: 64px;
+  --ds-button-padding-inline-xs: var(--ds-space-2);
+  --ds-button-padding-inline-sm: 10px;
+  --ds-button-padding-inline-md: 14px;
+  --ds-button-font-size-xs: var(--ds-font-size-12);
+  --ds-button-font-size-sm: var(--ds-font-size-12);
+  --ds-button-font-size-md: var(--ds-font-size-14);
+  --ds-button-line-height: 1;
+  --ds-button-font-weight: var(--ds-font-weight-semibold);
+  --ds-button-icon-size-xs: var(--ds-control-icon-sm);
+  --ds-button-icon-size-sm: var(--ds-control-icon-sm);
+  --ds-button-icon-size-md: var(--ds-control-icon-md);
+  --ds-button-border-width: 1px;
+  --ds-button-spinner-size: 14px;
+  --ds-button-spinner-border-width: 2px;
+  --ds-button-transition: var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out);
+  --ds-search-height: 40px;
+  --ds-search-icon-size: var(--ds-icon-size-md);
+  --ds-radio-control-size: 16px;
+  --ds-switch-width: 36px;
+  --ds-switch-height: 20px;
+  --ds-switch-thumb-size: 16px;
+  --ds-number-height: 40px;
+  --ds-number-stepper-width: 28px;
+  --ds-pagination-item-size: 32px;
   --ds-tag-height-sm: 20px;
   --ds-tag-height-md: 24px;
   --ds-tag-padding-inline: var(--ds-space-2);
@@ -138,8 +165,15 @@
   --ds-control-padding-inline-md: 14px;
   --ds-control-icon-sm: 14px;
   --ds-control-icon-md: 16px;
+  --ds-icon-size-xs: 12px;
+  --ds-icon-size-sm: 14px;
+  --ds-icon-size-md: 16px;
+  --ds-icon-size-lg: 20px;
+  --ds-icon-size-xl: 24px;
+  --ds-icon-stroke-width: 1.8;
+  --ds-icon-color: var(--ds-color-icon);
   --ds-table-header-height: 44px;
-  --ds-table-row-height: 52px;
+  --ds-table-row-height: 60px;
 
   /* Interaction state tokens. Pressed is transient; Selected is persistent. */
   --ds-state-hover-bg: var(--ds-color-soft);
@@ -163,19 +197,27 @@
   --ds-state-success-text: var(--ds-color-success);
 
   /* Button component tokens */
-  --ds-button-padding-inline: 15px;
+  --ds-button-padding-inline: var(--ds-button-padding-inline-md);
   --ds-button-icon-gap: var(--ds-space-2);
   --ds-button-primary-bg: var(--ds-color-accent);
   --ds-button-primary-bg-hover: color-mix(in srgb, var(--ds-color-accent) 88%, var(--ds-color-surface));
   --ds-button-primary-bg-pressed: color-mix(in srgb, var(--ds-color-accent) 76%, #000);
   --ds-button-primary-text: var(--ds-color-accent-contrast);
   --ds-button-primary-border: var(--ds-color-accent);
+  --ds-button-primary-shadow: 0 6px 14px -10px color-mix(in srgb, var(--ds-color-accent) 60%, transparent);
+  --ds-button-primary-shadow-hover: 0 8px 18px -12px color-mix(in srgb, var(--ds-color-accent) 70%, transparent);
+  --ds-button-secondary-bg: var(--ds-color-accent-soft);
+  --ds-button-secondary-bg-hover: color-mix(in srgb, var(--ds-color-accent-soft) 76%, var(--ds-color-surface));
+  --ds-button-secondary-bg-pressed: var(--ds-state-pressed-bg);
+  --ds-button-secondary-text: var(--ds-color-accent);
+  --ds-button-secondary-border: transparent;
   --ds-button-default-bg: var(--ds-color-surface);
   --ds-button-default-text: var(--ds-color-heading);
   --ds-button-default-border: var(--ds-color-border);
   --ds-button-default-border-hover: var(--ds-color-accent);
   --ds-button-disabled-bg: var(--ds-state-disabled-bg);
   --ds-button-disabled-text: var(--ds-state-disabled-text);
+  --ds-button-disabled-border: transparent;
 
   /* Input and Select component tokens */
   --ds-input-bg: var(--ds-color-surface);
@@ -188,6 +230,20 @@
   --ds-input-bg-readonly: var(--ds-state-readonly-bg);
   --ds-input-text-readonly: var(--ds-state-readonly-text);
   --ds-input-padding-inline: 11px;
+  --ds-search-bg: var(--ds-input-bg);
+  --ds-search-border: var(--ds-input-border);
+  --ds-search-border-focus: var(--ds-input-border-focus);
+  --ds-radio-bg: var(--ds-color-surface);
+  --ds-radio-border: var(--ds-color-border-strong);
+  --ds-radio-bg-checked: var(--ds-color-accent);
+  --ds-radio-indicator-checked: var(--ds-color-accent-contrast);
+  --ds-switch-bg: var(--ds-color-border-strong);
+  --ds-switch-bg-checked: var(--ds-color-accent);
+  --ds-switch-thumb: var(--ds-color-surface);
+  --ds-number-border: var(--ds-input-border);
+  --ds-pagination-item-bg-hover: var(--ds-state-hover-bg);
+  --ds-pagination-item-bg-selected: var(--ds-state-selected-bg);
+  --ds-pagination-item-text-selected: var(--ds-state-selected-text);
   --ds-select-option-bg-hover: var(--ds-state-hover-bg);
   --ds-select-option-bg-pressed: var(--ds-state-pressed-bg);
   --ds-select-option-bg-selected: var(--ds-state-selected-bg);

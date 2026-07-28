@@ -1,5 +1,5 @@
 {
-  "version": "1.1.7",
+  "version": "1.2.0",
   "name": "Product Design Tokens",
   "description": "Frontend handoff source of truth. Values are theme-aware; component tokens reference semantic tokens by path.",
   "theme": {
@@ -108,6 +108,12 @@
       "paddingInline": { "sm": 10, "md": 14 },
       "table": { "headerHeight": 44, "rowHeight": 52 },
       "tag": { "smHeight": 20, "mdHeight": 24, "paddingInline": 8 }
+    },
+    "icon": {
+      "source": "项目已批准的系统图标库",
+      "style": "线性，统一 24 × 24 viewBox，描边 1.8px",
+      "size": { "xs": 12, "sm": 14, "md": 16, "lg": 20, "xl": 24 },
+      "color": { "default": "{theme.color.icon}", "inherit": "currentColor", "success": "{theme.color.success}", "warning": "{theme.color.warning}", "danger": "{theme.color.danger}" }
     }
   },
   "state": {
@@ -124,11 +130,29 @@
     "button": {
       "height": { "xs": 24, "sm": 32, "md": 40 },
       "radius": "{shared.radius.button}",
-      "paddingInline": 15,
+      "paddingInline": { "xs": 8, "sm": 10, "md": 14 },
+      "minWidth": { "xs": 48, "sm": 56, "md": 64 },
+      "fontSize": { "xs": 12, "sm": 12, "md": 14 },
+      "lineHeight": 1,
+      "fontWeight": 600,
+      "iconSize": { "xs": 14, "sm": 14, "md": 16 },
       "iconGap": 8,
-      "primary": { "background": "{theme.color.accent}", "text": "{theme.color.accentContrast}", "border": "{theme.color.accent}", "hover": "color-mix({theme.color.accent} 88%, {theme.color.surface})", "pressed": "color-mix({theme.color.accent} 76%, #000)" },
-      "default": { "background": "{theme.color.surface}", "text": "{theme.color.heading}", "border": "{theme.color.border}", "hoverBorder": "{theme.color.accent}" },
-      "disabled": { "background": "{state.disabled.background}", "text": "{state.disabled.text}" }
+      "borderWidth": 1,
+      "spinner": { "size": 14, "borderWidth": 2 },
+      "transition": { "duration": "{shared.motion.duration.mid}", "easing": "{shared.motion.ease.inOut}" },
+      "primary": {
+        "default": { "background": "{theme.color.accent}", "text": "{theme.color.accentContrast}", "border": "{theme.color.accent}", "icon": "currentColor", "shadow": "0 6px 14px -10px color-mix({theme.color.accent} 60%, transparent)" },
+        "hover": { "background": "color-mix({theme.color.accent} 88%, {theme.color.surface})", "text": "{theme.color.accentContrast}", "border": "{theme.color.accent}", "icon": "currentColor", "shadow": "0 8px 18px -12px color-mix({theme.color.accent} 70%, transparent)" },
+        "pressed": { "background": "color-mix({theme.color.accent} 76%, #000)", "text": "{theme.color.accentContrast}", "border": "color-mix({theme.color.accent} 76%, #000)", "icon": "currentColor", "shadow": "none" }
+      },
+      "secondary": {
+        "default": { "background": "{theme.color.accentSoft}", "text": "{theme.color.accent}", "border": "transparent", "icon": "currentColor", "shadow": "none" },
+        "hover": { "background": "color-mix({theme.color.accentSoft} 76%, {theme.color.surface})", "text": "{theme.color.accent}", "border": "transparent", "icon": "currentColor", "shadow": "none" },
+        "pressed": { "background": "{state.pressed.background}", "text": "{theme.color.accent}", "border": "{state.pressed.border}", "icon": "currentColor", "shadow": "none" }
+      },
+      "focus": { "ring": "{state.focus.ring}", "ringWidth": "{state.focus.ringWidth}", "ringOffset": "{state.focus.ringOffset}" },
+      "disabled": { "background": "{state.disabled.background}", "text": "{state.disabled.text}", "border": "transparent", "opacity": "{state.disabled.opacity}" },
+      "loading": { "cursor": "progress", "preserveWidth": true }
     },
     "input": {
       "height": 40,
@@ -148,6 +172,11 @@
       "radius": "{shared.radius.control}",
       "option": { "hoverBackground": "{state.hover.background}", "pressedBackground": "{state.pressed.background}", "selectedBackground": "{state.selected.background}", "selectedText": "{state.selected.text}" }
     },
+    "search": { "height": 40, "iconSize": 16, "background": "{theme.color.surface}", "border": "{theme.color.border}", "focusBorder": "{theme.color.accent}" },
+    "radio": { "controlSize": 16, "background": "{theme.color.surface}", "border": "{theme.color.borderStrong}", "checked": { "background": "{theme.color.accent}", "indicator": "{theme.color.accentContrast}" } },
+    "switch": { "width": 36, "height": 20, "thumbSize": 16, "background": "{theme.color.borderStrong}", "checkedBackground": "{theme.color.accent}", "thumb": "{theme.color.surface}" },
+    "number": { "height": 40, "stepperWidth": 28, "border": "{theme.color.border}", "focusBorder": "{theme.color.accent}" },
+    "pagination": { "itemSize": 32, "hoverBackground": "{state.hover.background}", "selectedBackground": "{state.selected.background}", "selectedText": "{state.selected.text}" },
     "checkbox": {
       "controlSize": 16,
       "radius": "{shared.radius.xs}",

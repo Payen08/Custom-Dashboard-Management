@@ -78,6 +78,7 @@ interface ArcoButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElem
   size?: ButtonSize;
   scope?: ArcoScope;
   icon?: ReactNode;
+  trailingIcon?: ReactNode;
   iconOnly?: boolean;
   long?: boolean;
   loading?: boolean;
@@ -90,6 +91,7 @@ export const ArcoButton = forwardRef<HTMLButtonElement, ArcoButtonProps>(functio
   size = 'default',
   scope = 'app',
   icon,
+  trailingIcon,
   iconOnly = false,
   long = false,
   loading = false,
@@ -114,18 +116,33 @@ export const ArcoButton = forwardRef<HTMLButtonElement, ArcoButtonProps>(functio
       data-size={size}
       data-icon-only={iconOnly ? 'true' : undefined}
       data-long={long ? 'true' : undefined}
+      data-loading={loading ? 'true' : undefined}
       className={cx('arcoui-button', className)}
       style={{ ...scopeVars(scope), ...style }}
       {...props}
     >
       {loading ? <span className="arcoui-spinner" aria-hidden="true" /> : icon}
       {!iconOnly && children}
+      {!loading && !iconOnly && trailingIcon}
     </ButtonRoot>
   );
 });
 
 export function ArcoIconButton(props: Omit<ArcoButtonProps, 'iconOnly'>) {
   return <ArcoButton {...props} iconOnly />;
+}
+
+interface ArcoToggleButtonProps extends Omit<ArcoButtonProps, 'type'> {
+  selected: boolean;
+}
+
+/** A persistent choice control. Use ArcoButton for one-off actions instead. */
+export function ArcoToggleButton({ selected, ...props }: ArcoToggleButtonProps) {
+  return <ArcoButton {...props} type="secondary" aria-pressed={selected} data-toggle="true" data-selected={selected ? 'true' : undefined} />;
+}
+
+export function ArcoIconToggleButton(props: Omit<ArcoToggleButtonProps, 'iconOnly'>) {
+  return <ArcoToggleButton {...props} iconOnly />;
 }
 
 interface ArcoTagProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -171,7 +188,7 @@ interface ArcoModalProps {
   children?: ReactNode;
   footer?: ReactNode;
   scope?: ArcoScope;
-  status?: 'normal' | 'danger';
+  status?: 'normal' | 'info' | 'warning' | 'danger';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   width?: number | string;
   maxWidth?: number | string;

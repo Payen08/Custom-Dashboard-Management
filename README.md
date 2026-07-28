@@ -11,6 +11,5 @@
 
   ## Design system
 
-  Product visual and interaction rules are documented in `guidelines/Guidelines.md`.
-  Shared tokens and layout/component primitives live in `src/styles/design-system.css`;
-  theme palettes and semantic color mappings live in `src/app/theme.ts`.
+  The standalone GitLab-ready design-system handoff is in [`guidelines/`](guidelines/README.md).
+  Runtime prototype styles remain in `src/styles/` and are not the frontend handoff source.

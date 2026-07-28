@@ -1,5 +1,10 @@
 @custom-variant dark (&:is(.dark *));
 
+/* Approved linear system icons share one visual stroke across all pages. */
+.lucide {
+  stroke-width: var(--ds-icon-stroke-width, 1.8);
+}
+
 :root {
   --font-size: 16px;
   --background: #F0F0F0;

@@ -1,10 +1,13 @@
 # 产品视觉与交互规范
 
-本文件是页面设计与代码生成的强制约束。设计系统的代码单一来源为：
+本文件是页面设计、前端实现与代码生成的强制文字依据。设计系统交付包的单一来源为：
 
-- 基础与布局 Token：`src/styles/design-system.css`
-- 明暗主题与语义颜色：`src/app/theme.ts`
-- 平台基础控件的视觉与交互规范：本文件第 3 节
+- 文字规则与验收：`docs/ui-guidelines.md`
+- 机器可读 Token：`tokens/design-tokens.json`
+- 组件契约：`components/component-specs.json`
+- Ant Design 映射示例：`adapters/ant-design-theme.ts`
+
+原型工程中的 `src/styles/*` 与 `src/app/theme.ts` 仅用于验证规范映射，不属于前端接入源。
 
 优先级：页面特殊规则 < 业务组件规则 < 基础组件规则 < Design Token。页面不得重复定义已存在的 Token。
 
@@ -32,6 +35,16 @@
 - 正文默认 14px；辅助信息与紧凑标签 12px；模块标题 16–18px；页面标题 20–24px。
 - 正文常规字重 400；交互和标签 500/600；页面标题不超过 700。
 - 数字、版本号、坐标、代码和文件名可使用等宽字体 Token。
+
+| 应用位置 | 字号 | 字重 | 行高 | 使用说明 |
+| --- | ---: | ---: | --- | --- |
+| 页面标题 | 20 / 24px | 600 | tight | Page Header 中的唯一页面标题。 |
+| 弹窗标题 | 18px | 600 | normal | Modal Header 标题。 |
+| 模块标题 | 16px | 600 | normal | 内容区模块标题。 |
+| 正文 / 表单字段 | 14px | 400 | normal | 正文、Input 内容与字段说明主体。 |
+| 菜单 / 按钮 | 14px | 500 / 600 | normal | Menu 条目 500；Button 文案 600。 |
+| 表头 / 标签 / 辅助信息 | 12px | 500 / 400 | normal | 表头与标签 500；帮助、日期与状态补充 400。 |
+| 紧凑补充 | 10px | 400 | normal | 仅限低优先级版本、单位或补充信息。 |
 
 ### 间距
 
@@ -62,10 +75,10 @@
 - 新基础组件必须按适用范围包含 Default、Hover、Pressed、Focus、Selected、Disabled、Loading、Error 状态；`Pressed` 与 `Selected` 不得混用。
 - 同一模块仅允许一个主按钮；危险操作必须使用 danger 状态并二次确认。
 - 输入框与选择器必须有可见 Label；Placeholder 不能替代 Label。
-- 表格默认表头 44px、数据行 52px；宽表使用内部横向滚动。
+- 表格默认表头 44px、数据行 60px；宽表使用内部横向滚动。
 - 页面工具栏的搜索框与“导入、导出、刷新、新建/新增”主要操作统一 40px 高；弹窗表单输入和 Footer 按钮也使用 40px。表格行内操作、标签增删等紧凑控件保持 24–32px。
 - 常规文字按钮默认 40px 高，紧凑按钮只允许 32px，迷你图标操作只允许 24px；按钮圆角全部使用 8px，不允许页面自行定义高度或圆角。
-- Modal 用于需要确认的短任务；Drawer 用于保留页面上下文的连续配置。
+- Modal 用于需要确认的短任务。当前系统尚未发布可复用的 Drawer 运行时样式；连续配置使用页面内侧栏或已发布 Modal，不得自行搭建 Drawer 外观。
 - Dropdown 浮层使用 16px 外圆角、12px 条目圆角、overlay 阴影、危险项独立状态。
 
 ### 3.1 组件使用与视觉契约
@@ -101,6 +114,7 @@
 - 高度超出时只允许 Body 滚动，Header 与 Footer 必须固定；列表型弹窗的局部列表可再设内部最大高度。
 - Footer 操作顺序为“次要 / 取消”在左、“主要 / 确认”在右；只有关闭动作时使用普通次要按钮。
 - 同一弹窗最多一个主按钮；删除等危险操作使用 danger 按钮并提供明确后果说明。取消发布、停用等可恢复的状态回退使用品牌主按钮；Warning 仅用于提示信息或状态标记，不能因为弹窗包含提醒文案就改用黄色确认按钮。
+- 弹窗类型统一使用同一套中性壳、标题栏、关闭按钮和 Footer：提示用于可恢复状态回退；警示用于未保存修改、风险前置说明，确认仍为品牌主按钮；删除用于不可恢复动作，只有确认按钮使用 danger 语义。不得为不同类型新增黄色背景、整圈状态描边或标题左侧图标。
 - 列表型弹窗优先使用分段切换 + 单层列表 / 折叠列表，禁止在展开区再套完整表格或多层卡片。
 - 关闭规则统一：右上角 `X`、`Esc`、点击遮罩及 Footer “关闭 / 取消”必须使用同一套关闭逻辑；未保存表单关闭前需二次确认。
 
@@ -177,7 +191,7 @@
 | Button | 24 / 32 / 40px 高，圆角 8px |
 | 通用 Control | 24 / 28 / 36 / 40px 高，输入类圆角 10px |
 | Tag | 默认 24px 高、水平内边距 8px；紧凑态 20px 高、水平内边距 7px；胶囊圆角 |
-| Table | 表头 44px，数据行 52px |
+| Table | 表头 44px，数据行 60px |
 | Modal | 420 / 560 / 720 / 900px 宽；最大尺寸为视口减 48px |
 
 ### 9.4 布局与响应值
@@ -225,11 +239,32 @@
 - 校验错误使用字段附近的错误文本和 `role="alert"`；状态、错误、选中不能仅依赖颜色。
 - 成功保存、刷新和复制等操作沿用对应页面现有的局部状态反馈方式，避免在同一页面新增不同的反馈样式。
 
-### 11.5 交互验收
+### 11.5 图标规范
+
+- 图标统一使用项目已批准的**线性系统图标库**；同一页面不得混用不同风格、不同圆角语言或不同描边粗细的图标。面性图标只可作为既有品牌资产或明确的业务插画，不能与线性操作图标并列混用。
+- 标准尺寸为：12px 用于紧凑状态标记；14px 用于 24px 控件；16px 用于 32 / 40px 常规控件；20px 用于页面级操作或空状态辅助；24px 用于模块级图标。除这五档外不得新增页面私有尺寸。
+- 线性图标统一使用 `24 × 24` viewBox 和 1.8px 描边；自定义 SVG 必须移除硬编码 fill / stroke，使用 `currentColor`，并在导入前按该 viewBox 和描边规则校正。
+- 常规功能图标默认继承相邻文字色或 `--ds-icon-color`；按钮内图标继承文字色。成功、警示、错误等状态图标分别使用对应语义色，且必须配合状态文字，不能只依赖颜色。
+- 方向语义统一：向右表示进入、下一步或展开的目标方向；向下表示展开；向上表示收起；向左表示返回；同一页面不得让同一方向表达相反含义。左右、上下方向图标不作镜像替换来表达不同业务含义。
+- 装饰图标不得使用品牌主色抢占主操作层级；图标不能替代含义不明确的文字。纯图标操作仅用于高频且图标含义明确的动作，并提供 `aria-label` 与 Tooltip。
+- 业务专属图标应先归类为对象、状态或功能图标；不能以随机 Emoji、彩色图片或临时 SVG 代替系统图标。新增图标须经过设计评审并加入统一资产清单。
+
+### 11.6 内容文案规范
+
+- 文案以用户任务、对象和结果为中心，优先使用明确动词：使用“保存配置”“创建型号”“重新加载”，避免“确定”“提交”“处理”等脱离上下文的泛化词。
+- 页面标题表达当前对象或任务；按钮表达下一步动作；状态表达“对象 + 当前结果”；错误说明包含问题与可执行修正方向。相同概念在同一产品内使用同一名称，不混用同义词。
+- Placeholder 只给输入示例，不重复 Label，也不承载必填、格式、范围或错误规则；这些信息使用 Label、帮助文本和错误文本表达。
+- 成功、错误、空状态和无权限文案必须同时给出可理解的原因或下一步；不显示内部接口名、错误码、堆栈或“操作失败，请重试”这类无上下文提示。
+- 日期、数字、版本号、文件名和单位使用统一格式；数值与单位、状态图标与状态文字不可拆行。中英文、数字与标点之间遵循同一页面既有格式，不为视觉凑字新增空格或换行。
+- 文案优先简短、单义、可扫描；长说明放入帮助文本、详情或 Tooltip，Tooltip 不能承担唯一关键说明。危险操作必须说明影响对象和不可恢复后果。
+
+### 11.7 交互验收
 
 - [ ] Hover、Pressed、Selected、Focus、Disabled、Loading、Readonly、Error、Success 的视觉和事件行为符合第 11.1 节。
 - [ ] 弹窗的四种关闭入口均能正确收口；危险确认不会由取消入口触发。
 - [ ] 展开、选中、筛选和图标操作具有对应的可访问状态或名称。
+- [ ] 图标尺寸、描边、颜色、方向与自定义 SVG 均符合第 11.5 节；页面未混用多套操作图标风格。
+- [ ] 标题、按钮、状态、错误与空状态文案符合第 11.6 节，且未以 Placeholder 或 Tooltip 承载唯一关键信息。
 - [ ] 可搜索选择器在打开、选择、失焦关闭和候选项滚动时行为正确。
 - [ ] 开启“减少动效”偏好后，不保留非必要过渡或动画。
 
@@ -284,7 +319,7 @@
 
 ## 13. 已发布组件 Token 与组件契约
 
-组件只能消费 `src/styles/design-system.css` 中的组件 Token。业务页面不得直接写各状态的色值或重新创造同义变量。
+组件只能消费 `tokens/design-tokens.json` 发布的组件 Token。前端可将其转换为 CSS Variables 或组件库主题对象，但业务页面不得直接写各状态色值或重新创造同义变量。
 
 | 组件 | Token 前缀 | 必须覆盖的状态 |
 | --- | --- | --- |
@@ -296,27 +331,85 @@
 | Tabs | `--ds-tabs-*` | Default、Hover、Pressed、Focus、Selected、Disabled |
 | Menu | `--ds-menu-*` | Default、Hover、Pressed、Focus、Selected、Disabled、Open/Expanded |
 
-### 13.1 Button 与 IconButton
+### 13.1 Button、ToggleButton 与 IconButton
 
-- 类型只允许 `primary`、`secondary`、`outline`、`text`、`danger`；一个操作区域最多一个 `primary`。
-- 高度只允许 24 / 32 / 40px；纯图标按钮视觉尺寸可为 24px，但鼠标热区至少 32×32px、触控热区至少 44×44px。
+#### 13.1.1 使用边界
+
+- `Button` 用于保存、创建、确认、刷新和提交等一次性动作，只含 Default、Hover、Pressed、Focus、Disabled、Loading；**普通 Button 没有 Selected**。
+- `ToggleButton` 用于网格／列表视图、吸附开启等持续选择，包含 Default、Hover、Pressed、Focus、Selected、Disabled；使用 `aria-pressed` 表达状态。
+- `IconToggleButton` 仅用于图标语义明确的高频持续选择，状态同 ToggleButton，必须有 `aria-label` 和 Tooltip。
+- 类型只允许 `primary`、`secondary`、`outline`、`text`、`danger`；一个操作区域最多一个 `primary`。`danger` 是风险语义，不等同于 Pressed、Error 或 Selected；删除、解绑等不可逆操作必须二次确认。
+
+#### 13.1.2 Primary 与 Secondary 状态矩阵
+
+所有状态均须明确 background、text、border、icon、shadow、focus ring、cursor、opacity 与 transition；图标始终继承 `currentColor`。
+
+| 类型 / 状态 | Background | Text / Icon | Border | Shadow | Focus ring | Cursor | Opacity | Transition |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Primary Default | `--ds-button-primary-bg` | `--ds-button-primary-text` | `--ds-button-primary-border` | `--ds-button-primary-shadow` | 无 | pointer | 1 | `--ds-button-transition` |
+| Primary Hover | `--ds-button-primary-bg-hover` | Default | `--ds-button-primary-border` | `--ds-button-primary-shadow-hover` | 无 | pointer | 1 | 同上 |
+| Primary Pressed | `--ds-button-primary-bg-pressed` | Default | Pressed 背景值 | none | 无 | pointer | 1 | 同上 |
+| Primary Focus | Default | Default | Default | Default | `--ds-state-focus-ring` / 2px | pointer | 1 | 同上 |
+| Primary Disabled | `--ds-button-disabled-bg` | `--ds-button-disabled-text` | `--ds-button-disabled-border` | none | 无 | not-allowed | `--ds-opacity-disabled` | 同上 |
+| Primary Loading | 保持触发前类型 | 保持触发前类型；Spinner 使用 currentColor | 保持触发前类型 | 保持触发前类型 | 无 | progress | 1 | 同上 |
+| Secondary Default | `--ds-button-secondary-bg` | `--ds-button-secondary-text` | `--ds-button-secondary-border` | none | 无 | pointer | 1 | `--ds-button-transition` |
+| Secondary Hover | `--ds-button-secondary-bg-hover` | Default | Default | none | 无 | pointer | 1 | 同上 |
+| Secondary Pressed | `--ds-button-secondary-bg-pressed` | Default | `--ds-state-pressed-border` | none | 无 | pointer | 1 | 同上 |
+| Secondary Focus | Default | Default | Default | none | `--ds-state-focus-ring` / 2px | pointer | 1 | 同上 |
+| Secondary Disabled | `--ds-button-disabled-bg` | `--ds-button-disabled-text` | `--ds-button-disabled-border` | none | 无 | not-allowed | `--ds-opacity-disabled` | 同上 |
+| Secondary Loading | 保持触发前类型 | 保持触发前类型；Spinner 使用 currentColor | 保持触发前类型 | none | 无 | progress | 1 | 同上 |
+
+#### 13.1.3 内部规格与内容结构
+
+| 规格 | 24px / 32px / 40px | Token |
+| --- | --- | --- |
+| 水平内边距 | 8 / 10 / 14px | `--ds-button-padding-inline-*` |
+| 最小宽度 | 48 / 56 / 64px | `--ds-button-min-width-*` |
+| 最大宽度 | 常规按钮不设全局最大值；不得超过所在操作区。`fullWidth` = 容器可用宽度 | 布局约束 |
+| 文字 | 12 / 12 / 14px；行高 1；字重 600 | `--ds-button-font-size-*`、`--ds-button-line-height`、`--ds-button-font-weight` |
+| 图标与图文间距 | 14 / 14 / 16px；8px | `--ds-button-icon-size-*`、`--ds-button-icon-gap` |
+| 边框与 Spinner | 1px；14px / 2px 描边 | `--ds-button-border-width`、`--ds-button-spinner-*` |
+
+允许纯文字、前置图标＋文字、文字＋后置图标、纯图标、Loading 图标＋文字五种形态。普通动作图标默认前置；展开、跳转类图标可后置；同一按钮不得同时出现前后两个图标。纯图标只用于高频且含义明确的操作。文案默认单行，过长时优先缩短文案或收进 More，不得在按钮内换行。常规 Button 不发布固定最大宽度，宽度由内容与内边距决定且不得超出所在操作区；`fullWidth` 只用于窄栏表单、固定底部操作等通栏任务，并等于容器可用宽度。Loading 前后保留同一宽度，不得因文案变化跳动。
+
+#### 13.1.4 IconButton
+
+- 高度只允许 24 / 32 / 40px；视觉尺寸可为 24px，但鼠标热区至少 32×32px、触控热区至少 44×44px。
 - 纯图标按钮必须有 `aria-label` 和 Tooltip；Loading 时保持原宽度并阻止重复触发。
-- `danger` 表示高风险结果，不等同于 Pressed 或 Error；删除、解绑等不可逆操作必须二次确认。
 
-### 13.2 Input 与 Select
+### 13.2 SearchInput 与 SearchBar
+
+- `SearchInput` 用于在当前数据集内按关键词查询；默认高度 40px，搜索图标 16px。输入变化可即时筛选，或经明确的“搜索”动作提交；同一场景不能同时采用两套触发方式。
+- 有内容时可提供清除入口；清除后恢复默认结果和筛选状态。Loading 在输入框尾部展示，保留已输入关键词与控件宽度。
+- `SearchBar` 由 SearchInput、主筛选条件、筛选/重置操作和已生效条件组成；只在列表、看板等查询上下文使用，不替代页面标题或全局导航搜索。
+- 搜索词不得只用 Placeholder 表达字段含义；没有可见 Label 时必须提供可访问名称。无结果时保留搜索词和筛选条件，并提供清除入口。
+
+### 13.3 Input、InputNumber 与 Select
 
 - Input、TextArea、Select 都必须有可见 Label；Placeholder 仅用于输入示例，不能代替字段名称。
 - Readonly 保留正常文本对比度并允许复制；Disabled 不可编辑、不可聚焦，并在需要时通过外层 Tooltip 解释原因。
 - Select 的触发器在 `Open` 时保持 Focus/品牌边框；选项使用 `aria-selected`，多选筛选项使用 `aria-pressed` 或 `aria-checked`。
 - 可搜索 Select 输入变化后打开候选列表；`Esc`、点击外部、焦点离开整个控件或完成选择后按产品规则关闭。选项过多时列表内部滚动，不得撑开页面。
+- `InputNumber` 仅用于有明确数值含义、单位、范围或步长的字段；键盘输入、上下键、步进按钮使用同一 `min / max / step` 校验，禁止让三种方式得到不同结果。
+- 数值与单位不可分离；步进按钮不能是唯一输入方式。范围、精度、单位和非法输入提示应在字段附近说明；Loading、Error、Readonly、Disabled 沿用 Input 状态规则。
 
-### 13.3 Checkbox
+### 13.4 Radio、Switch 与 Checkbox
+
+- `Radio` 用于少量互斥选项；选项必须始终可见且可比较。当前值使用 `aria-checked`，键盘方向键在同组内移动；选项过多、需要搜索或分组时改用 Select。
+- `Switch` 用于开/关立即生效的独立设置；切换后如需要异步保存，应在控件附近反馈保存中、成功或失败，并在失败时恢复或明确保留原值，不能把 Switch 当作表单提交前的多项选择。
+- Radio 和 Switch 的标签是完整热区的一部分；Disabled 必须说明原因（需要时用外层 Tooltip），Checked 与 Focus 可同时可见。
 
 - Checked 使用品牌色底和品牌描边，勾选图标使用 `accent-contrast` 反白色；不得继承正文灰或状态色。
 - Disabled 使用 Disabled Token，可呈现灰色勾选图标；这只适用于不可操作状态，不能与正常 Checked 混用。
 - 复选框及标签作为一个可聚焦操作项；Focus Ring 覆盖完整控件，Checked + Focus 同时保留。
 
-### 13.4 Tabs 与 Menu
+### 13.5 Pagination
+
+- Pagination 用于可分页的结果集合，默认单项尺寸 32px；当前页使用 Selected 语义，前后页不可用时 Disabled，不以 Hover 表达当前页。
+- 分页位于结果区底部或列表 Footer；切换页后保留筛选和排序，内容区回到结果起点，并通过可访问状态告知当前页。
+- 页码过多时收敛为首尾页、当前页邻近页与省略号；省略号不可点击。窄屏优先保留上一页、当前页、下一页和总数／跳页入口，不能挤压成不可读密度。
+
+### 13.6 Tabs 与 Menu
 
 - Tab 的当前项使用 `aria-selected="true"`，不是 `Active`；左右方向键在同组内移动，Enter/Space 激活。
 - Menu 的当前页面或当前命令使用 `aria-current` 或 `aria-selected`；展开父级使用 `aria-expanded`。
@@ -367,7 +460,7 @@ Error message（可选）
 
 ### 15.1 结构与内容
 
-- 表头 44px、数据行 52px；数字、金额和百分比右对齐，文本和状态按列语义对齐。
+- 表头 44px、数据行 60px；数字、金额和百分比右对齐，文本和状态按列语义对齐。
 - 长文本单行省略，并通过 Tooltip 或详情入口呈现完整值；操作列固定在右侧，主标识列可按需要固定在左侧。
 - 宽表使用表格容器内部横向滚动；页面主体不因表格产生横向滚动。窄屏可切换卡片列表，但必须保留关键字段和主要操作。
 - 行点击、复选框和行内按钮必须各自处理事件；行内操作不得意外切换行选中，除非业务明确要求。
@@ -402,6 +495,7 @@ Error message（可选）
 
 - 反馈颜色必须表达语义：Info 使用 `accent / accent-soft`，Success 使用 `success / success-soft`，Warning 使用 `warning / warning-soft`，Error 与危险操作使用 `danger / danger-soft`；不得把所有反馈统一做成深色或同一种颜色。
 - Toast/Notification 的状态图标使用对应语义色且不加装饰性圆形底框；背景使用对应 `*-soft` 状态面，描边使用同色低对比混合值。信息内容必须同时有图标、文字和可读状态。
+- Toast 用于 360px 内的短结果，默认可自动关闭；Notification 用于 420px 内需要保留、重试或下一步操作的消息。两者均支持 Info、Success、Warning、Danger：Info 为品牌弱背景，Success 为成功弱背景，Warning 为警示弱背景，Danger 为错误弱背景；不得使用深色统一背景、灰色状态图标或“!”字符代替系统状态图标。
 - 层级固定为 Dropdown 50、Drawer 60、Modal 70、Toast 80、Tooltip 90；弹窗内的 Select/Popover 使用 `modal-popover` 75，确保其位于所属弹窗之上但低于 Toast；业务代码不得新增任意 `z-index`。
 - Tooltip、Popover、Dropdown、Select Popup 必须在视口碰撞时翻转或收缩；最大高度内滚动。
 - 触控端 Tooltip 不得成为理解或操作的唯一入口；Drawer 和 Modal 在窄屏可采用近全屏样式。
@@ -418,18 +512,7 @@ Error message（可选）
 
 ### 18.1 发布与变更
 
-设计系统当前版本为 `1.1.7`，状态为 Active，适用 light / dark、desktop-web / pad-web。每次发布在本节追加：版本号、日期、负责人、变更类型、破坏性变更和迁移说明。
-
-| 版本 | 日期 | 状态 | 负责人 | 变更摘要 |
-| --- | --- | --- | --- | --- |
-| 1.1.7 | 2026-07-21 | Active | Design System Team | 发布 15 项完整组件契约：使用边界、参数、状态、Token、无障碍、响应式、示例与验收项。 |
-| 1.1.6 | 2026-07-21 | Active | Design System Team | 发布 Checkbox 选中态 Token：品牌色底、反白勾选、禁用态映射与验收规则。 |
-| 1.1.5 | 2026-07-21 | Active | Design System Team | 发布弹窗内 Select/Popover 的嵌套层级 Token，保证选项浮层不被弹窗遮挡。 |
-| 1.1.4 | 2026-07-21 | Active | Design System Team | 发布前端 Token JSON、主题映射入口与交付说明。 |
-| 1.1.3 | 2026-07-21 | Active | Design System Team | 发布动效 Token、八类动效场景、减弱动效与验收规则。 |
-| 1.1.2 | 2026-07-21 | Active | Design System Team | 补齐 11 类页面模板、13 类业务组合、14 种页面级状态及明确的响应式/溢出规则。 |
-| 1.1.1 | 2026-07-21 | Active | Design System Team | 补齐 Success / Readonly Token 与控件实现；Button Pressed、Tab 键盘切换和状态命名验收。 |
-| 1.1.0 | 2026-07-21 | Active | Design System Team | 新增 Pressed/Selected 状态模型、六类组件 Token、表单/Table/浮层规则及静态验收。 |
+设计系统当前版本为 `1.2.0`，状态为 Active，适用 light / dark、desktop-web / pad-web。完整发布历史只维护在仓库根目录的 `CHANGELOG.md`，本文件不重复保存版本表。
 
 - 新 Token、组件契约或废弃规则需要设计和前端共同评审。
 - 破坏性变更必须提供替代 Token/组件、迁移期限和视觉回归截图。
@@ -443,32 +526,24 @@ Error message（可选）
 npm run check
 ```
 
-该命令依次执行设计系统静态检查和生产构建。静态检查至少验证：
+在独立规范仓库中，该命令验证：目录完整、三个发布版本一致、JSON 可解析、核心 Token 完整、22 项组件契约字段完整、必需文档章节存在、适配器只引用已发布 Token。
 
-- 关键组件 Token 已发布；
-- 响应间距没有遗留 14px；
-- 基础层不混入第三方适配或业务树样式；
-- 业务组件不再使用 `data-active`、`data-state="active"` 这类歧义状态；
-- 业务源码不再暴露遗留实现前缀；
-- 已发布的 Success、Readonly、Pressed 状态 Token 均有实现入口；
-- 已接入模板的页面仍消费其声明的页面模板；固定操作和全局提示复用统一业务模式；
-- 除编辑器画布内部的局部图层外，页面不得保留数字 `z-index` 或自行使用 `position: fixed`；
-- 规范文件包含状态模型、表单、Table、浮层和版本管理章节。
+在原型工程根目录执行同名命令时，还会检查规范到组件实现的映射并执行生产构建。前端项目接入后，应建立自己的实现映射、视觉回归和构建检查，不能把规范仓库校验当作页面验收的替代品。
 
 人工视觉回归仍需覆盖 Light/Dark、desktop/pad、Default/Hover/Pressed/Focus/Selected/Checked/Open/Expanded/Disabled/Loading/Readonly/Error/Success/Empty、键盘操作与 `prefers-reduced-motion`。
 
 ### 18.3 前端交付物
 
-- `Guidelines.md`：规范与验收的唯一文字依据。
-- `design-tokens.json`：light / dark、共享、状态和组件 Token 的机器可读唯一来源。
-- `component-specs.json`：15 项基础组件的机器可读契约；包含用途与边界、参数、状态、关联 Token、无障碍、响应式、示例和验收项。
-- `ant-design-theme.ts`：前端主题映射入口，可直接复制到工程使用。
+- `docs/ui-guidelines.md`：规范与验收的唯一文字依据。
+- `tokens/design-tokens.json`：light / dark、共享、状态和组件 Token 的机器可读唯一来源。
+- `components/component-specs.json`：22 项基础组件的机器可读契约；包含用途与边界、参数、状态、关联 Token、无障碍、响应式、示例和验收项。
+- `adapters/ant-design-theme.ts`：Ant Design 主题映射示例，可复制到前端工程后按实际依赖调整。
 
-交付文件的使用边界和 Token 引用规则见 `design-tokens.md`。原型工程的样式文件仅用于维护原型，不作为前端项目的接入文件。
+交付文件的使用边界和 Token 引用规则见 `docs/token-integration.md`。原型工程的样式文件仅用于维护原型，不作为前端项目的接入文件。
 
 ### 18.4 组件交付契约
 
-`component-specs.json` 是组件规范的唯一机器可读来源；每个前端实现将其中的行为参数映射到团队已批准的基础组件，不能通过页面私有样式改写同一契约。
+`components/component-specs.json` 是组件规范的唯一机器可读来源；每个前端实现将其中的行为参数映射到团队已批准的基础组件，不能通过页面私有样式改写同一契约。
 
 | 类别 | 覆盖组件 |
 | --- | --- |

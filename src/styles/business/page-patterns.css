@@ -149,9 +149,13 @@
 .ds-global-notice[data-tone='warning'] .ds-global-notice__indicator { color: var(--ds-color-warning); }
 .ds-global-notice[data-tone='danger'] .ds-global-notice__indicator { color: var(--ds-color-danger); }
 .ds-global-notice__message { min-width: 0; flex: 1 1 auto; color: var(--ds-color-heading); font-size: var(--ds-font-size-14); font-weight: var(--ds-font-weight-medium); line-height: 20px; }
+.ds-global-notice__content { min-width: 0; flex: 1 1 auto; display: grid; gap: 2px; }
+.ds-global-notice__content strong { color: var(--ds-color-heading); font-size: var(--ds-font-size-14); font-weight: var(--ds-font-weight-semibold); line-height: 20px; }
+.ds-global-notice__content small { color: var(--ds-color-text); font-size: var(--ds-font-size-12); line-height: 18px; }
 .ds-global-notice__close { color: var(--ds-color-muted); }
 .ds-global-notice__close:hover { color: var(--ds-color-heading); }
 .ds-global-notice__close { flex: 0 0 auto; }
+.ds-global-notice__action { flex: 0 0 auto; }
 
 @media (max-width: 767px) {
   .ds-page-header { align-items: stretch; flex-direction: column; }
