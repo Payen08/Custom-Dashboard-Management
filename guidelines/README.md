@@ -1,7 +1,9 @@
 # 数字造机 UI 设计规范
 
-当前发布版本：**1.2.0**  
-状态：**Active**  
+当前发布版本：**1.5.0**
+
+状态：**Active**
+
 适用对象：产品、设计、前端、测试，以及接入平台的第三方组件团队。
 
 本目录是一份可独立上传到 GitLab 的设计规范仓库。前端接入只需要本目录中的发布文件，不需要复制原型工程的 `src/styles/*`、页面组件或业务代码。
@@ -74,7 +76,7 @@ npm run check
 ```bash
 git init
 git add .
-git commit -m "docs: publish design system v1.2.0"
+git commit -m "docs: publish design system v1.5.0"
 git branch -M main
 git remote add origin <your-gitlab-repository-url>
 git push -u origin main

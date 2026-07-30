@@ -1,18 +1,31 @@
 import tokens from '../tokens/design-tokens.json';
 
 export type ProductThemeMode = 'light' | 'dark';
+export type ProductStylePreset = 'current' | 'industrial';
+export type ProductIndustrialColorTheme = 'steel' | 'cobalt' | 'graphite';
 
 /**
  * Copy this file and tokens/design-tokens.json into the frontend project, then pass
- * createProductTheme(mode) to the application theme provider.
+ * createProductTheme(mode, preset, industrialColorTheme) to the application theme provider.
  *
  * The JSON file remains the source of truth. Do not add page-specific values
  * to this mapping; publish a token first.
  */
-export function createProductTheme(mode: ProductThemeMode) {
+export function createProductTheme(
+  mode: ProductThemeMode,
+  preset: ProductStylePreset = 'current',
+  industrialColorTheme: ProductIndustrialColorTheme = 'steel',
+) {
+  const industrial = preset === 'industrial';
   const theme = tokens.theme[mode];
-  const { color, shadow } = theme;
-  const { typography, control, radius, motion } = tokens.shared;
+  const industrialPreset = tokens.stylePresets.industrial;
+  const presetTheme = industrialColorTheme === 'steel'
+    ? industrialPreset.theme[mode]
+    : industrialPreset.colorThemes[industrialColorTheme].theme[mode];
+  const color = industrial ? presetTheme.color : theme.color;
+  const shadow = industrial ? industrialPreset.theme[mode].shadow : theme.shadow;
+  const { typography, control, motion } = tokens.shared;
+  const radius = industrial ? tokens.stylePresets.industrial.radius : tokens.shared.radius;
 
   return {
     token: {

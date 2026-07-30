@@ -663,7 +663,7 @@ function ComponentStylePreview({ componentName }: { componentName: string }) {
   if (componentName === 'Table') return <TableStylePreview />;
   if (componentName === 'Pagination') return <nav className="ds-guidelines__component-pagination" aria-label="结果分页"><button type="button" disabled>‹</button><button type="button">1</button><button type="button" aria-current="page">2</button><button type="button">3</button><span>…</span><button type="button">12</button><button type="button">›</button><small>共 240 条</small></nav>;
   if (componentName === 'Modal') return <ModalStylePreview />;
-  if (componentName === 'Drawer') return <p className="ds-guidelines__component-unpublished">当前系统尚未发布可复用的 Drawer 运行时样式；在正式发布前，不得在业务页面自行搭建抽屉外观。连续配置请使用已发布的 Modal 或页面内侧栏。</p>;
+  if (componentName === 'Drawer') return <div className="ds-guidelines__component-drawer"><div><strong>组件类型</strong><span>查看字段、枚举取值与级联配置</span></div><section><small>类型字段</small><p>组件类型</p><p>子类型</p><p>规格</p></section><footer><ProductButton size="small">关闭</ProductButton></footer></div>;
   if (componentName === 'Tooltip / Popover') return <div className="ds-guidelines__component-popover"><ProductIconButton icon={<ClipboardCopy size={16} />} aria-label="复制链接" /><div><strong>复制链接</strong><span>复制当前型号的访问地址</span></div></div>;
   if (componentName === 'Toast / Notification') return <ToastNotificationPreview />;
   return <div className="ds-guidelines__component-empty"><div aria-hidden="true">—</div><strong>暂无数据</strong><span>可调整筛选条件或创建第一条数据。</span><ProductButton size="small" type="primary">新建</ProductButton></div>;

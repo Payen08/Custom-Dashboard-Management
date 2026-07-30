@@ -73,7 +73,7 @@ export function ComponentLibrary({ onExit, title = '组件库', showBack = true,
   function toggle(id: string) { setExpanded(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); }
 
   return (
-    <div style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', margin: editorLayout ? 0 : '16px 0 16px 12px', background: 'var(--app-surface)', borderRadius: 'var(--app-card-radius)', border: '1px solid var(--app-border)', boxShadow: editorLayout ? '0 16px 40px -34px var(--app-shadow-color)' : 'none', overflow: 'hidden' }}>
+    <div className={editorLayout ? 'ds-editor-library' : undefined} style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', margin: editorLayout ? 0 : '16px 0 16px 12px', background: 'var(--app-surface)', borderRadius: 'var(--app-card-radius)', border: '1px solid var(--app-border)', boxShadow: editorLayout ? '0 16px 40px -34px var(--app-shadow-color)' : 'none', overflow: 'hidden' }}>
       <div style={{ padding: editorLayout ? '22px 16px 16px' : '16px 18px 14px', borderBottom: '1px solid var(--app-border)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           {showBack && <ArcoIconButton onClick={onExit} aria-label="返回" title="返回" type="text" size="small" icon={<ArrowLeft size={16} />} />}

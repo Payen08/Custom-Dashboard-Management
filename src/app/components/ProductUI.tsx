@@ -8,6 +8,7 @@
 export {
   ArcoButton as ProductButton,
   ArcoCheckbox as ProductCheckbox,
+  ArcoDrawer as ProductDrawer,
   ArcoIconButton as ProductIconButton,
   ArcoIconToggleButton as ProductIconToggleButton,
   ArcoModal as ProductModal,
@@ -25,6 +26,7 @@ export {
 export {
   ArcoButton,
   ArcoCheckbox,
+  ArcoDrawer,
   ArcoIconButton,
   ArcoIconToggleButton,
   ArcoModal,

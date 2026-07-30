@@ -120,7 +120,8 @@ export function PanelList({
                   onSelectScheme(scheme.id);
                 }
               }}
-              className="group relative cursor-pointer"
+              className="ds-homepage-scheme-card group relative cursor-pointer"
+              data-selected={active}
               style={{
                 minHeight: 114,
                 padding: '18px 16px',

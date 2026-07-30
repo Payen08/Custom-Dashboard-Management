@@ -274,6 +274,72 @@ export function ArcoModal({
   );
 }
 
+interface ArcoDrawerProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: ReactNode;
+  description?: ReactNode;
+  children?: ReactNode;
+  footer?: ReactNode;
+  scope?: ArcoScope;
+  width?: number | string;
+  closeable?: boolean;
+}
+
+/**
+ * Product drawer for contextual details and continuous configuration.
+ * Header and footer remain fixed; only the body scrolls.
+ */
+export function ArcoDrawer({
+  open,
+  onOpenChange,
+  title,
+  description,
+  children,
+  footer,
+  scope = 'app',
+  width = 'var(--ds-drawer-width, 420px)',
+  closeable = true,
+}: ArcoDrawerProps) {
+  const overlayState = useOverlayState({ isOpen: open, onOpenChange });
+
+  return (
+    <ModalRoot state={overlayState}>
+      <ModalBackdrop className="arcoui-drawer-overlay" style={scopeVars(scope)}>
+        <ModalContainer className="arcoui-drawer-container">
+          <ModalDialog
+            className="arcoui-drawer"
+            data-scope={scope}
+            style={{ ...scopeVars(scope), width }}
+          >
+            <div className="arcoui-drawer-header">
+              <div className="arcoui-modal-title-area">
+                <ModalHeading className="arcoui-modal-title">{title}</ModalHeading>
+                <p className={description ? 'arcoui-modal-description' : 'arcoui-visually-hidden'}>
+                  {description ?? '抽屉内容'}
+                </p>
+              </div>
+              {closeable && (
+                <ArcoIconButton
+                  scope={scope}
+                  type="text"
+                  size="small"
+                  icon={<X size={15} />}
+                  aria-label="关闭"
+                  title="关闭"
+                  onClick={() => overlayState.close()}
+                />
+              )}
+            </div>
+            <div className="arcoui-drawer-body">{children}</div>
+            {footer && <div className="arcoui-drawer-footer">{footer}</div>}
+          </ModalDialog>
+        </ModalContainer>
+      </ModalBackdrop>
+    </ModalRoot>
+  );
+}
+
 interface FieldProps {
   label?: ReactNode;
   children: ReactNode;

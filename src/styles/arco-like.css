@@ -389,6 +389,92 @@
   flex-shrink: 0;
 }
 
+.arcoui-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ds-z-drawer, 60);
+  background: var(--arcoui-overlay);
+  animation: arcoui-drawer-overlay-in var(--ds-motion-duration-mid, 180ms) var(--ds-motion-ease-out, ease-out);
+}
+
+.arcoui-drawer-container {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--ds-z-drawer, 60) + 1);
+  pointer-events: none;
+}
+
+.arcoui-drawer {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  max-width: calc(100vw - var(--ds-space-6, 24px));
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--arcoui-border);
+  border-radius: var(--ds-radius-card, 16px) 0 0 var(--ds-radius-card, 16px);
+  background: var(--arcoui-surface);
+  color: var(--arcoui-text);
+  box-shadow: var(--arcoui-shadow);
+  outline: none;
+  overflow: hidden;
+  pointer-events: auto;
+  animation: arcoui-drawer-in var(--ds-motion-duration-slow, 240ms) var(--ds-motion-ease-out, ease-out);
+}
+
+.arcoui-drawer-header {
+  min-height: 76px;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-3, 12px);
+  padding: var(--ds-space-5, 20px) var(--ds-space-6, 24px);
+  border-bottom: 1px solid var(--arcoui-border);
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+
+.arcoui-drawer-body {
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: var(--ds-space-5, 20px) var(--ds-space-6, 24px);
+  overflow: auto;
+}
+
+.arcoui-drawer-footer {
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ds-space-2, 8px);
+  padding: var(--ds-space-3, 12px) var(--ds-space-6, 24px);
+  border-top: 1px solid var(--arcoui-border);
+  background: var(--arcoui-surface);
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 767px) {
+  .arcoui-drawer {
+    width: calc(100vw - var(--ds-space-4, 16px)) !important;
+    max-width: none;
+  }
+}
+
+@keyframes arcoui-drawer-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes arcoui-drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcoui-drawer-overlay,
+  .arcoui-drawer { animation: none; }
+}
+
 .arcoui-modal-footer .arcoui-button {
   min-width: 88px;
   height: 40px;

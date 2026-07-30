@@ -21,9 +21,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { ROBOT_THEME_VARS, type ThemeMode } from '../theme';
+import { getRobotThemeVars, type IndustrialColorTheme, type StylePreset, type ThemeMode } from '../theme';
 import { INITIAL_SCHEMES, type HomepageScheme } from '../shared';
 import type { SoftwareProduct } from '../softwareProducts';
+import {
+  getAllowedDictionaryValues,
+  getEnabledDictionaryCategory,
+  type DictionaryCategory,
+} from '../dictionaryData';
 import { CategoryTree, buildInitialData as buildProductVersionData, type ProductCategory } from './ProductVersionManager';
 
 type PublishStatus = 'published' | 'draft';
@@ -150,6 +155,7 @@ interface RobotModel {
   softwareSelectionIds: string[];
   softwarePackages: Record<SoftwarePackageSlot, SoftwarePackageConfig>;
   homepageSchemeId?: string;
+  dictionarySelections?: Record<string, string>;
 }
 
 interface RobotDraft {
@@ -163,9 +169,19 @@ interface RobotDraft {
   componentCount: number;
   peripheralsText: string;
   homepageSchemeId?: string;
+  dictionarySelections: Record<string, string>;
 }
 
 const ROBOT_TYPES = ['复合机器人', '人形双足机器人', 'AGV搬运机器人', '巡检机器人'];
+
+function defaultDictionarySelections(category?: DictionaryCategory): Record<string, string> {
+  if (!category) return {};
+  return category.fields.reduce<Record<string, string>>((selections, field) => {
+    const first = getAllowedDictionaryValues(category, field.id, selections)[0];
+    if (first) selections[field.id] = first.id;
+    return selections;
+  }, {});
+}
 
 const STATUS_META: Record<PublishStatus, { label: string; color: string; bg: string; border: string }> = {
   published: { label: '已发布', color: 'var(--robot-success)', bg: 'var(--robot-success-soft)', border: 'var(--robot-success-border)' },
@@ -253,8 +269,12 @@ function initialThemeMode(): ThemeMode {
   return stored === 'dark' ? 'dark' : 'light';
 }
 
-function robotThemeVars(mode: ThemeMode): React.CSSProperties {
-  return ROBOT_THEME_VARS[mode] as React.CSSProperties;
+function robotThemeVars(
+  mode: ThemeMode,
+  preset: StylePreset,
+  industrialColorTheme: IndustrialColorTheme,
+): React.CSSProperties {
+  return getRobotThemeVars(mode, preset, industrialColorTheme) as React.CSSProperties;
 }
 
 function RobotButton({
@@ -2596,9 +2616,15 @@ function SoftwareVersionDialog({
 
 export function RobotModelManager({
   themeMode: controlledThemeMode,
+  stylePreset = 'current',
+  industrialColorTheme = 'steel',
+  dictionaryCategories = [],
 }: {
   themeMode?: ThemeMode;
+  stylePreset?: StylePreset;
+  industrialColorTheme?: IndustrialColorTheme;
   softwareProducts?: SoftwareProduct[];
+  dictionaryCategories?: DictionaryCategory[];
 } = {}) {
   const [models, setModels] = useState<RobotModel[]>(INITIAL_ROBOT_MODELS);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -2633,6 +2659,10 @@ export function RobotModelManager({
   const [componentPickerSelection, setComponentPickerSelection] = useState<Set<string>>(new Set());
 
   const themeMode = controlledThemeMode ?? internalThemeMode;
+  const modelDictionary = useMemo(
+    () => getEnabledDictionaryCategory(dictionaryCategories, 'model_template'),
+    [dictionaryCategories],
+  );
   const softwareCatalog = useMemo(() => buildSoftwareVersionCatalog(), []);
   const activeModel = activeId ? (models.find(model => model.id === activeId) ?? null) : null;
   const modelReadOnly = activeModel?.status === 'published';
@@ -2663,12 +2693,12 @@ export function RobotModelManager({
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    Object.entries(ROBOT_THEME_VARS[themeMode]).forEach(([key, value]) => {
+    Object.entries(getRobotThemeVars(themeMode, stylePreset, industrialColorTheme)).forEach(([key, value]) => {
       document.documentElement.style.setProperty(key, value);
     });
     document.documentElement.dataset.robotTheme = themeMode;
     window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
-  }, [themeMode]);
+  }, [industrialColorTheme, themeMode, stylePreset]);
 
   useEffect(() => () => {
     if (publishLockTimerRef.current !== null) window.clearTimeout(publishLockTimerRef.current);
@@ -2741,8 +2771,8 @@ export function RobotModelManager({
     return (
       <>
         {publishLockToast}
-        <div style={{
-          ...robotThemeVars(themeMode),
+        <div className="robot-manager-page robot-manager-page--list" style={{
+          ...robotThemeVars(themeMode, stylePreset, industrialColorTheme),
           flex: 1,
           minWidth: 0,
           height: '100%',
@@ -2756,7 +2786,7 @@ export function RobotModelManager({
           transition: 'background-color var(--ds-motion-duration-slow) var(--ds-motion-ease-in-out), color var(--ds-motion-duration-slow) var(--ds-motion-ease-in-out)',
         }}>
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--robot-section-gap)', flexShrink: 0, gap: 'var(--robot-section-gap)' }}>
+          <div className="robot-manager-page__header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--robot-section-gap)', flexShrink: 0, gap: 'var(--robot-section-gap)' }}>
             <div style={{ minWidth: 0 }}>
               <h1 style={{ color: 'var(--robot-heading)', fontSize: 20, fontWeight: 600, margin: 0 }}>型号库</h1>
               <p style={{ color: 'var(--robot-muted)', fontSize: 14, margin: '4px 0 0' }}>
@@ -3162,9 +3192,12 @@ export function RobotModelManager({
   })();
 
   function openCreateDialog() {
+    const dictionarySelections = defaultDictionarySelections(modelDictionary);
+    const robotTypeField = modelDictionary?.fields.find(field => field.key === 'robot_type');
+    const robotTypeValue = robotTypeField?.values.find(item => item.id === dictionarySelections[robotTypeField.id]);
     setDraft({
       name: '新建机器人型号',
-      type: '复合机器人',
+      type: robotTypeValue?.name ?? ROBOT_TYPES[0],
       description: '',
       homepageSchemeId: undefined,
       ownerAccount: 'robot-admin',
@@ -3172,12 +3205,15 @@ export function RobotModelManager({
       version: 'R1.0',
       componentCount: 8,
       peripheralsText: '视觉相机\n激光雷达',
+      dictionarySelections,
     });
     setModelDialogOpen(true);
   }
 
   function openEditDialog() {
     if (modelReadOnly) return;
+    const robotTypeField = modelDictionary?.fields.find(field => field.key === 'robot_type');
+    const matchingRobotType = robotTypeField?.values.find(item => item.name === activeModel.type);
     setDraft({
       id: activeModel.id,
       name: activeModel.name,
@@ -3189,6 +3225,10 @@ export function RobotModelManager({
       version: activeModel.version,
       componentCount: activeModel.componentCount,
       peripheralsText: activeModel.peripherals.join('\n'),
+      dictionarySelections: activeModel.dictionarySelections ?? {
+        ...defaultDictionarySelections(modelDictionary),
+        ...(robotTypeField && matchingRobotType ? { [robotTypeField.id]: matchingRobotType.id } : {}),
+      },
     });
     setModelDialogOpen(true);
   }
@@ -3212,6 +3252,7 @@ export function RobotModelManager({
       softwareSelectionIds: nextSoftwareSelectionIds,
       softwarePackages: draft.id ? activeModel.softwarePackages : packagesFromSoftwareSelections(nextSoftwareSelectionIds, defaultSoftwarePackages(draft.type), softwareCatalog),
       homepageSchemeId: draft.homepageSchemeId,
+      dictionarySelections: draft.dictionarySelections,
     };
 
     setModels(prev => {
@@ -3277,8 +3318,8 @@ export function RobotModelManager({
   }
 
   return (
-    <div style={{
-      ...robotThemeVars(themeMode),
+    <div className="robot-manager-page robot-manager-page--detail" style={{
+      ...robotThemeVars(themeMode, stylePreset, industrialColorTheme),
       flex: 1,
       minWidth: 0,
       height: '100%',
@@ -3868,11 +3909,39 @@ export function RobotModelManager({
                   <ArcoTextArea scope="robot" value={draft.description} onChange={event => setDraft({ ...draft, description: event.target.value })} placeholder="简要描述该型号的用途、场景与特点…" />
                 </ArcoField>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <ArcoField label="类型">
-                    <ArcoSelect scope="robot" value={draft.type} onChange={event => setDraft({ ...draft, type: event.target.value })}>
-                      {ROBOT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-                    </ArcoSelect>
-                  </ArcoField>
+                  {(modelDictionary?.fields.length ? modelDictionary.fields : []).map(field => {
+                    const allowedValues = getAllowedDictionaryValues(modelDictionary!, field.id, draft.dictionarySelections);
+                    return (
+                      <ArcoField key={field.id} label={field.name}>
+                        <ArcoSelect
+                          scope="robot"
+                          value={draft.dictionarySelections[field.id] ?? ''}
+                          onChange={event => {
+                            const nextSelections = { ...draft.dictionarySelections, [field.id]: event.target.value };
+                            modelDictionary!.fields
+                              .filter(nextField => nextField.seq > field.seq)
+                              .forEach(nextField => { delete nextSelections[nextField.id]; });
+                            const nextValue = field.values.find(item => item.id === event.target.value);
+                            setDraft({
+                              ...draft,
+                              dictionarySelections: nextSelections,
+                              type: field.key === 'robot_type' ? (nextValue?.name ?? draft.type) : draft.type,
+                            });
+                          }}
+                        >
+                          <option value="">请选择{field.name}</option>
+                          {allowedValues.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                        </ArcoSelect>
+                      </ArcoField>
+                    );
+                  })}
+                  {!modelDictionary?.fields.length && (
+                    <ArcoField label="类型">
+                      <ArcoSelect scope="robot" value={draft.type} onChange={event => setDraft({ ...draft, type: event.target.value })}>
+                        {ROBOT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                      </ArcoSelect>
+                    </ArcoField>
+                  )}
                   <ArcoField label="发布状态">
                     <ArcoSelect scope="robot" value={draft.status} onChange={event => setDraft({ ...draft, status: event.target.value as PublishStatus })}>
                       <option value="draft">未发布</option>
@@ -4067,7 +4136,17 @@ function ComponentChassisScene() {
   );
 }
 
-export function RobotComponentLibrary({ themeMode }: { themeMode?: ThemeMode }) {
+export function RobotComponentLibrary({
+  themeMode,
+  stylePreset = 'current',
+  industrialColorTheme = 'steel',
+  dictionaryCategories = [],
+}: {
+  themeMode?: ThemeMode;
+  stylePreset?: StylePreset;
+  industrialColorTheme?: IndustrialColorTheme;
+  dictionaryCategories?: DictionaryCategory[];
+}) {
   const activeTheme = themeMode ?? initialThemeMode();
   const [topology, setTopology] = useState<TopologyNode[]>(() => mcrTopology());
   const [selectedId, setSelectedId] = useState('base_link');
@@ -4085,14 +4164,34 @@ export function RobotComponentLibrary({ themeMode }: { themeMode?: ThemeMode }) 
   const [pendingUrdfFileName, setPendingUrdfFileName] = useState('');
   const [urdfImportError, setUrdfImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const componentDictionary = useMemo(
+    () => getEnabledDictionaryCategory(dictionaryCategories, 'component_library'),
+    [dictionaryCategories],
+  );
+  const [componentDictionarySelections, setComponentDictionarySelections] = useState<Record<string, string>>(
+    () => defaultDictionarySelections(componentDictionary),
+  );
+
+  useEffect(() => {
+    setComponentDictionarySelections(current => {
+      if (!componentDictionary) return {};
+      return componentDictionary.fields.reduce<Record<string, string>>((next, field) => {
+        const allowed = getAllowedDictionaryValues(componentDictionary, field.id, next);
+        const retained = allowed.find(item => item.id === current[field.id]);
+        const selected = retained ?? allowed[0];
+        if (selected) next[field.id] = selected.id;
+        return next;
+      }, {});
+    });
+  }, [componentDictionary]);
 
   // UI-kit modals render in a portal, so the robot tokens must also be available on the document root.
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    Object.entries(ROBOT_THEME_VARS[activeTheme]).forEach(([key, value]) => {
+    Object.entries(getRobotThemeVars(activeTheme, stylePreset, industrialColorTheme)).forEach(([key, value]) => {
       document.documentElement.style.setProperty(key, value);
     });
-  }, [activeTheme]);
+  }, [activeTheme, industrialColorTheme, stylePreset]);
 
   const selectedNode = useMemo(
     () => findTopologyNode(topology, selectedId) ?? topology[0] ?? null,
@@ -4182,7 +4281,7 @@ export function RobotComponentLibrary({ themeMode }: { themeMode?: ThemeMode }) 
   }
 
   return (
-    <div style={{ ...robotThemeVars(activeTheme), flex: 1, minWidth: 0, height: '100%', padding: 'var(--robot-page-padding)', display: 'flex', flexDirection: 'column', background: 'var(--robot-page)', color: 'var(--robot-text)', boxSizing: 'border-box', overflow: 'hidden' }}>
+    <div className="robot-component-page" style={{ ...robotThemeVars(activeTheme, stylePreset, industrialColorTheme), flex: 1, minWidth: 0, height: '100%', padding: 'var(--robot-page-padding)', display: 'flex', flexDirection: 'column', background: 'var(--robot-page)', color: 'var(--robot-text)', boxSizing: 'border-box', overflow: 'hidden' }}>
       <style>{`
         .component-library-grid { display: grid; grid-template-columns: 320px minmax(560px, 1fr) 330px; gap: var(--robot-section-gap); min-height: 0; flex: 1; overflow: hidden; }
         .component-library-card { min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--robot-border); border-radius: var(--robot-card-radius); background: var(--robot-surface); box-shadow: var(--robot-shadow-soft); }
@@ -4243,9 +4342,30 @@ export function RobotComponentLibrary({ themeMode }: { themeMode?: ThemeMode }) 
             <div style={{ padding: 12, borderRadius: 'var(--robot-inner-radius)', background: 'var(--robot-accent-soft)', color: 'var(--robot-accent-text)', fontSize: 14, fontWeight: 600 }}>仙工底盘</div>
             <label>名称<strong>仙工底盘</strong></label>
             <label>标识<strong>xiangong-base</strong></label>
-            <label>类型<strong>底盘</strong></label>
             <label>描述<strong>-</strong></label>
-            <label>子类型<strong>仙工</strong></label>
+            {componentDictionary?.fields.map(field => {
+              const allowedValues = getAllowedDictionaryValues(componentDictionary, field.id, componentDictionarySelections);
+              return (
+                <label key={field.id}>
+                  {field.name}
+                  <ArcoSelect
+                    scope="robot"
+                    value={componentDictionarySelections[field.id] ?? ''}
+                    onChange={event => {
+                      const nextSelections = { ...componentDictionarySelections, [field.id]: event.target.value };
+                      componentDictionary.fields
+                        .filter(nextField => nextField.seq > field.seq)
+                        .forEach(nextField => { delete nextSelections[nextField.id]; });
+                      setComponentDictionarySelections(nextSelections);
+                    }}
+                    aria-label={field.name}
+                  >
+                    <option value="">请选择{field.name}</option>
+                    {allowedValues.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                  </ArcoSelect>
+                </label>
+              );
+            })}
           </div>
         </section>
 

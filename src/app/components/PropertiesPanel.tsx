@@ -179,7 +179,7 @@ export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, showTitl
   }
 
   return (
-    <div style={{
+    <div className={embedded ? 'ds-editor-properties' : undefined} style={{
       width: embedded ? 'clamp(288px, 20vw, 320px)' : 280, flexShrink: 0,
       display: 'flex', flexDirection: 'column',
       margin: embedded ? '16px 16px 16px 0' : '16px 12px 16px 0',

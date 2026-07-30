@@ -94,9 +94,25 @@ expect(/--ds-state-success-(?:bg|border|text)/.test(sourceContent), 'At least on
   expect(guidelines.includes(heading), `Guidelines is missing motion coverage: ${heading}`);
 });
 
-expect(handoffTokens.version === '1.2.0', 'Token handoff version must match the published token contract.');
+expect(handoffTokens.version === '1.5.0', 'Token handoff version must match the published token contract.');
 expect(handoffTokens.theme?.light?.color?.brand === '#241F7D', 'Token handoff is missing the light brand token.');
 expect(handoffTokens.theme?.dark?.color?.brand === '#4F46E5', 'Token handoff is missing the dark brand token.');
+expect(handoffTokens.stylePresets?.current?.status === 'stable', 'Token handoff is missing the stable Current style preset.');
+expect(JSON.stringify(handoffTokens.stylePresets?.industrial?.supportedThemes) === JSON.stringify(['light', 'dark']), 'Industrial style preset must support Light and Dark.');
+expect(handoffTokens.stylePresets?.industrial?.theme?.light?.color?.brand === '#255D76', 'Industrial Light is missing the published steel-blue interface color.');
+expect(handoffTokens.stylePresets?.industrial?.theme?.dark?.color?.brand === '#317895', 'Industrial Dark is missing the published steel-blue interface color.');
+expect(handoffTokens.stylePresets?.industrial?.theme?.light?.color?.signal === '#E56A17', 'Industrial Light is missing the published orange signal color.');
+expect(handoffTokens.stylePresets?.industrial?.defaultColorTheme === 'steel', 'Industrial style must default to the steel color theme.');
+expect(Object.keys(handoffTokens.stylePresets?.industrial?.colorThemes ?? {}).length === 3, 'Industrial style must publish steel, cobalt, and graphite color themes.');
+expect(handoffTokens.stylePresets?.industrial?.colorThemes?.cobalt?.theme?.light?.color?.brand === '#241F7D', 'Industrial brand-purple theme must use #241F7D.');
+expect(handoffTokens.stylePresets?.industrial?.theme?.light?.color?.page === '#F0F0F0', 'Industrial Light default page background must be #F0F0F0.');
+expect(handoffTokens.stylePresets?.industrial?.theme?.light?.color?.border === '#D9E0E4', 'Industrial Light default border must be #D9E0E4.');
+expect(handoffTokens.stylePresets?.industrial?.theme?.light?.color?.borderStrong === '#C7D0D5', 'Industrial Light strong border must be #C7D0D5.');
+expect(handoffTokens.stylePresets?.industrial?.colorThemes?.cobalt?.theme?.light?.color?.page === '#F0F0F0', 'Industrial Light brand-purple page background must be #F0F0F0.');
+expect(handoffTokens.stylePresets?.industrial?.colorThemes?.graphite?.theme?.light?.color?.page === '#F0F0F0', 'Industrial Light graphite page background must be #F0F0F0.');
+expect(handoffTokens.stylePresets?.industrial?.layout?.pagePadding === 0, 'Industrial page padding must be zero.');
+expect(handoffTokens.stylePresets?.industrial?.layout?.moduleGap === 0, 'Industrial first-level module gap must be zero.');
+expect(handoffTokens.stylePresets?.industrial?.radius?.control === 4, 'Industrial style preset is missing the compact control radius.');
 expect(handoffTokens.components?.button?.height?.md === 40, 'Token handoff is missing the standard button height.');
 expect(handoffTokens.components?.button?.paddingInline?.md === 14, 'Token handoff is missing the published button padding matrix.');
 expect(handoffTokens.components?.button?.spinner?.size === 14, 'Token handoff is missing the button spinner specification.');

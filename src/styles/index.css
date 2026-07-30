@@ -6,3 +6,6 @@
 @import './business/taxonomy-tree.css';
 @import './business/page-patterns.css';
 @import './business/design-guidelines.css';
+@import './business/dictionary-config.css';
+@import './business/data-management.css';
+@import './style-presets.css';

@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0",
+  "version": "1.5.0",
   "name": "Product Design Tokens",
   "description": "Frontend handoff source of truth. Values are theme-aware; component tokens reference semantic tokens by path.",
   "theme": {
@@ -71,6 +71,181 @@
         "card": "0 18px 44px -32px rgba(0,0,0,0.52)",
         "overlay": "0 18px 48px -18px rgba(0,0,0,0.64), 0 4px 12px rgba(0,0,0,0.24)",
         "dialog": "0 24px 72px -24px rgba(0,0,0,0.72)"
+      }
+    }
+  },
+  "stylePresets": {
+    "current": {
+      "status": "stable",
+      "label": "Current",
+      "supportedThemes": ["light", "dark"],
+      "description": "默认产品风格。保持现有 light / dark 配色、圆角和密度，不受其他预设影响。"
+    },
+    "industrial": {
+      "status": "experimental",
+      "label": "Industrial",
+      "supportedThemes": ["light", "dark"],
+      "defaultColorTheme": "steel",
+      "description": "高密度工业控制与设备监控风格。钢灰蓝承担界面交互，工业橙仅作为设备与运行信号色。",
+      "theme": {
+        "light": {
+          "color": {
+            "page": "#F0F0F0",
+            "layout": "#F7F9FA",
+            "surface": "#FFFFFF",
+            "surfaceRaised": "#FFFFFF",
+            "soft": "#F5F7F9",
+            "border": "#D9E0E4",
+            "borderStrong": "#C7D0D5",
+            "heading": "#17252C",
+            "text": "#42545D",
+            "muted": "#788891",
+            "icon": "#53666F",
+            "brand": "#255D76",
+            "accent": "#1F5067",
+            "accentContrast": "#FFFFFF",
+            "accentSoft": "#E6F0F5",
+            "focus": "#39758F",
+            "signal": "#E56A17",
+            "info": "#356B9A",
+            "infoSoft": "#E5EEF6",
+            "success": "#267A43",
+            "successSoft": "#E5F3E9",
+            "warning": "#A96B00",
+            "warningSoft": "#FFF2D6",
+            "danger": "#B93A35",
+            "dangerSoft": "#F8E5E3",
+            "overlay": "rgba(29,36,40,0.42)"
+          },
+          "shadow": {
+            "xs": "0 1px 0 rgba(29,36,40,0.10)",
+            "card": "none",
+            "overlay": "0 12px 28px rgba(29,36,40,0.18)",
+            "dialog": "0 18px 44px rgba(29,36,40,0.24)"
+          }
+        },
+        "dark": {
+          "color": {
+            "page": "#09131A",
+            "layout": "#0D1921",
+            "surface": "#172730",
+            "surfaceRaised": "#20323C",
+            "soft": "#13222C",
+            "border": "#263C47",
+            "borderStrong": "#37515F",
+            "heading": "#F1F6F8",
+            "text": "#B8C7CE",
+            "muted": "#7E929C",
+            "icon": "#A8BBC4",
+            "brand": "#317895",
+            "accent": "#8CC3DA",
+            "accentContrast": "#FFFFFF",
+            "accentSoft": "#153443",
+            "focus": "#69A9C4",
+            "signal": "#D46A28",
+            "info": "#60A5FA",
+            "infoSoft": "#10253D",
+            "success": "#42C879",
+            "successSoft": "#102A1D",
+            "warning": "#E3B341",
+            "warningSoft": "#34270D",
+            "danger": "#FF6B6B",
+            "dangerSoft": "#321719",
+            "overlay": "rgba(0,0,0,0.72)"
+          },
+          "shadow": {
+            "xs": "0 1px 0 rgba(0,0,0,0.48)",
+            "card": "none",
+            "overlay": "0 12px 32px rgba(0,0,0,0.55)",
+            "dialog": "0 18px 48px rgba(0,0,0,0.68)"
+          }
+        }
+      },
+      "colorThemes": {
+        "steel": {
+          "label": "钢铁蓝",
+          "description": "默认工业主题。钢灰蓝承担界面交互，橙色用于设备与运行信号。",
+          "signal": { "light": "#E56A17", "dark": "#D46A28" },
+          "themeSource": "{stylePresets.industrial.theme}"
+        },
+        "cobalt": {
+          "label": "品牌紫",
+          "description": "沿用钢铁蓝工业主题的中性灰白界面，仅将主操作、选中与焦点强调色替换为产品品牌色 #241F7D，并保留橙色设备信号。",
+          "signal": { "light": "#E56A17", "dark": "#D46A28" },
+          "theme": {
+            "light": {
+              "color": {
+                "page": "#F0F0F0", "layout": "#F7F9FA", "surface": "#FFFFFF", "surfaceRaised": "#FFFFFF",
+                "soft": "#F5F7F9", "border": "#D9E0E4", "borderStrong": "#C7D0D5",
+                "heading": "#17252C", "text": "#42545D", "muted": "#788891", "icon": "#53666F",
+                "brand": "#241F7D", "accent": "#241F7D", "accentContrast": "#FFFFFF", "accentSoft": "#EEEDF7", "focus": "#4B4595",
+                "info": "#241F7D", "infoSoft": "#EEEDF7", "success": "#267A43", "successSoft": "#E5F3E9",
+                "warning": "#A96B00", "warningSoft": "#FFF2D6", "danger": "#B93A35", "dangerSoft": "#F8E5E3",
+                "signal": "#E56A17", "overlay": "rgba(9,19,26,0.42)"
+              }
+            },
+            "dark": {
+              "color": {
+                "page": "#09131A", "layout": "#0D1921", "surface": "#172730", "surfaceRaised": "#20323C",
+                "soft": "#13222C", "border": "#263C47", "borderStrong": "#37515F",
+                "heading": "#F1F6F8", "text": "#B8C7CE", "muted": "#7E929C", "icon": "#A8BBC4",
+                "brand": "#645CC7", "accent": "#C4C0FF", "accentContrast": "#FFFFFF", "accentSoft": "#27264A", "focus": "#918AED",
+                "info": "#918AED", "infoSoft": "#27264A", "success": "#42C879", "successSoft": "#102A1D",
+                "warning": "#E3B341", "warningSoft": "#34270D", "danger": "#FF6B6B", "dangerSoft": "#321719",
+                "signal": "#D46A28", "overlay": "rgba(0,0,0,0.72)"
+              }
+            }
+          }
+        },
+        "graphite": {
+          "label": "石墨灰",
+          "description": "低彩度机械工程主题，使用琥珀橙作为设备信号。",
+          "signal": { "light": "#D97706", "dark": "#E09A3E" },
+          "theme": {
+            "light": {
+              "color": {
+                "page": "#F0F0F0", "layout": "#F0F1F0", "surface": "#FFFFFF", "surfaceRaised": "#FFFFFF",
+                "soft": "#F4F5F4", "border": "#D7DBD9", "borderStrong": "#C3C9C6",
+                "heading": "#1B2023", "text": "#505A5F", "muted": "#7D868A", "icon": "#596267",
+                "brand": "#353A3D", "accent": "#30383C", "accentContrast": "#FFFFFF", "accentSoft": "#ECEFEE", "focus": "#5B666B",
+                "info": "#426D80", "infoSoft": "#E5EEF1", "success": "#267A43", "successSoft": "#E5F3E9",
+                "warning": "#A96B00", "warningSoft": "#FFF2D6", "danger": "#B93A35", "dangerSoft": "#F8E5E3",
+                "signal": "#D97706", "overlay": "rgba(27,32,35,0.42)"
+              }
+            },
+            "dark": {
+              "color": {
+                "page": "#0B0D0E", "layout": "#111416", "surface": "#1D2225", "surfaceRaised": "#292E31",
+                "soft": "#181C1E", "border": "#30363A", "borderStrong": "#454D51",
+                "heading": "#F1F3F4", "text": "#BAC1C5", "muted": "#80898E", "icon": "#A8B0B4",
+                "brand": "#626B70", "accent": "#C3CBCF", "accentContrast": "#111315", "accentSoft": "#252A2D", "focus": "#626B70",
+                "info": "#76A8BC", "infoSoft": "#182B33", "success": "#42C879", "successSoft": "#102A1D",
+                "warning": "#E3B341", "warningSoft": "#34270D", "danger": "#FF6B6B", "dangerSoft": "#321719",
+                "signal": "#E09A3E", "overlay": "rgba(0,0,0,0.72)"
+              }
+            }
+          }
+        }
+      },
+      "radius": {
+        "xs": 2,
+        "sm": 4,
+        "button": 4,
+        "control": 4,
+        "inner": 4,
+        "card": 6,
+        "overlay": 6,
+        "pill": 999
+      },
+      "layout": {
+        "pagePadding": 0,
+        "pagePaddingBlock": 0,
+        "gridGap": 12,
+        "moduleGap": 0
+      },
+      "control": {
+        "tableHeaderHeight": 40,
+        "tableRowHeight": 48
       }
     }
   },

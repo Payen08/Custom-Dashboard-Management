@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0",
+  "version": "1.5.0",
   "name": "Component Contracts",
   "description": "Framework-agnostic component contracts. Parameter names describe design behavior; each frontend implementation maps them to its approved component set.",
   "categories": [
@@ -127,9 +127,9 @@
       "states": ["Open", "Loading", "Error", "Warning", "Danger"], "tokens": ["--ds-modal-width-sm", "--ds-modal-max-height", "--ds-shadow-dialog", "--ds-z-modal"], "rules": ["Header/Footer 固定，只允许 Body 滚动。", "提示与警示使用品牌主操作，不因提醒文案使用黄色确认按钮。", "删除使用 danger 按钮，但弹窗壳保持中性描边。", "取消、Esc、遮罩、关闭按钮使用同一关闭逻辑。"], "a11y": ["焦点限制在弹窗内，关闭后返回触发元素。"], "responsive": "窄屏近全屏，最大尺寸为视口减 48px。", "example": "<Modal open variant=\"danger\" title=\"删除型号\" footer={actions} />", "acceptance": ["焦点恢复", "唯一主按钮", "未保存关闭确认", "警示与删除语义清晰"]
     },
     {
-      "name": "Drawer", "category": "feedback", "purpose": "预留给未来在不离开上下文时展示详情或连续配置的能力", "whenToUse": "当前未发布；连续配置使用页面内侧栏或已发布 Modal", "avoid": "在业务页面自行搭建抽屉外观", "sizes": ["未发布"],
-      "api": [{ "name": "open", "values": "boolean", "required": true, "description": "显示状态" }, { "name": "placement", "values": "start | end", "required": false, "description": "打开方向" }, { "name": "footer", "values": "optional actions", "required": false, "description": "连续任务提交" }],
-      "states": ["未发布"], "tokens": ["--ds-drawer-width", "--ds-z-drawer"], "rules": ["当前系统尚未发布 Drawer 运行时样式；在发布前不得在业务页面自行搭建。", "未来发布后只允许 Body 滚动，未保存关闭前必须确认。"], "a11y": ["未来发布时 Esc 与遮罩关闭必须遵循同一逻辑。"], "responsive": "当前不适用；未来窄屏需使用近全屏且保留逃生操作。", "example": "等待平台发布后提供", "acceptance": ["运行时样式发布后再启用", "发布前无业务自定义实现"]
+      "name": "Drawer", "category": "feedback", "purpose": "在不离开当前列表上下文时查看详情或完成连续配置", "whenToUse": "对象详情、字段配置、关联配置、低频筛选", "avoid": "短确认任务、整页主流程或在业务页面自行搭建抽屉外观", "sizes": ["420", "custom up to viewport - 48"],
+      "api": [{ "name": "open", "values": "boolean", "required": true, "description": "显示状态" }, { "name": "title", "values": "string", "required": true, "description": "当前对象或任务标题" }, { "name": "description", "values": "string", "required": false, "description": "上下文说明" }, { "name": "width", "values": "number | tokenized string", "required": false, "description": "抽屉宽度" }, { "name": "footer", "values": "optional actions", "required": false, "description": "连续任务提交或关闭操作" }],
+      "states": ["Open", "Loading", "Empty", "Error", "Disabled"], "tokens": ["--ds-drawer-width", "--ds-z-drawer", "--ds-color-overlay", "--ds-radius-card", "--ds-shadow-dialog"], "rules": ["Header/Footer 固定，只允许 Body 滚动。", "抽屉从右侧进入并保留当前页面上下文。", "取消、Esc、遮罩、关闭按钮使用同一关闭逻辑。", "未保存关闭前必须确认。"], "a11y": ["焦点限制在抽屉内，关闭后返回触发元素。", "标题必须作为 Dialog 可访问名称。"], "responsive": "窄屏使用视口宽度减 16px的近全屏形态，并始终保留关闭操作。", "example": "<ProductDrawer open title=\"组件类型\" width=\"760px\">...</ProductDrawer>", "acceptance": ["焦点恢复", "Header/Footer 固定", "Body 独立滚动", "窄屏可退出"]
     },
     {
       "name": "Tooltip / Popover", "category": "feedback", "purpose": "补充短说明或提供轻量内容", "whenToUse": "图标说明、预览、少量操作", "avoid": "唯一关键说明、长表单或高风险确认", "sizes": ["tooltip 280 max", "popover 240–420"],

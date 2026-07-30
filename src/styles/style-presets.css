@@ -1,0 +1,276 @@
+/*
+ * Optional product style presets.
+ *
+ * The current appearance remains the default. Industrial rules are scoped to
+ * data-style="industrial" so the preset can be enabled or removed at runtime.
+ */
+
+html[data-style='industrial'][data-theme='light'] {
+  color-scheme: light;
+}
+
+html[data-style='industrial'][data-theme='dark'] {
+  color-scheme: dark;
+}
+
+html[data-style='industrial'] body {
+  background:
+    linear-gradient(color-mix(in srgb, var(--ds-color-brand) 2.5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ds-color-brand) 2.5%, transparent) 1px, transparent 1px),
+    var(--ds-color-page);
+  background-size: 24px 24px;
+}
+
+html[data-style='industrial'] button,
+html[data-style='industrial'] input,
+html[data-style='industrial'] textarea,
+html[data-style='industrial'] select,
+html[data-style='industrial'] [role='button'],
+html[data-style='industrial'] [role='tab'] {
+  border-radius: var(--ds-radius-control) !important;
+}
+
+html[data-style='industrial'] [role='dialog'],
+html[data-style='industrial'] .ds-card,
+html[data-style='industrial'] .ds-panel,
+html[data-style='industrial'] .ds-page-header,
+html[data-style='industrial'] .ds-table-surface,
+html[data-style='industrial'] .workspace-product,
+html[data-style='industrial'] .workspace-machine-visual,
+html[data-style='industrial'] .arcoui-modal,
+html[data-style='industrial'] .arcoui-drawer,
+html[data-style='industrial'] .arcoui-popover,
+html[data-style='industrial'] .arcoui-tooltip,
+html[data-style='industrial'] .arcoui-dropdown,
+html[data-style='industrial'] .arcoui-table {
+  border-radius: var(--ds-radius-card) !important;
+}
+
+html[data-style='industrial'] .arcoui-button,
+html[data-style='industrial'] .arcoui-input,
+html[data-style='industrial'] .arcoui-select-trigger,
+html[data-style='industrial'] .arcoui-menu-item,
+html[data-style='industrial'] .arcoui-tab {
+  letter-spacing: 0.01em;
+}
+
+html[data-style='industrial'] .arcoui-button[data-type='default'] {
+  --arcoui-button-bg: var(--ds-button-default-bg);
+  --arcoui-button-color: var(--ds-button-default-text);
+  --arcoui-button-border: var(--ds-button-default-border);
+}
+
+html[data-style='industrial'] .arcoui-button[data-type='default']:not(:disabled):hover {
+  background: var(--ds-state-hover-bg);
+  border-color: var(--ds-button-default-border-hover);
+}
+
+html[data-style='industrial'] .arcoui-button[data-type='secondary'] {
+  --arcoui-button-border: var(--ds-button-secondary-border);
+}
+
+html[data-style='industrial'] .arcoui-button[data-status='danger']:not([data-type='primary']) {
+  --arcoui-button-bg: var(--ds-color-danger-soft);
+  --arcoui-button-color: var(--ds-color-danger);
+  --arcoui-button-border: color-mix(in srgb, var(--ds-color-danger) 24%, var(--ds-color-border));
+  background: var(--ds-color-danger-soft);
+  border-color: color-mix(in srgb, var(--ds-color-danger) 24%, var(--ds-color-border));
+  color: var(--ds-color-danger);
+}
+
+html[data-style='industrial'] .arcoui-button[data-status='danger']:not([data-type='primary']):not(:disabled):hover {
+  background: color-mix(in srgb, var(--ds-color-danger) 10%, var(--ds-color-surface));
+  border-color: color-mix(in srgb, var(--ds-color-danger) 42%, var(--ds-color-border));
+  color: var(--ds-color-danger);
+}
+
+html[data-style='industrial'] .arcoui-button[data-status='danger']:not([data-type='primary']):not(:disabled):active {
+  background: color-mix(in srgb, var(--ds-color-danger) 16%, var(--ds-color-surface));
+  border-color: color-mix(in srgb, var(--ds-color-danger) 58%, var(--ds-color-border));
+}
+
+html[data-style='industrial'] .arcoui-input {
+  border-color: var(--ds-input-border);
+  background: var(--ds-input-bg);
+}
+
+html[data-style='industrial'] .arcoui-input:hover {
+  border-color: var(--ds-input-border-hover);
+  background: var(--ds-input-bg);
+}
+
+html[data-style='industrial'] .arcoui-input:focus,
+html[data-style='industrial'] .arcoui-input:focus-visible {
+  border-color: var(--ds-input-border-focus);
+  background: var(--ds-input-bg);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ds-color-focus) 18%, transparent);
+}
+
+html[data-style='industrial'] .ds-card,
+html[data-style='industrial'] .ds-panel,
+html[data-style='industrial'] .workspace-product {
+  box-shadow: none !important;
+}
+
+html[data-style='industrial'] .ds-homepage-list,
+html[data-style='industrial'] .ds-homepage-preview__content,
+html[data-style='industrial'] .ds-homepage-preview__canvas,
+html[data-style='industrial'] .ds-table-surface {
+  border-color: var(--ds-color-border-strong);
+}
+
+/* Industrial workspaces use an edge-to-edge shell with dividers instead of gutters. */
+html[data-style='industrial'] .ds-page {
+  padding: 0;
+}
+
+html[data-style='industrial'] .ds-page--list,
+html[data-style='industrial'] .ds-page--split,
+html[data-style='industrial'] .ds-page--dashboard,
+html[data-style='industrial'] .ds-page--editor {
+  gap: 0;
+}
+
+html[data-style='industrial'] .ds-page--list {
+  gap: var(--ds-layout-grid-gap);
+}
+
+html[data-style='industrial'] .ds-page--list > .ds-page-header {
+  min-height: 72px;
+  padding: 12px 16px 0;
+  border-bottom: 0;
+  background: var(--ds-color-page);
+}
+
+html[data-style='industrial'] .ds-page--list > .ds-table-surface {
+  width: auto;
+  margin: 0 16px 16px;
+  border: 1px solid var(--ds-table-border);
+  border-radius: var(--ds-radius-card) !important;
+}
+
+html[data-style='industrial'] .ds-page--split:not(.ds-homepage-preview) > .ds-page__sidebar {
+  border: 0 !important;
+  border-right: 1px solid var(--ds-color-border-strong) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-style='industrial'] .ds-page--split:not(.ds-homepage-preview) > .ds-page__content {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-style='industrial'] .ds-homepage-preview {
+  padding: 0;
+  gap: 0;
+}
+
+html[data-style='industrial'] .ds-homepage-preview > .ds-homepage-list {
+  border: 0;
+  border-right: 1px solid color-mix(in srgb, var(--ds-color-border) 48%, transparent);
+  border-radius: 0 !important;
+}
+
+html[data-style='industrial'] .ds-homepage-scheme-card[data-selected='true'] {
+  border-width: 1px !important;
+  border-color: color-mix(in srgb, var(--ds-color-accent) 22%, var(--ds-color-border)) !important;
+}
+
+html[data-style='industrial'] .ds-homepage-preview > .ds-homepage-preview__content {
+  border: 0;
+  border-radius: 0 !important;
+}
+
+html[data-style='industrial'] .ds-homepage-editor__workspace {
+  padding: 0;
+  gap: 0 !important;
+}
+
+html[data-style='industrial'] .ds-editor-library,
+html[data-style='industrial'] .ds-editor-placeholder {
+  margin: 0 !important;
+  border: 0 !important;
+  border-right: 1px solid var(--ds-color-border-strong) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-style='industrial'] .ds-homepage-editor__canvas-shell {
+  border: 0;
+  border-radius: 0 !important;
+}
+
+html[data-style='industrial'] .ds-editor-properties {
+  margin: 0 !important;
+  border: 0 !important;
+  border-left: 1px solid var(--ds-color-border-strong) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-style='industrial'] .ds-guidelines {
+  padding: 0;
+}
+
+html[data-style='industrial'] .ds-guidelines__body {
+  gap: 0;
+}
+
+html[data-style='industrial'] .ds-guidelines__nav {
+  border: 0;
+  border-right: 1px solid var(--ds-color-border-strong);
+  border-radius: 0;
+}
+
+html[data-style='industrial'] .ds-guidelines__main-content {
+  padding: 12px 16px;
+}
+
+html[data-style='industrial'] .robot-manager-page--detail,
+html[data-style='industrial'] .robot-component-page {
+  padding: var(--ds-layout-grid-gap) !important;
+}
+
+html[data-style='industrial'] .component-library-grid,
+html[data-style='industrial'] .robot-detail-grid,
+html[data-style='industrial'] .component-library-left,
+html[data-style='industrial'] .component-library-right,
+html[data-style='industrial'] .robot-detail-left,
+html[data-style='industrial'] .robot-detail-right {
+  gap: var(--ds-layout-grid-gap) !important;
+}
+
+html[data-style='industrial'] .robot-manager-page--list > .robot-manager-page__header {
+  min-height: 72px;
+  margin-bottom: 0 !important;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ds-color-border-strong);
+  background: var(--robot-surface);
+}
+
+html[data-style='industrial'] .robot-manager-page--list > .model-library-scroll {
+  padding: 12px 16px 16px !important;
+}
+
+html[data-style='industrial'] .component-library-card,
+html[data-style='industrial'] .robot-detail-card,
+html[data-style='industrial'] .robot-topology-param-panel {
+  border-radius: var(--ds-radius-card) !important;
+  box-shadow: none !important;
+}
+
+html[data-style='industrial'] .component-library-meta strong {
+  border: 1px solid var(--robot-border);
+  background: var(--robot-surface);
+}
+
+html[data-style='industrial'] :focus-visible {
+  outline-color: var(--ds-color-focus);
+}
+
+html[data-style='industrial'] ::selection {
+  color: var(--ds-color-heading);
+  background: color-mix(in srgb, var(--ds-color-accent) 34%, transparent);
+}

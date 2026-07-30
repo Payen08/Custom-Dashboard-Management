@@ -146,11 +146,11 @@ function MapViewWidget() {
         <ellipse cx="50%" cy="68%" rx="8%" ry="2.5%" fill="var(--app-brand)" fillOpacity="0.5" stroke="var(--app-brand)" strokeWidth="0.5" />
 
         {/* Robot arm body */}
-        <rect x="47%" y="52%" width="6%" height="18%" rx="2" fill="var(--app-brand)" stroke="var(--app-accent)" strokeWidth="0.5" />
+        <rect x="47%" y="52%" width="6%" height="18%" rx="2" fill="var(--app-signal, var(--app-brand))" stroke="var(--app-signal, var(--app-accent))" strokeWidth="0.5" />
 
         {/* Robot arm upper */}
         <rect x="46%" y="36%" width="4%" height="18%" rx="2"
-          fill="var(--app-brand)" stroke="var(--app-accent)" strokeWidth="0.5"
+          fill="var(--app-signal, var(--app-brand))" stroke="var(--app-signal, var(--app-accent))" strokeWidth="0.5"
           style={{ transformOrigin: '48% 52%', transform: 'rotate(-15deg)' }}
         />
 
@@ -161,7 +161,7 @@ function MapViewWidget() {
         />
 
         {/* End effector / gripper */}
-        <circle cx="52%" cy="24%" r="2.5%" fill="var(--app-accent)" opacity="0.9" />
+        <circle cx="52%" cy="24%" r="2.5%" fill="var(--app-signal, var(--app-accent))" opacity="0.9" />
         <circle cx="52%" cy="24%" r="1.2%" fill="var(--app-accent-border)" />
 
         {/* Status glow rings */}

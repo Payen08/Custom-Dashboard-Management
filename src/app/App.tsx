@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import {
-  Activity, ArrowLeft, ArrowRight, Bell, BookOpen, Box, CheckCircle2, ChevronRight, ClipboardList, Clock3, Cpu, Download, Eye, FileKey2, FileText,
-  Home, LogOut, Moon, Package, PanelLeft, Pencil, RotateCcw, Save, Search, ShieldCheck, Sun, Trash2, User, Wand2,
+  Activity, ArrowLeft, ArrowRight, Bell, BookKey, BookOpen, Box, CheckCircle2, ChevronRight, ClipboardList, Clock3, Cpu, Database, Download, Eye, Factory, FileKey2, FileText,
+  Home, LogOut, Moon, Package, Palette, PanelLeft, Pencil, RotateCcw, Save, Search, ShieldCheck, Sun, Trash2, User, Wand2,
 } from 'lucide-react';
 import { PanelList } from './components/PanelList';
 import { ComponentLibrary } from './components/ComponentLibrary';
@@ -14,11 +14,20 @@ import { ProductVersionManager } from './components/ProductVersionManager';
 import { SoftwareManager } from './components/SoftwareManager';
 import { InstallationRecordsManager } from './components/InstallationRecordsManager';
 import { DesignGuidelines } from './components/DesignGuidelines';
+import { DictionaryConfigManager } from './components/DictionaryConfigManager';
+import {
+  activateDataManagementSection,
+  DATA_MANAGEMENT_SECTIONS,
+  DataManagementManager,
+  readDataManagementSection,
+  type DataManagementSection,
+} from './components/DataManagementManager';
 import { WorkspaceLogin as WorkspaceLoginScreen } from './components/WorkspaceLogin';
 import { INITIAL_SOFTWARE_PRODUCTS, type SoftwareProduct } from './softwareProducts';
+import { buildInitialDictionaryCategories, type DictionaryCategory } from './dictionaryData';
 import { useComponentCatalog } from './components/useComponentCatalog';
-import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTag } from './components/ProductUI';
-import { APP_THEME_VARS, type ThemeMode } from './theme';
+import { ArcoButton, ArcoIconButton, ArcoIconToggleButton, ArcoModal, ArcoTag } from './components/ProductUI';
+import { getAppThemeVars, type IndustrialColorTheme, type StylePreset, type ThemeMode } from './theme';
 import {
   type HomepageScheme, type PlacedItem,
   COMPONENT_PROPS, GRID_COLS, GRID_ROWS, CANVAS_W, CANVAS_H,
@@ -27,15 +36,40 @@ import {
 
 const FONT = "'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
 
-type EditorNavKey = 'home' | 'status' | 'components' | 'records' | 'alerts' | 'settings' | 'apps' | 'robotComponents' | 'products' | 'software' | 'installations' | 'guidelines';
+type EditorNavKey = 'home' | 'status' | 'components' | 'records' | 'alerts' | 'settings' | 'apps' | 'robotComponents' | 'products' | 'software' | 'installations' | 'dictionary' | 'dataManagement' | 'guidelines';
 type AppThemeMode = ThemeMode;
 type WorkspaceProduct = 'login' | 'workspace' | 'software' | 'authorization' | 'machine';
 
 const ROBOT_THEME_STORAGE_KEY = 'robot-manager-theme-mode';
+const STYLE_PRESET_STORAGE_KEY = 'digital-machine-style-preset';
+const INDUSTRIAL_COLOR_THEME_STORAGE_KEY = 'digital-machine-industrial-color-theme';
+const DICTIONARY_CONFIG_STORAGE_KEY = 'digital-machine-dictionary-config-v1';
 
 function initialRobotThemeMode(): AppThemeMode {
   if (typeof window === 'undefined') return 'light';
   return window.localStorage.getItem(ROBOT_THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light';
+}
+
+function initialStylePreset(): StylePreset {
+  if (typeof window === 'undefined') return 'current';
+  return window.localStorage.getItem(STYLE_PRESET_STORAGE_KEY) === 'industrial' ? 'industrial' : 'current';
+}
+
+function initialIndustrialColorTheme(): IndustrialColorTheme {
+  if (typeof window === 'undefined') return 'steel';
+  const stored = window.localStorage.getItem(INDUSTRIAL_COLOR_THEME_STORAGE_KEY);
+  return stored === 'cobalt' || stored === 'graphite' ? stored : 'steel';
+}
+
+function initialDictionaryCategories(): DictionaryCategory[] {
+  if (typeof window === 'undefined') return buildInitialDictionaryCategories();
+  try {
+    const stored = window.localStorage.getItem(DICTIONARY_CONFIG_STORAGE_KEY);
+    const parsed = stored ? JSON.parse(stored) : null;
+    return Array.isArray(parsed) && parsed.length ? parsed as DictionaryCategory[] : buildInitialDictionaryCategories();
+  } catch {
+    return buildInitialDictionaryCategories();
+  }
 }
 
 const WORKSPACE_PRODUCTS = [
@@ -723,6 +757,9 @@ const EDITOR_NAV_META: Record<EditorNavKey, { label: string; description: string
   robotComponents: { label: '组件库', description: '管理机器人 3D 组件、结构与参数配置' },
   products: { label: '版本管理', description: '产品包与版本迭代发布管理' },
   software: { label: '软件产品', description: '管理软件产品信息、标识码与授权' },
+  installations: { label: '装机记录', description: '追踪机器人软件出库与现场装机结果' },
+  dictionary: { label: '字典配置', description: '维护业务字段、枚举取值与级联依赖关系' },
+  dataManagement: { label: '数据管理', description: '管理字段字典、构型模板与参数定义' },
   guidelines: { label: '设计规范', description: '查看已发布 Token、组件状态与交付规范' },
 };
 
@@ -805,11 +842,20 @@ function EditorCanvasHeader({
 function GlobalTopBar({
   themeMode = 'light',
   onThemeToggle,
+  stylePreset = 'current',
+  onStyleToggle,
+  industrialColorTheme = 'steel',
+  onIndustrialColorThemeChange,
 }: {
   themeMode?: AppThemeMode;
   onThemeToggle?: () => void;
+  stylePreset?: StylePreset;
+  onStyleToggle?: () => void;
+  industrialColorTheme?: IndustrialColorTheme;
+  onIndustrialColorThemeChange?: (theme: IndustrialColorTheme) => void;
 }) {
   const isDark = themeMode === 'dark';
+  const isIndustrial = stylePreset === 'industrial';
   const barBg = 'var(--app-surface)';
   const barBorder = 'var(--app-border)';
   const textColor = 'var(--app-text)';
@@ -873,6 +919,51 @@ function GlobalTopBar({
             /
           </span>
         </label>
+        <ArcoIconToggleButton
+          selected={isIndustrial}
+          onClick={onStyleToggle}
+          icon={<Factory size={16} />}
+          aria-label={isIndustrial ? '恢复当前风格' : '切换为工业风格'}
+          title={isIndustrial ? '恢复当前风格' : '工业风格'}
+          size="small"
+        />
+        {isIndustrial && (
+          <label
+            title="工业主题色"
+            style={{
+              height: 32,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '0 8px',
+              border: '1px solid var(--app-border)',
+              borderRadius: 'var(--app-control-radius)',
+              background: 'var(--app-soft)',
+              color: 'var(--app-text)',
+            }}
+          >
+            <Palette size={14} aria-hidden="true" />
+            <select
+              aria-label="工业主题色"
+              value={industrialColorTheme}
+              onChange={event => onIndustrialColorThemeChange?.(event.target.value as IndustrialColorTheme)}
+              style={{
+                height: 30,
+                border: 0,
+                outline: 0,
+                background: 'transparent',
+                color: 'var(--app-heading)',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              <option value="steel">钢铁蓝</option>
+              <option value="cobalt">品牌紫</option>
+              <option value="graphite">石墨灰</option>
+            </select>
+          </label>
+        )}
         <button
           onClick={onThemeToggle}
           title={isDark ? '浅色模式' : '暗色模式'}
@@ -880,7 +971,8 @@ function GlobalTopBar({
             width: 32, height: 32, borderRadius: 8,
             border: 'none', background: 'transparent', color: textColor,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', transition: 'background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out)',
+            cursor: 'pointer',
+            transition: 'background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out)',
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = hoverBg; }}
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
@@ -905,6 +997,8 @@ function EditorNavRail({
   onWorkspace?: () => void;
   themeMode?: AppThemeMode;
 }) {
+  const [dataMenuOpen, setDataMenuOpen] = useState(false);
+  const [activeDataSection, setActiveDataSection] = useState<DataManagementSection>(readDataManagementSection);
   const bg = 'var(--app-surface)';
   const textColor = 'var(--app-text)';
   const mutedColor = 'var(--app-muted)';
@@ -920,16 +1014,30 @@ function EditorNavRail({
     { key: 'products' as const, icon: Package, label: '版本管理' },
     { key: 'software' as const, icon: Cpu, label: '软件产品' },
     { key: 'installations' as const, icon: ClipboardList, label: '装机记录' },
+    { key: 'dictionary' as const, icon: BookKey, label: '字典配置' },
+    { key: 'dataManagement' as const, icon: Database, label: '数据管理' },
     { key: 'guidelines' as const, icon: BookOpen, label: '设计规范' },
     // 外设库、用户管理模块暂时隐藏，页面能力保留以便后续恢复。
   ];
 
-  function renderItem(key: EditorNavKey, Icon: typeof Home, label: string) {
+  function renderItem(
+    key: EditorNavKey,
+    Icon: typeof Home,
+    label: string,
+    options?: {
+      onClick?: () => void;
+      ariaExpanded?: boolean;
+      ariaHasPopup?: 'menu';
+      trailing?: ReactNode;
+    },
+  ) {
     const isActive = active === key;
     return (
       <button
         key={key}
-        onClick={() => onChange(key)}
+        onClick={options?.onClick ?? (() => onChange(key))}
+        aria-expanded={options?.ariaExpanded}
+        aria-haspopup={options?.ariaHasPopup}
         style={{
           width: '100%',
           height: 48,
@@ -957,9 +1065,17 @@ function EditorNavRail({
           }} />
         )}
         <Icon size={18} strokeWidth={isActive ? 2.3 : 1.8} />
-        <span>{label}</span>
+        <span style={{ minWidth: 0, flex: 1, textAlign: 'left' }}>{label}</span>
+        {options?.trailing}
       </button>
     );
+  }
+
+  function selectDataSection(section: DataManagementSection) {
+    setActiveDataSection(section);
+    activateDataManagementSection(section);
+    onChange('dataManagement');
+    setDataMenuOpen(false);
   }
 
   return (
@@ -1013,7 +1129,46 @@ function EditorNavRail({
       </button>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {navItems.map(item => renderItem(item.key, item.icon, item.label))}
+        {navItems.map(item => item.key === 'dataManagement' ? (
+          <div
+            key={item.key}
+            className="data-management-nav-anchor"
+            onMouseEnter={() => setDataMenuOpen(true)}
+            onMouseLeave={() => setDataMenuOpen(false)}
+            onFocus={() => setDataMenuOpen(true)}
+            onBlur={event => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDataMenuOpen(false);
+            }}
+            onKeyDown={event => {
+              if (event.key === 'Escape') {
+                setDataMenuOpen(false);
+                (event.currentTarget.querySelector('[aria-haspopup="menu"]') as HTMLButtonElement | null)?.focus();
+              }
+            }}
+          >
+            {renderItem(item.key, item.icon, item.label, {
+              onClick: () => setDataMenuOpen(open => !open),
+              ariaExpanded: dataMenuOpen,
+              ariaHasPopup: 'menu',
+              trailing: <ChevronRight size={14} />,
+            })}
+            {dataMenuOpen && (
+              <div className="data-management-nav-popover" role="menu" aria-label="数据管理二级导航">
+                {DATA_MANAGEMENT_SECTIONS.map(section => (
+                  <button
+                    key={section.key}
+                    type="button"
+                    role="menuitem"
+                    aria-current={active === 'dataManagement' && activeDataSection === section.key ? 'page' : undefined}
+                    onClick={() => selectDataSection(section.key)}
+                  >
+                    {section.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : renderItem(item.key, item.icon, item.label))}
       </div>
 
       <div style={{ flex: 1 }} />
@@ -1030,6 +1185,10 @@ function AppShell({
   active,
   themeMode,
   onThemeToggle,
+  stylePreset,
+  onStyleToggle,
+  industrialColorTheme,
+  onIndustrialColorThemeChange,
   onNavChange,
   onWorkspace,
   sidebarCollapsed = false,
@@ -1039,6 +1198,10 @@ function AppShell({
   active: EditorNavKey;
   themeMode: AppThemeMode;
   onThemeToggle: () => void;
+  stylePreset: StylePreset;
+  onStyleToggle: () => void;
+  industrialColorTheme: IndustrialColorTheme;
+  onIndustrialColorThemeChange: (theme: IndustrialColorTheme) => void;
   onNavChange: (key: EditorNavKey) => void;
   onWorkspace?: () => void;
   sidebarCollapsed?: boolean;
@@ -1059,7 +1222,16 @@ function AppShell({
           <EditorNavRail active={active} themeMode={themeMode} onChange={onNavChange} onWorkspace={onWorkspace} />
         )}
         <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          {!hideTopBar && <GlobalTopBar themeMode={themeMode} onThemeToggle={onThemeToggle} />}
+          {!hideTopBar && (
+            <GlobalTopBar
+              themeMode={themeMode}
+              onThemeToggle={onThemeToggle}
+              stylePreset={stylePreset}
+              onStyleToggle={onStyleToggle}
+              industrialColorTheme={industrialColorTheme}
+              onIndustrialColorThemeChange={onIndustrialColorThemeChange}
+            />
+          )}
           <div style={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
             {children}
           </div>
@@ -1081,7 +1253,7 @@ function EditorPlaceholderPanel({
   const meta = EDITOR_NAV_META[active];
 
   return (
-    <div style={{
+    <div className="ds-editor-placeholder" style={{
       width: 280,
       flexShrink: 0,
       display: 'flex',
@@ -1308,6 +1480,7 @@ export default function App() {
   const { components: catalogComponents } = useComponentCatalog();
   const [workspaceProduct, setWorkspaceProduct] = useState<WorkspaceProduct>('login');
   const [softwareProducts, setSoftwareProducts] = useState<SoftwareProduct[]>(INITIAL_SOFTWARE_PRODUCTS);
+  const [dictionaryCategories, setDictionaryCategories] = useState<DictionaryCategory[]>(initialDictionaryCategories);
   const [schemes, setSchemes] = useState<HomepageScheme[]>(INITIAL_SCHEMES);
   const [activeSchemeId, setActiveSchemeId] = useState('s1');
   const [canvasItems, setCanvasItems] = useState<Record<string, PlacedItem[]>>(INITIAL_ITEMS);
@@ -1318,6 +1491,9 @@ export default function App() {
   const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [robotThemeMode, setRobotThemeMode] = useState<AppThemeMode>(initialRobotThemeMode);
+  const [stylePreset, setStylePreset] = useState<StylePreset>(initialStylePreset);
+  const [industrialColorTheme, setIndustrialColorTheme] = useState<IndustrialColorTheme>(initialIndustrialColorTheme);
+  const appliedThemeVarKeysRef = useRef<string[]>([]);
 
   const toggleRobotThemeMode = useCallback(() => {
     setRobotThemeMode(prev => {
@@ -1329,15 +1505,44 @@ export default function App() {
     });
   }, []);
 
+  const toggleStylePreset = useCallback(() => {
+    setStylePreset(prev => {
+      const next: StylePreset = prev === 'industrial' ? 'current' : 'industrial';
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(STYLE_PRESET_STORAGE_KEY, next);
+      }
+      return next;
+    });
+  }, []);
+
+  const changeIndustrialColorTheme = useCallback((theme: IndustrialColorTheme) => {
+    setIndustrialColorTheme(theme);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(INDUSTRIAL_COLOR_THEME_STORAGE_KEY, theme);
+    }
+  }, []);
+
   // Inject global dark/light CSS variables
   useEffect(() => {
-    const vars = APP_THEME_VARS[robotThemeMode];
+    appliedThemeVarKeysRef.current.forEach(key => {
+      document.documentElement.style.removeProperty(key);
+    });
+    const vars = getAppThemeVars(robotThemeMode, stylePreset, industrialColorTheme);
     Object.entries(vars).forEach(([k, v]) => {
       document.documentElement.style.setProperty(k, v);
     });
+    appliedThemeVarKeysRef.current = Object.keys(vars);
     document.documentElement.classList.toggle('dark', robotThemeMode === 'dark');
     document.documentElement.dataset.theme = robotThemeMode;
-  }, [robotThemeMode]);
+    document.documentElement.dataset.style = stylePreset;
+    document.documentElement.dataset.industrialColorTheme = industrialColorTheme;
+  }, [industrialColorTheme, robotThemeMode, stylePreset]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(DICTIONARY_CONFIG_STORAGE_KEY, JSON.stringify(dictionaryCategories));
+    }
+  }, [dictionaryCategories]);
 
   const activeScheme = schemes.find(s => s.id === activeSchemeId);
   const activeItems = canvasItems[activeSchemeId] ?? [];
@@ -1612,10 +1817,20 @@ export default function App() {
         active={activeEditorNav}
         themeMode={robotThemeMode}
         onThemeToggle={toggleRobotThemeMode}
+        stylePreset={stylePreset}
+        onStyleToggle={toggleStylePreset}
+        industrialColorTheme={industrialColorTheme}
+        onIndustrialColorThemeChange={changeIndustrialColorTheme}
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
       >
-        <RobotModelManager themeMode={robotThemeMode} softwareProducts={softwareProducts} />
+        <RobotModelManager
+          themeMode={robotThemeMode}
+          stylePreset={stylePreset}
+          industrialColorTheme={industrialColorTheme}
+          softwareProducts={softwareProducts}
+          dictionaryCategories={dictionaryCategories}
+        />
       </AppShell>
     );
   }
@@ -1626,10 +1841,19 @@ export default function App() {
         active={activeEditorNav}
         themeMode={robotThemeMode}
         onThemeToggle={toggleRobotThemeMode}
+        stylePreset={stylePreset}
+        onStyleToggle={toggleStylePreset}
+        industrialColorTheme={industrialColorTheme}
+        onIndustrialColorThemeChange={changeIndustrialColorTheme}
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
       >
-        <RobotComponentLibrary themeMode={robotThemeMode} />
+        <RobotComponentLibrary
+          themeMode={robotThemeMode}
+          stylePreset={stylePreset}
+          industrialColorTheme={industrialColorTheme}
+          dictionaryCategories={dictionaryCategories}
+        />
       </AppShell>
     );
   }
@@ -1640,6 +1864,10 @@ export default function App() {
         active={activeEditorNav}
         themeMode={robotThemeMode}
         onThemeToggle={toggleRobotThemeMode}
+        stylePreset={stylePreset}
+        onStyleToggle={toggleStylePreset}
+        industrialColorTheme={industrialColorTheme}
+        onIndustrialColorThemeChange={changeIndustrialColorTheme}
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
       >
@@ -1654,6 +1882,10 @@ export default function App() {
         active={activeEditorNav}
         themeMode={robotThemeMode}
         onThemeToggle={toggleRobotThemeMode}
+        stylePreset={stylePreset}
+        onStyleToggle={toggleStylePreset}
+        industrialColorTheme={industrialColorTheme}
+        onIndustrialColorThemeChange={changeIndustrialColorTheme}
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
       >
@@ -1668,10 +1900,50 @@ export default function App() {
         active={activeEditorNav}
         themeMode={robotThemeMode}
         onThemeToggle={toggleRobotThemeMode}
+        stylePreset={stylePreset}
+        onStyleToggle={toggleStylePreset}
+        industrialColorTheme={industrialColorTheme}
+        onIndustrialColorThemeChange={changeIndustrialColorTheme}
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
       >
         <InstallationRecordsManager />
+      </AppShell>
+    );
+  }
+
+  if (!isEditing && !isCanvasPreview && activeEditorNav === 'dictionary') {
+    return (
+      <AppShell
+        active={activeEditorNav}
+        themeMode={robotThemeMode}
+        onThemeToggle={toggleRobotThemeMode}
+        stylePreset={stylePreset}
+        onStyleToggle={toggleStylePreset}
+        industrialColorTheme={industrialColorTheme}
+        onIndustrialColorThemeChange={changeIndustrialColorTheme}
+        onNavChange={handleShellNavChange}
+        onWorkspace={returnToWorkspace}
+      >
+        <DictionaryConfigManager categories={dictionaryCategories} onCategoriesChange={setDictionaryCategories} />
+      </AppShell>
+    );
+  }
+
+  if (!isEditing && !isCanvasPreview && activeEditorNav === 'dataManagement') {
+    return (
+      <AppShell
+        active={activeEditorNav}
+        themeMode={robotThemeMode}
+        onThemeToggle={toggleRobotThemeMode}
+        stylePreset={stylePreset}
+        onStyleToggle={toggleStylePreset}
+        industrialColorTheme={industrialColorTheme}
+        onIndustrialColorThemeChange={changeIndustrialColorTheme}
+        onNavChange={handleShellNavChange}
+        onWorkspace={returnToWorkspace}
+      >
+        <DataManagementManager categories={dictionaryCategories} onCategoriesChange={setDictionaryCategories} />
       </AppShell>
     );
   }
@@ -1682,6 +1954,10 @@ export default function App() {
         active={activeEditorNav}
         themeMode={robotThemeMode}
         onThemeToggle={toggleRobotThemeMode}
+        stylePreset={stylePreset}
+        onStyleToggle={toggleStylePreset}
+        industrialColorTheme={industrialColorTheme}
+        onIndustrialColorThemeChange={changeIndustrialColorTheme}
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
       >
@@ -1697,6 +1973,10 @@ export default function App() {
         active={activeEditorNav}
         themeMode={robotThemeMode}
         onThemeToggle={toggleRobotThemeMode}
+        stylePreset={stylePreset}
+        onStyleToggle={toggleStylePreset}
+        industrialColorTheme={industrialColorTheme}
+        onIndustrialColorThemeChange={changeIndustrialColorTheme}
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
         sidebarCollapsed
@@ -1791,6 +2071,10 @@ export default function App() {
       active={activeEditorNav}
       themeMode={robotThemeMode}
       onThemeToggle={toggleRobotThemeMode}
+      stylePreset={stylePreset}
+      onStyleToggle={toggleStylePreset}
+      industrialColorTheme={industrialColorTheme}
+      onIndustrialColorThemeChange={changeIndustrialColorTheme}
       onNavChange={handleShellNavChange}
       onWorkspace={returnToWorkspace}
     >
