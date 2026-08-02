@@ -17,6 +17,8 @@ function figmaAssetResolver() {
 }
 
 export default defineConfig({
+  // Base path for GitHub Pages deployment under /Custom-Dashboard-Management/
+  base: '/Custom-Dashboard-Management/',
   server: {
     host: '0.0.0.0',
     port: 10882,

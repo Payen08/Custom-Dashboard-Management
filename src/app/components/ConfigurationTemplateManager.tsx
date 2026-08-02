@@ -14,17 +14,17 @@ import {
   ProductTextInput,
 } from './ProductUI';
 
-type SlotKind = 'base' | 'joint' | 'link';
-type SlotPolicies = Record<SlotKind, string[]>;
+export type SlotKind = 'base' | 'joint' | 'link';
+export type SlotPolicies = Record<SlotKind, string[]>;
 
-interface ConfigurationSlot {
+export interface ConfigurationSlot {
   id: string;
   kind: SlotKind;
   name: string;
   allowedSpecIds: string[];
 }
 
-interface ConfigurationTemplate {
+export interface ConfigurationTemplate {
   id: string;
   name: string;
   key: string;
@@ -121,7 +121,7 @@ function initialTemplates(): ConfigurationTemplate[] {
   }));
 }
 
-function readTemplates(): ConfigurationTemplate[] {
+export function readConfigurationTemplates(): ConfigurationTemplate[] {
   if (typeof window === 'undefined') return initialTemplates();
   try {
     const stored = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null');
@@ -146,7 +146,7 @@ function readTemplates(): ConfigurationTemplate[] {
   return initialTemplates();
 }
 
-function readGlobalSlotPolicies(categories: DictionaryCategory[]): SlotPolicies {
+export function readGlobalSlotPolicies(categories: DictionaryCategory[]): SlotPolicies {
   if (typeof window === 'undefined') return getDefaultSlotPolicies(categories);
   try {
     const storedRules = JSON.parse(window.localStorage.getItem(SLOT_RULES_STORAGE_KEY) ?? 'null');
@@ -176,7 +176,7 @@ function emptyTemplate(): ConfigurationTemplate {
 }
 
 export function ConfigurationTemplateManager({ categories }: { categories: DictionaryCategory[] }) {
-  const [templates, setTemplates] = useState<ConfigurationTemplate[]>(readTemplates);
+  const [templates, setTemplates] = useState<ConfigurationTemplate[]>(readConfigurationTemplates);
   const [query, setQuery] = useState('');
   const [form, setForm] = useState<ConfigurationTemplate | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ConfigurationTemplate | null>(null);

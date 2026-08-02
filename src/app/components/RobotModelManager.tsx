@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
-  ArrowLeft, Box, CheckCircle2, ChevronDown, ChevronRight, FileCode2, FileJson, FileUp, LayoutGrid,
+  ArrowLeft, Box, CheckCircle2, ChevronDown, ChevronRight, Eye, FileCode2, FileJson, FileUp, LayoutGrid,
   LockKeyhole, MoreHorizontal, Pencil, Plus, RefreshCw, Save, Search, SlidersHorizontal, Trash2, X,
 } from 'lucide-react';
 import {
@@ -30,6 +30,13 @@ import {
   type DictionaryCategory,
 } from '../dictionaryData';
 import { CategoryTree, buildInitialData as buildProductVersionData, type ProductCategory } from './ProductVersionManager';
+import {
+  readConfigurationTemplates,
+  readGlobalSlotPolicies,
+  type ConfigurationSlot,
+  type ConfigurationTemplate,
+  type SlotKind,
+} from './ConfigurationTemplateManager';
 
 type PublishStatus = 'published' | 'draft';
 type TopologyKind = 'link' | 'joint' | 'mesh';
@@ -4093,7 +4100,7 @@ export function RobotModelManager({
   );
 }
 
-function ComponentChassisScene() {
+function ComponentChassisScene({ kind = 'chassis', name = '仙工底盘' }: { kind?: 'chassis' | 'arm'; name?: string }) {
   return (
     <section className="component-library-card component-library-scene">
       <div className="component-library-scene__viewport">
@@ -4113,7 +4120,7 @@ function ComponentChassisScene() {
           })}
           {Array.from({ length: 15 }).map((_, index) => <line key={`component-grid-v-${index}`} x1="380" y1="252" x2={76 + index * 44} y2="530" stroke="var(--robot-scene-muted)" strokeWidth="1" />)}
           <ellipse cx="382" cy="444" rx="185" ry="34" fill="#05070d" opacity="0.45" filter="url(#component-chassis-shadow)" />
-          <g transform="translate(382 300)">
+          {kind === 'chassis' ? <g transform="translate(382 300)">
             <path d="M-156 48 L-102 -6 L105 -6 L160 48 L126 112 L-126 112 Z" fill="var(--robot-soft)" stroke="var(--robot-accent-border)" strokeWidth="3" />
             <path d="M-102 -6 L-56 -50 L64 -50 L105 -6 Z" fill="var(--robot-accent-soft)" stroke="var(--robot-accent-border)" strokeWidth="3" />
             <rect x="-118" y="44" width="236" height="44" rx="8" fill="var(--robot-surface)" stroke="var(--robot-border-strong)" strokeWidth="2" />
@@ -4121,7 +4128,16 @@ function ComponentChassisScene() {
             <rect x="18" y="58" width="74" height="15" rx="4" fill="var(--robot-accent)" opacity="0.88" />
             {[-108, 108].map(x => <g key={x}><circle cx={x} cy="116" r="28" fill="#10141f" stroke="var(--robot-accent-border)" strokeWidth="3" /><circle cx={x} cy="116" r="13" fill="var(--robot-accent)" opacity="0.8" /></g>)}
             <rect x="-39" y="-38" width="78" height="26" rx="6" fill="var(--robot-accent)" opacity="0.72" />
-          </g>
+          </g> : <g transform="translate(382 430)">
+            <ellipse cx="0" cy="18" rx="150" ry="30" fill="var(--robot-accent)" opacity=".12" />
+            <rect x="-82" y="-34" width="164" height="68" rx="18" fill="var(--robot-soft)" stroke="var(--robot-accent-border)" strokeWidth="4" />
+            <line x1="0" y1="-32" x2="-34" y2="-138" stroke="var(--robot-accent)" strokeWidth="38" strokeLinecap="round" />
+            <circle cx="-34" cy="-138" r="25" fill="var(--robot-accent-border)" stroke="var(--robot-accent-soft)" strokeWidth="7" />
+            <line x1="-34" y1="-138" x2="78" y2="-224" stroke="var(--robot-accent-text)" strokeWidth="32" strokeLinecap="round" />
+            <circle cx="78" cy="-224" r="22" fill="var(--robot-accent-border)" stroke="var(--robot-accent-soft)" strokeWidth="7" />
+            <line x1="78" y1="-224" x2="132" y2="-316" stroke="var(--robot-accent)" strokeWidth="25" strokeLinecap="round" />
+            <circle cx="132" cy="-316" r="19" fill="var(--robot-soft)" stroke="var(--robot-accent-border)" strokeWidth="6" />
+          </g>}
           <g transform="translate(672 468)">
             <line x1="0" y1="0" x2="52" y2="0" stroke="var(--robot-axis-x)" strokeWidth="3" />
             <line x1="0" y1="0" x2="0" y2="-52" stroke="var(--robot-axis-y)" strokeWidth="3" />
@@ -4129,10 +4145,121 @@ function ComponentChassisScene() {
             <text x="58" y="5" fill="var(--robot-axis-x)" fontSize="12" fontWeight="700">X</text><text x="-8" y="-59" fill="var(--robot-axis-y)" fontSize="12" fontWeight="700">Y</text><text x="-48" y="-34" fill="var(--robot-axis-z)" fontSize="12" fontWeight="700">Z</text>
           </g>
         </svg>
-        <div className="component-library-scene__status">3D预览 <span /> 仙工底盘</div>
+        <div className="component-library-scene__status">3D预览 <span /> {name}</div>
         <div className="component-library-scene__telemetry">X / Y / Z<br />0.000 / 0.000 / 0.000<br /><br />RX / RY / RZ<br />0.000 / 0.000 / 0.000</div>
       </div>
     </section>
+  );
+}
+
+interface ArmAssemblyModule {
+  id: string;
+  name: string;
+  identifier: string;
+  kind: SlotKind;
+  specificationId: string;
+  previewable: boolean;
+}
+
+interface CreatedArmComponent {
+  id: string;
+  name: string;
+  identifier: string;
+  typeId: string;
+  subtypeId: string;
+  templateId: string;
+  assembly: Record<string, string>;
+  createdAt?: string;
+}
+
+const ARM_COMPONENT_STORAGE_KEY = 'digital-machine-arm-components';
+
+function readCreatedArmComponents(): CreatedArmComponent[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(ARM_COMPONENT_STORAGE_KEY) ?? '[]');
+    return Array.isArray(stored) ? stored : [];
+  } catch {
+    return [];
+  }
+}
+
+function buildAssemblyModules(specificationIds: string[]): ArmAssemblyModule[] {
+  const names: Record<SlotKind, string[]> = {
+    base: ['紧凑型安装底座', '高刚性安装底座'],
+    joint: ['高精度关节模组', '轻量化关节模组'],
+    link: ['碳纤维连杆模组', '铝合金连杆模组'],
+  };
+  return (['base', 'joint', 'link'] as SlotKind[]).flatMap(kind => specificationIds.flatMap((specificationId, specIndex) =>
+    names[kind].map((name, index) => ({
+      id: `${kind}-${specificationId}-${index + 1}`,
+      name,
+      identifier: `${kind}_${specificationId.replace(/^spec-/, '')}_${index + 1}`,
+      kind,
+      specificationId,
+      previewable: (specIndex + index) % 2 === 0,
+    })),
+  ));
+}
+
+function buildArmTopology(identifier: string, slots: ConfigurationSlot[]): TopologyNode[] {
+  const baseSlot = slots.find(slot => slot.kind === 'base');
+  const root: TopologyNode = {
+    id: `${identifier}-base-link`,
+    label: `${identifier}_base_link`,
+    kind: 'link',
+    origin: { ...DEFAULT_ORIGIN },
+    children: [],
+  };
+  let cursor = root;
+  let jointIndex = 0;
+  let linkIndex = 0;
+  slots.filter(slot => slot.id !== baseSlot?.id).forEach(slot => {
+    if (slot.kind === 'joint') {
+      jointIndex += 1;
+      const joint: TopologyNode = {
+        id: `${identifier}-joint-${jointIndex}`,
+        label: `${identifier}_joint_${jointIndex}`,
+        kind: 'joint',
+        jointType: 'revolute',
+        origin: { ...DEFAULT_ORIGIN },
+        axis: { ...DEFAULT_AXIS },
+        limit: { ...DEFAULT_LIMIT },
+        children: [],
+      };
+      cursor.children = [joint];
+      cursor = joint;
+    } else if (slot.kind === 'link') {
+      linkIndex += 1;
+      const link: TopologyNode = {
+        id: `${identifier}-link-${linkIndex}`,
+        label: `${identifier}_link_${linkIndex}`,
+        kind: 'link',
+        origin: { ...DEFAULT_ORIGIN },
+        children: [],
+      };
+      cursor.children = [link];
+      cursor = link;
+    }
+  });
+  return [root];
+}
+
+function ComponentCardPreview({ kind }: { kind: 'chassis' | 'arm' }) {
+  return (
+    <div className="model-card-preview" aria-hidden="true">
+      <svg viewBox="0 0 420 230" preserveAspectRatio="xMidYMid slice">
+        <defs><linearGradient id={`component-card-${kind}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--robot-scene-top)" /><stop offset="100%" stopColor="var(--robot-scene-bottom)" /></linearGradient></defs>
+        <rect width="420" height="230" fill={`url(#component-card-${kind})`} />
+        {Array.from({ length: 8 }).map((_, index) => <line key={`component-card-grid-${kind}-${index}`} x1={54 - index * 14} y1={118 + index * 15} x2={366 + index * 14} y2={118 + index * 15} stroke="var(--robot-scene-muted)" />)}
+        {kind === 'chassis' ? (
+          <g transform="translate(210 74)"><path d="M-92 54 L-60 18 H60 L92 54 L72 100 H-72 Z" fill="var(--robot-soft)" stroke="var(--robot-accent-border)" strokeWidth="3" /><rect x="-58" y="42" width="116" height="30" rx="7" fill="var(--robot-accent)" opacity=".82" /><circle cx="-64" cy="104" r="18" fill="var(--robot-accent-text)" /><circle cx="64" cy="104" r="18" fill="var(--robot-accent-text)" /></g>
+        ) : (
+          <g transform="translate(210 178)"><ellipse cx="0" cy="10" rx="66" ry="14" fill="var(--robot-accent)" opacity=".18" /><rect x="-42" y="-20" width="84" height="40" rx="10" fill="var(--robot-soft)" stroke="var(--robot-accent-border)" strokeWidth="3" /><line x1="0" y1="-20" x2="26" y2="-82" stroke="var(--robot-accent)" strokeWidth="17" strokeLinecap="round" /><line x1="26" y1="-82" x2="78" y2="-126" stroke="var(--robot-accent-text)" strokeWidth="15" strokeLinecap="round" /><circle cx="78" cy="-126" r="13" fill="var(--robot-accent-border)" stroke="var(--robot-accent-soft)" strokeWidth="4" /></g>
+        )}
+      </svg>
+      <span className="model-card-preview-label">3D 预览</span>
+    </div>
   );
 }
 
@@ -4163,6 +4290,17 @@ export function RobotComponentLibrary({
   const [pendingUrdfTopology, setPendingUrdfTopology] = useState<TopologyNode[] | null>(null);
   const [pendingUrdfFileName, setPendingUrdfFileName] = useState('');
   const [urdfImportError, setUrdfImportError] = useState<string | null>(null);
+  const [createArmOpen, setCreateArmOpen] = useState(false);
+  const [createArmStep, setCreateArmStep] = useState<1 | 2>(1);
+  const [configurationTemplates, setConfigurationTemplates] = useState<ConfigurationTemplate[]>(readConfigurationTemplates);
+  const [createdArmComponents, setCreatedArmComponents] = useState<CreatedArmComponent[]>(readCreatedArmComponents);
+  const [activeComponentId, setActiveComponentId] = useState<string | null>(null);
+  const [componentSearchQuery, setComponentSearchQuery] = useState('');
+  const [componentDeleteTargetId, setComponentDeleteTargetId] = useState<string | null>(null);
+  const [activeComponent, setActiveComponent] = useState({ name: '仙工底盘', identifier: 'xiangong-base' });
+  const [armForm, setArmForm] = useState({ name: '', identifier: '', typeId: '', subtypeId: '', templateId: '' });
+  const [armAssembly, setArmAssembly] = useState<Record<string, string>>({});
+  const [previewModuleId, setPreviewModuleId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const componentDictionary = useMemo(
     () => getEnabledDictionaryCategory(dictionaryCategories, 'component_library'),
@@ -4171,6 +4309,48 @@ export function RobotComponentLibrary({
   const [componentDictionarySelections, setComponentDictionarySelections] = useState<Record<string, string>>(
     () => defaultDictionarySelections(componentDictionary),
   );
+  const componentTypeField = componentDictionary?.fields.find(field => field.key === 'component_type');
+  const componentSubtypeField = componentDictionary?.fields.find(field => field.key === 'component_subtype');
+  const componentSpecificationField = componentDictionary?.fields.find(field => field.key === 'component_specification');
+  const armTypeValue = componentTypeField?.values.find(value => value.key === 'robot_arm');
+  const enabledTemplates = useMemo(() => configurationTemplates.filter(item => item.enabled), [configurationTemplates]);
+  const selectedArmTemplate = enabledTemplates.find(item => item.id === armForm.templateId) ?? null;
+  const slotPolicies = useMemo(() => readGlobalSlotPolicies(dictionaryCategories), [dictionaryCategories, createArmOpen]);
+  const assemblyModules = useMemo(
+    () => buildAssemblyModules(componentSpecificationField?.values.filter(value => value.enabled).map(value => value.id) ?? []),
+    [componentSpecificationField],
+  );
+  const allowedSubtypes = useMemo(() => {
+    if (!componentDictionary || !componentSubtypeField || !armForm.typeId) return [];
+    return getAllowedDictionaryValues(componentDictionary, componentSubtypeField.id, {
+      [componentTypeField?.id ?? 'component-type']: armForm.typeId,
+    });
+  }, [armForm.typeId, componentDictionary, componentSubtypeField, componentTypeField]);
+  const identifierError = useMemo(() => {
+    const identifier = armForm.identifier.trim();
+    if (!identifier) return '请输入英文标识符';
+    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(identifier)) return '需以英文字母开头，仅支持字母、数字和下划线';
+    if (identifier === 'xiangong-base' || createdArmComponents.some(item => item.identifier.toLowerCase() === identifier.toLowerCase())) return '该标识符已存在';
+    return '';
+  }, [armForm.identifier, createdArmComponents]);
+  const previewModule = assemblyModules.find(item => item.id === previewModuleId) ?? null;
+  const componentCards = useMemo(() => [{
+    id: 'xiangong-base', name: '仙工底盘', identifier: 'xiangong-base', kind: 'chassis' as const,
+    subtype: '轮式底盘', specification: '标准型', slotCount: 1, updatedAt: '2026-07-01 14:32', builtin: true,
+  }, ...createdArmComponents.map(item => {
+    const template = configurationTemplates.find(candidate => candidate.id === item.templateId);
+    const subtype = componentSubtypeField?.values.find(value => value.id === item.subtypeId)?.name ?? '机械臂整臂';
+    return {
+      id: item.id, name: item.name, identifier: item.identifier, kind: 'arm' as const,
+      subtype, specification: template?.name ?? '构型模板', slotCount: template?.slots.length ?? Object.keys(item.assembly).length,
+      updatedAt: item.createdAt ?? '刚刚', builtin: false,
+    };
+  })], [componentSubtypeField, configurationTemplates, createdArmComponents]);
+  const filteredComponentCards = useMemo(() => {
+    const query = componentSearchQuery.trim().toLowerCase();
+    return componentCards.filter(item => !query || item.name.toLowerCase().includes(query) || item.identifier.toLowerCase().includes(query) || item.subtype.toLowerCase().includes(query));
+  }, [componentCards, componentSearchQuery]);
+  const activeComponentCard = componentCards.find(item => item.id === activeComponentId) ?? null;
 
   useEffect(() => {
     setComponentDictionarySelections(current => {
@@ -4201,6 +4381,96 @@ export function RobotComponentLibrary({
   function updateNode(patch: Partial<TopologyNode>) {
     if (!selectedNode) return;
     setTopology(current => updateTopologyNode(current, selectedNode.id, patch));
+  }
+
+  function openComponentDetail(componentId: string) {
+    if (componentId === 'xiangong-base') {
+      setActiveComponent({ name: '仙工底盘', identifier: 'xiangong-base' });
+      setTopology(mcrTopology());
+      setSelectedId('base_link');
+      setComponentDictionarySelections(defaultDictionarySelections(componentDictionary));
+      setActiveComponentId(componentId);
+      return;
+    }
+    const component = createdArmComponents.find(item => item.id === componentId);
+    if (!component) return;
+    const template = configurationTemplates.find(item => item.id === component.templateId);
+    setActiveComponent({ name: component.name, identifier: component.identifier });
+    if (template) {
+      setTopology(buildArmTopology(component.identifier, template.slots));
+      setSelectedId(`${component.identifier}-base-link`);
+    }
+    setComponentDictionarySelections(current => ({ ...current, [componentTypeField?.id ?? 'component-type']: component.typeId, [componentSubtypeField?.id ?? 'component-subtype']: component.subtypeId }));
+    setActiveComponentId(componentId);
+  }
+
+  function deleteCreatedComponent() {
+    if (!componentDeleteTargetId) return;
+    const next = createdArmComponents.filter(item => item.id !== componentDeleteTargetId);
+    setCreatedArmComponents(next);
+    window.localStorage.setItem(ARM_COMPONENT_STORAGE_KEY, JSON.stringify(next));
+    setComponentDeleteTargetId(null);
+  }
+
+  function openCreateArm() {
+    const templates = readConfigurationTemplates().filter(item => item.enabled);
+    setConfigurationTemplates(readConfigurationTemplates());
+    const typeId = armTypeValue?.id ?? '';
+    const subtypes = componentDictionary && componentSubtypeField
+      ? getAllowedDictionaryValues(componentDictionary, componentSubtypeField.id, {
+          [componentTypeField?.id ?? 'component-type']: typeId,
+        })
+      : [];
+    setArmForm({ name: '', identifier: '', typeId, subtypeId: subtypes[0]?.id ?? '', templateId: templates[0]?.id ?? '' });
+    setArmAssembly({});
+    setCreateArmStep(1);
+    setCreateArmOpen(true);
+  }
+
+  function allowedSpecificationsForSlot(slot: ConfigurationSlot) {
+    const ids = slot.allowedSpecIds.length ? slot.allowedSpecIds : slotPolicies[slot.kind];
+    const effectiveIds = ids.length ? ids : (componentSpecificationField?.values.map(value => value.id) ?? []);
+    return componentSpecificationField?.values.filter(value => value.enabled && effectiveIds.includes(value.id)) ?? [];
+  }
+
+  function modulesForSlot(slot: ConfigurationSlot) {
+    const specificationIds = new Set(allowedSpecificationsForSlot(slot).map(item => item.id));
+    return assemblyModules.filter(item => item.kind === slot.kind && specificationIds.has(item.specificationId));
+  }
+
+  function goToAssembly() {
+    if (!armForm.name.trim() || identifierError || !armForm.typeId || !armForm.subtypeId || !selectedArmTemplate) return;
+    const retained: Record<string, string> = {};
+    selectedArmTemplate.slots.forEach(slot => {
+      if (modulesForSlot(slot).some(item => item.id === armAssembly[slot.id])) retained[slot.id] = armAssembly[slot.id];
+    });
+    setArmAssembly(retained);
+    setCreateArmStep(2);
+  }
+
+  function submitArmComponent() {
+    if (!selectedArmTemplate || selectedArmTemplate.slots.some(slot => !armAssembly[slot.id])) return;
+    const created: CreatedArmComponent = {
+      id: `arm-component-${Date.now()}`,
+      name: armForm.name.trim(),
+      identifier: armForm.identifier.trim(),
+      typeId: armForm.typeId,
+      subtypeId: armForm.subtypeId,
+      templateId: armForm.templateId,
+      assembly: { ...armAssembly },
+      createdAt: new Date().toLocaleString('zh-CN', { hour12: false }),
+    };
+    const nextComponents = [...createdArmComponents, created];
+    setCreatedArmComponents(nextComponents);
+    window.localStorage.setItem(ARM_COMPONENT_STORAGE_KEY, JSON.stringify(nextComponents));
+    setActiveComponent({ name: created.name, identifier: created.identifier });
+    setTopology(buildArmTopology(created.identifier, selectedArmTemplate.slots));
+    setSelectedId(`${created.identifier}-base-link`);
+    setComponentDictionarySelections(current => ({ ...current, [componentTypeField?.id ?? 'component-type']: created.typeId, [componentSubtypeField?.id ?? 'component-subtype']: created.subtypeId }));
+    setCreateArmOpen(false);
+    setActiveComponentId(created.id);
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1600);
   }
 
   function openAdd(parentId?: string, kind: TopologyKind = 'link') {
@@ -4330,18 +4600,119 @@ export function RobotComponentLibrary({
         .component-library-import-preview__branch { width: 12px; color: var(--robot-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
         .component-library-import-preview__name { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .component-library-import-preview__kind { padding: 2px 8px; border-radius: 999px; background: var(--robot-accent-soft); color: var(--robot-accent-text); font-size: 12px; }
+        .component-library-list { min-height: 0; flex: 1; display: flex; flex-direction: column; }
+        .component-library-list__header { margin-bottom: var(--robot-section-gap); display: flex; align-items: center; justify-content: space-between; gap: var(--robot-section-gap); flex-shrink: 0; }
+        .component-library-list__header h1 { margin: 0; color: var(--robot-heading); font-size: 20px; line-height: 28px; font-weight: 600; }
+        .component-library-list__header p { margin: 4px 0 0; color: var(--robot-muted); font-size: 14px; }
+        .component-library-list__tools { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .component-library-list__scroll { min-height: 0; flex: 1; overflow-y: auto; padding: 2px 2px 20px; }
+        .model-library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); align-content: start; gap: var(--robot-section-gap); }
+        .model-library-card { min-width: 0; overflow: hidden; border: 1px solid var(--robot-border); border-radius: var(--robot-card-radius); background: var(--robot-surface); box-shadow: var(--robot-shadow-soft); transition: border-color var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out), box-shadow var(--ds-motion-duration-mid) var(--ds-motion-ease-in-out); }
+        .model-library-card:hover { border-color: var(--robot-accent-border); box-shadow: var(--robot-shadow); }
+        .model-card-main { width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+        .model-card-main:focus-visible { outline: 3px solid var(--robot-accent-soft); outline-offset: -3px; }
+        .model-card-preview { position: relative; height: 190px; overflow: hidden; background: var(--robot-scene-bg); }
+        .model-card-preview svg { width: 100%; height: 100%; display: block; }
+        .model-card-preview-label { position: absolute; top: 12px; left: 12px; min-height: 24px; padding: 0 9px; display: inline-flex; align-items: center; border: 1px solid var(--robot-hud-border); border-radius: 999px; background: var(--robot-hud-bg); color: var(--robot-hud-text); font-size: 12px; font-weight: 600; }
+        .model-card-content { padding: 16px; }
+        .model-card-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .model-card-title { min-width: 0; margin: 0; overflow: hidden; color: var(--robot-heading); font-size: 16px; line-height: 24px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+        .model-card-type { margin: 3px 0 0; overflow: hidden; color: var(--robot-muted); font-size: 12px; line-height: 18px; text-overflow: ellipsis; white-space: nowrap; }
+        .model-card-stats { margin-top: 14px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+        .model-card-stat { min-width: 0; padding: 10px 11px; border-radius: var(--robot-inner-radius); background: var(--robot-soft); }
+        .model-card-stat span { display: block; color: var(--robot-muted); font-size: 10px; line-height: 15px; }
+        .model-card-stat strong { display: block; margin-top: 2px; overflow: hidden; color: var(--robot-heading); font-size: 14px; line-height: 18px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+        .model-card-footer { min-height: 52px; padding: 8px 12px 8px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--robot-border); }
+        .model-card-updated { overflow: hidden; color: var(--robot-subtle); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+        .model-card-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+        .component-library-empty { min-height: 240px; display: grid; place-items: center; padding: 32px; border: 1px dashed var(--robot-border-strong); border-radius: var(--robot-card-radius); background: var(--robot-surface); color: var(--robot-muted); font-size: 14px; }
+        .arm-create-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: var(--robot-control-radius); background: var(--robot-soft); }
+        .arm-create-step { min-height: 40px; border: 0; border-radius: calc(var(--robot-control-radius) - 2px); background: transparent; color: var(--robot-muted); font: inherit; font-size: 14px; font-weight: 600; cursor: default; }
+        .arm-create-step[data-selected="true"] { background: var(--robot-surface); color: var(--robot-accent-text); box-shadow: var(--robot-shadow-soft); }
+        .arm-create-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 20px; }
+        .arm-create-form__wide { grid-column: 1 / -1; }
+        .arm-create-help, .arm-create-error { margin: 6px 0 0; font-size: 12px; line-height: 18px; }
+        .arm-create-help { color: var(--robot-muted); }
+        .arm-create-error { color: var(--robot-danger); }
+        .arm-assembly-summary { margin-top: 16px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--robot-border); border-radius: var(--robot-inner-radius); background: var(--robot-soft); color: var(--robot-muted); font-size: 13px; }
+        .arm-assembly-summary strong { color: var(--robot-heading); }
+        .arm-assembly-list { max-height: min(52vh, 520px); margin-top: 14px; overflow-y: auto; display: grid; gap: 10px; padding-right: 4px; }
+        .arm-assembly-row { min-width: 0; padding: 14px; display: grid; grid-template-columns: 112px minmax(150px, .8fr) minmax(260px, 1.4fr); gap: 14px; align-items: center; border: 1px solid var(--robot-border); border-radius: var(--robot-inner-radius); background: var(--robot-surface); }
+        .arm-assembly-slot { display: flex; align-items: center; gap: 10px; }
+        .arm-assembly-slot__code { width: 38px; height: 32px; display: grid; place-items: center; border-radius: 8px; background: var(--robot-accent-soft); color: var(--robot-accent-text); font-size: 12px; font-weight: 700; }
+        .arm-assembly-slot strong { display: block; color: var(--robot-heading); font-size: 14px; }
+        .arm-assembly-slot span { color: var(--robot-muted); font-size: 12px; }
+        .arm-assembly-specs { min-width: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+        .arm-assembly-specs span { padding: 3px 8px; border-radius: 999px; background: var(--robot-soft); color: var(--robot-muted); font-size: 12px; white-space: nowrap; }
+        .arm-assembly-picker { min-width: 0; display: flex; align-items: center; gap: 8px; }
+        .arm-assembly-picker .arcoui-select-wrap { min-width: 0; flex: 1; }
+        .arm-module-preview { min-height: 310px; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(220px, .8fr); gap: 18px; }
+        .arm-module-preview__scene { min-height: 280px; display: grid; place-items: center; overflow: hidden; border-radius: var(--robot-inner-radius); background: var(--robot-scene-bg); }
+        .arm-module-preview__shape { width: 170px; height: 170px; position: relative; border-radius: 42% 58% 45% 55%; background: linear-gradient(145deg, var(--robot-accent-soft), var(--robot-accent)); box-shadow: 0 28px 60px rgba(20, 18, 110, .28); transform: rotate(-18deg); }
+        .arm-module-preview__shape::before { content: ''; position: absolute; inset: 28px; border: 12px solid var(--robot-surface); border-radius: 50%; opacity: .85; }
+        .arm-module-preview__meta { align-content: start; display: grid; gap: 14px; }
+        .arm-module-preview__meta h3 { margin: 0; color: var(--robot-heading); font-size: 18px; }
+        .arm-module-preview__meta dl { margin: 0; display: grid; gap: 12px; }
+        .arm-module-preview__meta div { display: grid; gap: 3px; }
+        .arm-module-preview__meta dt { color: var(--robot-muted); font-size: 12px; }
+        .arm-module-preview__meta dd { margin: 0; color: var(--robot-text); font-size: 14px; }
         @media (max-width: 1240px) { .component-library-grid { grid-template-columns: 300px minmax(380px, 1fr); overflow-y: auto; } .component-library-right { grid-column: 1 / -1; min-height: 680px; display: grid; grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 760px) { .component-library-grid { grid-template-columns: minmax(0, 1fr); } .component-library-right { grid-column: auto; display: flex; } }
+        @media (max-width: 760px) { .component-library-grid { grid-template-columns: minmax(0, 1fr); } .component-library-right { grid-column: auto; display: flex; } .arm-create-form, .arm-module-preview { grid-template-columns: 1fr; } .arm-assembly-row { grid-template-columns: 1fr; } }
       `}</style>
 
+      {activeComponentId === null ? (
+        <section className="component-library-list">
+          <header className="component-library-list__header">
+            <div>
+              <h1>组件库</h1>
+              <p>管理机器人组件，点击卡片进入查看模型结构与参数配置。</p>
+            </div>
+            <div className="component-library-list__tools">
+              <ArcoTextInput scope="robot" icon={<Search size={14} />} value={componentSearchQuery} onChange={event => setComponentSearchQuery(event.target.value)} placeholder="搜索组件名称、标识符…" style={{ width: 260 }} />
+              <ArcoButton scope="robot" type="primary" icon={<Plus size={15} />} onClick={openCreateArm}>新增组件</ArcoButton>
+            </div>
+          </header>
+          <div className="component-library-list__scroll">
+            {filteredComponentCards.length ? (
+              <div className="model-library-grid">
+                {filteredComponentCards.map(component => (
+                  <article key={component.id} className="model-library-card">
+                    <button type="button" className="model-card-main" onClick={() => openComponentDetail(component.id)} aria-label={`查看${component.name}详情`}>
+                      <ComponentCardPreview kind={component.kind} />
+                      <div className="model-card-content">
+                        <div className="model-card-title-row">
+                          <div style={{ minWidth: 0 }}><h2 className="model-card-title">{component.name}</h2><p className="model-card-type">{component.identifier}</p></div>
+                          <span className="robot-detail-chip" data-tone={component.builtin ? 'accent' : undefined}>{component.builtin ? '内置' : '自定义'}</span>
+                        </div>
+                        <div className="model-card-stats">
+                          <div className="model-card-stat"><span>类型</span><strong>{component.kind === 'arm' ? '机械臂整臂' : '底盘'}</strong></div>
+                          <div className="model-card-stat"><span>子类型</span><strong>{component.subtype}</strong></div>
+                          <div className="model-card-stat"><span>槽位</span><strong>{component.slotCount}</strong></div>
+                        </div>
+                      </div>
+                    </button>
+                    <footer className="model-card-footer">
+                      <span className="model-card-updated">更新于 {component.updatedAt}</span>
+                      <div className="model-card-actions">
+                        <ArcoIconButton scope="robot" type="text" size="small" icon={<Pencil size={14} />} aria-label={`查看${component.name}`} title="查看详情" onClick={() => openComponentDetail(component.id)} />
+                        {!component.builtin ? <ArcoIconButton scope="robot" type="text" status="danger" size="small" icon={<Trash2 size={14} />} aria-label={`删除${component.name}`} title="删除" onClick={() => setComponentDeleteTargetId(component.id)} /> : null}
+                      </div>
+                    </footer>
+                  </article>
+                ))}
+              </div>
+            ) : <div className="component-library-empty">没有匹配“{componentSearchQuery}”的组件。</div>}
+          </div>
+        </section>
+      ) : (
       <div className="component-library-grid">
         <div className="component-library-left">
         <section className="component-library-card component-library-info">
-          <header className="component-library-card__header"><Box size={18} color="var(--robot-accent)" /><h1>组件库</h1></header>
+          <header className="component-library-card__header"><ArcoIconButton scope="robot" type="text" size="small" icon={<ArrowLeft size={17} />} aria-label="返回组件库" title="返回组件库" onClick={() => setActiveComponentId(null)} /><h1 style={{ flex: 1 }}>{activeComponent.name}</h1></header>
           <div className="component-library-meta">
-            <div style={{ padding: 12, borderRadius: 'var(--robot-inner-radius)', background: 'var(--robot-accent-soft)', color: 'var(--robot-accent-text)', fontSize: 14, fontWeight: 600 }}>仙工底盘</div>
-            <label>名称<strong>仙工底盘</strong></label>
-            <label>标识<strong>xiangong-base</strong></label>
+            <div style={{ padding: 12, borderRadius: 'var(--robot-inner-radius)', background: 'var(--robot-accent-soft)', color: 'var(--robot-accent-text)', fontSize: 14, fontWeight: 600 }}>{activeComponent.name}</div>
+            <label>名称<strong>{activeComponent.name}</strong></label>
+            <label>标识<strong>{activeComponent.identifier}</strong></label>
             <label>描述<strong>-</strong></label>
             {componentDictionary?.fields.map(field => {
               const allowedValues = getAllowedDictionaryValues(componentDictionary, field.id, componentDictionarySelections);
@@ -4373,11 +4744,11 @@ export function RobotComponentLibrary({
           <header className="component-library-card__header"><h2>参数配置</h2></header>
           <div className="component-library-parameter__body">
             <div className="component-library-parameter__section">
-              <h3>底盘参数</h3>
+              <h3>{activeComponentCard?.kind === 'arm' ? '整臂参数' : '底盘参数'}</h3>
               <div className="component-library-parameter__grid">
-                <label>驱动形式<ArcoTextInput scope="robot" value={config.driver} onChange={event => setConfig(current => ({ ...current, driver: event.target.value }))} placeholder="-" /></label>
+                <label>{activeComponentCard?.kind === 'arm' ? '驱动方式' : '驱动形式'}<ArcoTextInput scope="robot" value={config.driver} onChange={event => setConfig(current => ({ ...current, driver: event.target.value }))} placeholder="-" /></label>
                 <label>最大负载（kg）<ArcoTextInput scope="robot" value={config.payload} onChange={event => setConfig(current => ({ ...current, payload: event.target.value }))} placeholder="-" /></label>
-                <label>轴距（mm）<ArcoTextInput scope="robot" value={config.wheelbase} onChange={event => setConfig(current => ({ ...current, wheelbase: event.target.value }))} placeholder="-" /></label>
+                <label>{activeComponentCard?.kind === 'arm' ? '工作半径（mm）' : '轴距（mm）'}<ArcoTextInput scope="robot" value={config.wheelbase} onChange={event => setConfig(current => ({ ...current, wheelbase: event.target.value }))} placeholder="-" /></label>
               </div>
             </div>
             <div className="component-library-parameter__section">
@@ -4396,7 +4767,7 @@ export function RobotComponentLibrary({
         </section>
         </div>
 
-        <ComponentChassisScene />
+        <ComponentChassisScene kind={activeComponentCard?.kind ?? 'chassis'} name={activeComponent.name} />
 
         <div className="component-library-right">
           <section className="component-library-card component-library-tree">
@@ -4422,6 +4793,146 @@ export function RobotComponentLibrary({
           {selectedNode && <TopologyParamPanel node={selectedNode} onChange={updateNode} readOnly={false} onReadOnlyAttempt={() => {}} />}
         </div>
       </div>
+      )}
+
+      <ArcoModal
+        open={Boolean(componentDeleteTargetId)}
+        onOpenChange={open => { if (!open) setComponentDeleteTargetId(null); }}
+        scope="robot"
+        status="danger"
+        title="删除组件"
+        size="sm"
+        footer={<><ArcoButton scope="robot" onClick={() => setComponentDeleteTargetId(null)}>取消</ArcoButton><ArcoButton scope="robot" type="primary" status="danger" onClick={deleteCreatedComponent}>删除</ArcoButton></>}
+      >
+        <p style={{ margin: 0, color: 'var(--robot-muted)', fontSize: 14, lineHeight: 1.7 }}>确认删除“{componentCards.find(item => item.id === componentDeleteTargetId)?.name ?? '该组件'}”吗？对应装配配置将一并移除。</p>
+      </ArcoModal>
+
+      <ArcoModal
+        open={createArmOpen}
+        onOpenChange={setCreateArmOpen}
+        scope="robot"
+        title="创建机械臂整臂组件"
+        description="填写基础信息并按照构型模板完成模块装配。"
+        size="xl"
+        maxWidth="calc(100vw - 48px)"
+        bodyStyle={{ overflow: 'hidden' }}
+        footer={createArmStep === 1 ? <>
+          <ArcoButton scope="robot" onClick={() => setCreateArmOpen(false)}>取消</ArcoButton>
+          <ArcoButton
+            scope="robot"
+            type="primary"
+            disabled={!armForm.name.trim() || Boolean(identifierError) || !armForm.typeId || !armForm.subtypeId || !selectedArmTemplate}
+            onClick={goToAssembly}
+          >下一步：模块装配</ArcoButton>
+        </> : <>
+          <ArcoButton scope="robot" onClick={() => setCreateArmStep(1)}>上一步</ArcoButton>
+          <ArcoButton
+            scope="robot"
+            type="primary"
+            disabled={!selectedArmTemplate || selectedArmTemplate.slots.some(slot => !armAssembly[slot.id])}
+            onClick={submitArmComponent}
+          >提交并生成组件</ArcoButton>
+        </>}
+      >
+        <div className="arm-create-steps" aria-label="创建步骤">
+          <button type="button" className="arm-create-step" data-selected={createArmStep === 1}>1&nbsp; 基础信息与构型</button>
+          <button type="button" className="arm-create-step" data-selected={createArmStep === 2}>2&nbsp; 模块装配</button>
+        </div>
+
+        {createArmStep === 1 ? (
+          <div className="arm-create-form">
+            <ArcoField label="组件名称" required>
+              <ArcoTextInput scope="robot" value={armForm.name} onChange={event => setArmForm(current => ({ ...current, name: event.target.value }))} placeholder="例如：六轴协作机械臂整臂" autoFocus />
+            </ArcoField>
+            <ArcoField label="英文标识符" required>
+              <ArcoTextInput scope="robot" value={armForm.identifier} onChange={event => setArmForm(current => ({ ...current, identifier: event.target.value }))} placeholder="例如：cobot_arm_6" />
+              {armForm.identifier && identifierError ? <p className="arm-create-error">{identifierError}</p> : <p className="arm-create-help">创建后不可修改，并作为 Link 名称前缀。</p>}
+            </ArcoField>
+            <ArcoField label="组件类型" required>
+              <ArcoSelect scope="robot" value={armForm.typeId} onChange={event => {
+                const typeId = event.target.value;
+                const subtypes = componentDictionary && componentSubtypeField
+                  ? getAllowedDictionaryValues(componentDictionary, componentSubtypeField.id, { [componentTypeField?.id ?? 'component-type']: typeId })
+                  : [];
+                setArmForm(current => ({ ...current, typeId, subtypeId: subtypes[0]?.id ?? '' }));
+              }}>
+                {armTypeValue ? <option value={armTypeValue.id}>机械臂整臂</option> : <option value="">暂无可用类型</option>}
+              </ArcoSelect>
+            </ArcoField>
+            <ArcoField label="子类型" required>
+              <ArcoSelect scope="robot" value={armForm.subtypeId} onChange={event => setArmForm(current => ({ ...current, subtypeId: event.target.value }))}>
+                <option value="">请选择子类型</option>
+                {allowedSubtypes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </ArcoSelect>
+            </ArcoField>
+            <div className="arm-create-form__wide">
+              <ArcoField label="构型模板" required>
+                <ArcoSelect scope="robot" value={armForm.templateId} onChange={event => { setArmForm(current => ({ ...current, templateId: event.target.value })); setArmAssembly({}); }}>
+                  <option value="">请选择构型模板</option>
+                  {enabledTemplates.map(item => <option key={item.id} value={item.id}>{item.name} · {item.dof} 轴</option>)}
+                </ArcoSelect>
+                <p className="arm-create-help">模板决定底座、关节和连杆的装配顺序，以及各槽位允许使用的规格。</p>
+              </ArcoField>
+            </div>
+            {selectedArmTemplate ? (
+              <div className="arm-create-form__wide arm-assembly-summary">
+                <CheckCircle2 size={17} color="var(--robot-success)" />
+                <span><strong>{selectedArmTemplate.name}</strong> 将生成 {selectedArmTemplate.slots.length} 个槽位：1 个底座、{selectedArmTemplate.dof} 个关节、{selectedArmTemplate.dof} 个连杆。</span>
+              </div>
+            ) : null}
+          </div>
+        ) : selectedArmTemplate ? (
+          <>
+            <div className="arm-assembly-summary">
+              <Box size={17} color="var(--robot-accent)" />
+              <span><strong>{selectedArmTemplate.name}</strong> · 请按运动链顺序完成 {selectedArmTemplate.slots.length} 个槽位，全部选择后才可生成组件。</span>
+            </div>
+            <div className="arm-assembly-list">
+              {selectedArmTemplate.slots.map(slot => {
+                const specifications = allowedSpecificationsForSlot(slot);
+                const modules = modulesForSlot(slot);
+                const selectedModule = modules.find(item => item.id === armAssembly[slot.id]);
+                const slotCode = slot.kind === 'base' ? 'BASE' : slot.kind === 'joint' ? `J${slot.id.split('-')[1] ?? ''}` : `L${slot.id.split('-')[1] ?? ''}`;
+                return (
+                  <div className="arm-assembly-row" key={slot.id}>
+                    <div className="arm-assembly-slot"><span className="arm-assembly-slot__code">{slotCode}</span><span><strong>{slot.name}</strong><span>{slot.kind === 'base' ? '底座' : slot.kind === 'joint' ? '关节' : '连杆'}</span></span></div>
+                    <div className="arm-assembly-specs" aria-label={`${slot.name}允许规格`}>
+                      {specifications.map(item => <span key={item.id}>{item.name}</span>)}
+                    </div>
+                    <div className="arm-assembly-picker">
+                      <ArcoSelect scope="robot" value={armAssembly[slot.id] ?? ''} onChange={event => setArmAssembly(current => ({ ...current, [slot.id]: event.target.value }))} aria-label={`选择${slot.name}模块`}>
+                        <option value="">请选择匹配模块</option>
+                        {modules.map(item => {
+                          const specification = componentSpecificationField?.values.find(value => value.id === item.specificationId);
+                          return <option key={item.id} value={item.id}>{item.name} · {specification?.name ?? '-'}</option>;
+                        })}
+                      </ArcoSelect>
+                      <ArcoIconButton scope="robot" icon={<Eye size={16} />} aria-label={`预览${slot.name}模块`} title={selectedModule?.previewable ? '预览模块' : '该模块暂无预览'} disabled={!selectedModule?.previewable} onClick={() => setPreviewModuleId(selectedModule?.id ?? null)} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : null}
+      </ArcoModal>
+
+      <ArcoModal open={Boolean(previewModule)} onOpenChange={open => { if (!open) setPreviewModuleId(null); }} scope="robot" title="模块预览" size="lg" footer={<ArcoButton scope="robot" onClick={() => setPreviewModuleId(null)}>关闭</ArcoButton>}>
+        {previewModule ? (
+          <div className="arm-module-preview">
+            <div className="arm-module-preview__scene" aria-label={`${previewModule.name}三维预览`}><div className="arm-module-preview__shape" /></div>
+            <div className="arm-module-preview__meta">
+              <h3>{previewModule.name}</h3>
+              <dl>
+                <div><dt>模块标识</dt><dd>{previewModule.identifier}</dd></div>
+                <div><dt>模块类型</dt><dd>{previewModule.kind === 'base' ? '底座' : previewModule.kind === 'joint' ? '关节' : '连杆'}</dd></div>
+                <div><dt>规格</dt><dd>{componentSpecificationField?.values.find(value => value.id === previewModule.specificationId)?.name ?? '-'}</dd></div>
+                <div><dt>预览说明</dt><dd>用于装配前核对模块外形与规格，最终结构以模块模型文件为准。</dd></div>
+              </dl>
+            </div>
+          </div>
+        ) : null}
+      </ArcoModal>
 
       <ArcoModal open={addDialogOpen} onOpenChange={setAddDialogOpen} scope="robot" title={addAsRoot ? '添加根 Link' : `添加${topologyKindMeta(nodeKind).label}节点`} size="sm" footer={<><ArcoButton scope="robot" onClick={() => setAddDialogOpen(false)}>取消</ArcoButton><ArcoButton scope="robot" type="primary" onClick={confirmAdd} disabled={!nodeLabel.trim()}>添加</ArcoButton></>}>
         <ArcoField label="节点名称"><ArcoTextInput scope="robot" value={nodeLabel} onChange={event => setNodeLabel(event.target.value)} autoFocus /></ArcoField>
