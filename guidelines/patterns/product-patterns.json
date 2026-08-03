@@ -1,0 +1,74 @@
+{
+  "version": "1.7.0",
+  "name": "Digital Machine Product Patterns",
+  "defaultStyle": "current",
+  "industrialPolicy": "explicit-opt-in-only",
+  "shell": {
+    "name": "ProductShell",
+    "required": true,
+    "regions": ["ProductNavigation", "GlobalTopBar", "PageViewport"],
+    "metrics": {
+      "navigationWidth": 200,
+      "topbarHeight": 52,
+      "navigationItemHeight": 48,
+      "navigationItemRadius": 12,
+      "navigationIconSize": 18
+    },
+    "scrollOwner": "PageViewport",
+    "rules": [
+      "Business pages do not recreate global navigation or topbar",
+      "Only PageViewport content changes during page navigation",
+      "Industrial style is never inferred from a manufacturing domain name"
+    ]
+  },
+  "patterns": [
+    {
+      "key": "management-list",
+      "label": "标准管理列表",
+      "templateClass": "ds-page ds-page--list",
+      "regions": ["PageHeader", "TableSurface", "FilterBar", "TableScroll", "Pagination"],
+      "metrics": { "headerHeight": 44, "rowHeight": 60, "cellPaddingInline": 16, "actionColumnWidth": 96, "searchWidth": 312 },
+      "actions": { "pagePrimaryMax": 1, "rowActionComponent": "ProductIconButton", "rowActionGap": 8 },
+      "states": ["loading", "empty", "filtered-empty", "error", "ready"],
+      "scrollOwner": "TableScroll"
+    },
+    {
+      "key": "modal-form",
+      "label": "短创建与短编辑",
+      "component": "ProductModal",
+      "regions": ["Header", "Body", "Footer"],
+      "layout": { "columnsDesktop": 2, "fieldGap": 20, "sectionGap": 24 },
+      "footer": { "secondary": "cancel", "primaryMax": 1 },
+      "scrollOwner": "Body",
+      "states": ["open", "dirty", "saving", "field-error", "submit-error", "success"]
+    },
+    {
+      "key": "drawer-detail",
+      "label": "上下文详情",
+      "component": "ProductDrawer",
+      "regions": ["Header", "Body", "Footer"],
+      "defaultWidth": 420,
+      "complexWidth": "min(760px, calc(100vw - 48px))",
+      "sections": ["status", "basic-information", "business-information", "details", "operation-log"],
+      "scrollOwner": "Body",
+      "preserveListContext": ["query", "filters", "sorting", "pagination", "scrollPosition"]
+    },
+    {
+      "key": "import-workflow",
+      "label": "导入流程",
+      "component": "ProductSteps",
+      "steps": ["select-file", "parse-and-map", "preview-and-validate", "confirm", "result"],
+      "resultStates": ["success", "partial-success", "error"],
+      "requiredFeedback": ["fileName", "parsedCount", "duplicateCount", "failedCount", "downloadableErrors"]
+    }
+  ],
+  "crudDecision": {
+    "createShort": "modal-form",
+    "editShort": "modal-form",
+    "viewObject": "drawer-detail",
+    "editLong": "form-page",
+    "multiStep": "workflow-page",
+    "delete": "danger-confirm-modal",
+    "shortFeedback": "toast"
+  }
+}

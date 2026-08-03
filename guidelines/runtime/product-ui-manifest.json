@@ -1,0 +1,51 @@
+{
+  "version": "1.7.0",
+  "entrypoint": "src/app/components/ProductUI.tsx",
+  "policy": "Business components import approved Product* exports only",
+  "stable": [
+    { "contract": "Button", "export": "ProductButton" },
+    { "contract": "IconButton", "export": "ProductIconButton" },
+    { "contract": "ToggleButton", "export": "ProductToggleButton" },
+    { "contract": "IconToggleButton", "export": "ProductIconToggleButton" },
+    { "contract": "Tag", "export": "ProductTag" },
+    { "contract": "Input", "export": "ProductTextInput" },
+    { "contract": "TextArea", "export": "ProductTextArea" },
+    { "contract": "Select", "export": "ProductSelect" },
+    { "contract": "Field", "export": "ProductField" },
+    { "contract": "Checkbox", "export": "ProductCheckbox" },
+    { "contract": "Modal", "export": "ProductModal" },
+    { "contract": "Drawer", "export": "ProductDrawer" },
+    { "contract": "Upload", "export": "ProductUploadBox" }
+  ],
+  "requiredNext": [
+    "ProductShell",
+    "ProductPageHeader",
+    "ProductSearchBar",
+    "ProductFilterBar",
+    "ProductTable",
+    "ProductTableActionGroup",
+    "ProductPagination",
+    "ProductDateTimePicker",
+    "ProductInputNumber",
+    "ProductTooltip",
+    "ProductSteps",
+    "ProductTimeline",
+    "ProductBreadcrumb",
+    "ProductContentState"
+  ],
+  "forbiddenDirectImports": [
+    "@heroui/react",
+    "@mui/material",
+    "@mui/icons-material",
+    "@radix-ui/*"
+  ],
+  "forbiddenBusinessImplementations": [
+    "native-select",
+    "private-modal",
+    "private-drawer",
+    "private-toast",
+    "private-tag",
+    "arbitrary-z-index",
+    "hard-coded-theme-color"
+  ]
+}

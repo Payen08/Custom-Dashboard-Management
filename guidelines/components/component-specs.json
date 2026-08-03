@@ -1,5 +1,5 @@
 {
-  "version": "1.5.0",
+  "version": "1.7.0",
   "name": "Component Contracts",
   "description": "Framework-agnostic component contracts. Parameter names describe design behavior; each frontend implementation maps them to its approved component set.",
   "categories": [

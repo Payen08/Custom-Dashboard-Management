@@ -1,5 +1,5 @@
 {
-  "version": "1.5.0",
+  "version": "1.7.0",
   "name": "Product Design Tokens",
   "description": "Frontend handoff source of truth. Values are theme-aware; component tokens reference semantic tokens by path.",
   "theme": {
@@ -273,6 +273,7 @@
       "navigationWidth": { "desktop": 232, "tablet": 208, "mobile": "100%" },
       "sidebarWidth": { "desktop": 292, "tablet": 272, "mobile": "100%" },
       "detailSidebarWidth": { "desktop": 320, "tablet": 300, "mobile": "100%" },
+      "productShell": { "navigationWidth": 200, "topbarHeight": 52, "navigationItemHeight": 48, "navigationItemRadius": 12, "navigationIconSize": 18 },
       "breakpoint": { "mobileMax": 767, "tabletMax": 1199, "minimumViewport": 320 }
     },
     "control": {
@@ -281,7 +282,7 @@
       "fieldHeight": 40,
       "icon": { "sm": 14, "md": 16 },
       "paddingInline": { "sm": 10, "md": 14 },
-      "table": { "headerHeight": 44, "rowHeight": 52 },
+      "table": { "headerHeight": 44, "rowHeight": 60, "cellPaddingInline": 16, "actionColumnWidth": 96 },
       "tag": { "smHeight": 20, "mdHeight": 24, "paddingInline": 8 }
     },
     "icon": {
@@ -362,7 +363,7 @@
     },
     "table": {
       "headerHeight": 44,
-      "rowHeight": 52,
+      "rowHeight": 60,
       "headerBackground": "{theme.color.soft}",
       "border": "{theme.color.border}",
       "row": { "hoverBackground": "{state.hover.background}", "pressedBackground": "{state.pressed.background}", "selectedBackground": "{state.selected.background}", "selectedText": "{state.selected.text}" }

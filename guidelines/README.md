@@ -1,6 +1,6 @@
 # 数字造机 UI 设计规范
 
-当前发布版本：**1.5.0**
+当前发布版本：**1.7.0**
 
 状态：**Active**
 
@@ -12,10 +12,14 @@
 
 | 角色 | 首先阅读 | 实际使用 |
 | --- | --- | --- |
-| 前端 | [Token 接入说明](docs/token-integration.md) | [Design Token](tokens/design-tokens.json)、[组件契约](components/component-specs.json)、[Ant Design 映射示例](adapters/ant-design-theme.ts) |
+| 前端 | [前端接入清单](docs/frontend-onboarding.md) | [Design Token](tokens/design-tokens.json)、[产品模式](patterns/product-patterns.json)、[运行时清单](runtime/product-ui-manifest.json)、[React 模板](examples/react/README.md) |
 | 设计 | [UI 总规范](docs/ui-guidelines.md) | 颜色、字体、间距、状态、模板和组件边界 |
 | 测试 | [UI 总规范](docs/ui-guidelines.md#18-版本管理与自动化验收) | 状态矩阵、响应式、无障碍和验收清单 |
 | 维护者 | [贡献与发布](CONTRIBUTING.md) | 版本升级、变更评审、CI 校验与发布记录 |
+
+产品级页面实现还必须同时阅读 [产品外壳规范](docs/product-shell.md)、[页面 Recipe](docs/page-recipes.md)、[ProductUI 映射](docs/product-ui-mapping.md) 与 [视觉回归要求](docs/visual-regression.md)。
+
+完整接入资料包括 [Token 接入说明](docs/token-integration.md)、[ProductShell 模板](examples/react/ProductShell.template.tsx)、[管理列表模板](examples/react/ManagementListPage.template.tsx)、[Modal 表单模板](examples/react/ModalForm.template.tsx)、[Drawer 详情模板](examples/react/DrawerDetail.template.tsx)、[前端审计脚本](scripts/audit-frontend.mjs) 和 [打包脚本](scripts/package.sh)。
 
 ## 目录结构
 
@@ -28,7 +32,17 @@
 ├── package.json                      # 规范包版本与本地命令
 ├── docs/
 │   ├── ui-guidelines.md              # 唯一文字规范与验收依据
-│   └── token-integration.md          # 前端 Token 接入说明
+│   ├── token-integration.md          # 前端 Token 接入说明
+│   ├── product-shell.md              # 数字造机产品外壳与全局导航规范
+│   ├── page-recipes.md               # 管理页面、表单、抽屉与 CRUD 配方
+│   ├── product-ui-mapping.md         # 规范组件到 ProductUI 的实现映射
+│   ├── frontend-onboarding.md        # 前端接入顺序与完成定义
+│   └── visual-regression.md          # 视觉回归矩阵与合并门禁
+├── patterns/
+│   └── product-patterns.json         # 机器可读产品外壳与页面模式
+├── runtime/
+│   └── product-ui-manifest.json      # 正式组件、待补组件与禁止依赖
+├── examples/react/                   # 可复制的 React 产品结构模板
 ├── tokens/
 │   └── design-tokens.json            # 唯一机器可读 Token 源
 ├── components/
@@ -38,7 +52,9 @@
 ├── references/
 │   └── ant-design-background.md      # 背景资料，不是当前规范
 └── scripts/
-    └── validate.mjs                  # 独立规范校验
+    ├── validate.mjs                  # 独立规范校验
+    ├── audit-frontend.mjs            # 业务源码静态审计
+    └── package.sh                    # 生成分发压缩包
 ```
 
 ## 文件优先级
@@ -59,6 +75,23 @@
 4. 页面不得复制原型工程样式，也不得用页面私有 CSS 覆盖基础组件契约。
 5. 接入完成后，按 UI 总规范覆盖 Light/Dark、桌面/Pad、全部适用状态及键盘操作。
 
+## 前端项目审计
+
+```bash
+npm run audit -- ../your-frontend/src
+```
+
+存量项目可增加 `--report-only` 建立整改基线。审计会阻止原生业务 Select、底层 UI 库直连、私有 Modal/Drawer 和任意 `z-index`，并报告硬编码颜色与页面内联样式。
+
+## 生成分发包
+
+```bash
+npm run check
+npm run pack:bundle
+```
+
+压缩包生成在规范目录的上一级，文件名包含当前版本。
+
 ## 本地校验
 
 本规范包无第三方依赖，安装 Node.js 20+ 后执行：
@@ -76,7 +109,7 @@ npm run check
 ```bash
 git init
 git add .
-git commit -m "docs: publish design system v1.5.0"
+git commit -m "docs: publish design system v1.7.0"
 git branch -M main
 git remote add origin <your-gitlab-repository-url>
 git push -u origin main

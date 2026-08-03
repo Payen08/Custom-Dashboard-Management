@@ -2,6 +2,8 @@
 
 `tokens/design-tokens.json` 是前端接入的唯一 Token 源；它给出了 light / dark 两套完整语义色、可选风格预设，以及共享的字体、间距、圆角、透明度、动效、层级、布局、控件、状态和组件 Token。
 
+数字造机现有工程的组件实现入口与组合方式见 `docs/product-ui-mapping.md`，产品外壳及页面级组合分别见 `docs/product-shell.md` 和 `docs/page-recipes.md`。Token 只决定数值与语义，不能替代这些实现和组合契约。
+
 `adapters/ant-design-theme.ts` 是 Ant Design 主题映射示例。应用根部按当前主题、风格和工业主题色调用 `createProductTheme(mode, preset, industrialColorTheme)` 并传入主题提供者即可；业务页面不得再写颜色、间距、圆角、阴影、控件高度或动效时长。
 
 ## 交付文件

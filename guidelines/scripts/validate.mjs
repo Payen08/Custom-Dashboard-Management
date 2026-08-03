@@ -15,10 +15,24 @@ const requiredFiles = [
   'package.json',
   'docs/ui-guidelines.md',
   'docs/token-integration.md',
+  'docs/product-shell.md',
+  'docs/page-recipes.md',
+  'docs/product-ui-mapping.md',
+  'docs/frontend-onboarding.md',
+  'docs/visual-regression.md',
   'tokens/design-tokens.json',
   'components/component-specs.json',
+  'patterns/product-patterns.json',
+  'runtime/product-ui-manifest.json',
+  'examples/react/README.md',
+  'examples/react/ProductShell.template.tsx',
+  'examples/react/ManagementListPage.template.tsx',
+  'examples/react/ModalForm.template.tsx',
+  'examples/react/DrawerDetail.template.tsx',
   'adapters/ant-design-theme.ts',
   'references/ant-design-background.md',
+  'scripts/audit-frontend.mjs',
+  'scripts/package.sh',
 ];
 
 requiredFiles.forEach((path) => expect(existsSync(join(root, path)), `缺少交付文件：${path}`));
@@ -26,9 +40,13 @@ requiredFiles.forEach((path) => expect(existsSync(join(root, path)), `缺少交�
 let packageInfo;
 let tokens;
 let componentSpecs;
+let productPatterns;
+let runtimeManifest;
 try { packageInfo = JSON.parse(read('package.json')); } catch (error) { errors.push(`package.json 无法解析：${error.message}`); }
 try { tokens = JSON.parse(read('tokens/design-tokens.json')); } catch (error) { errors.push(`design-tokens.json 无法解析：${error.message}`); }
 try { componentSpecs = JSON.parse(read('components/component-specs.json')); } catch (error) { errors.push(`component-specs.json 无法解析：${error.message}`); }
+try { productPatterns = JSON.parse(read('patterns/product-patterns.json')); } catch (error) { errors.push(`product-patterns.json 无法解析：${error.message}`); }
+try { runtimeManifest = JSON.parse(read('runtime/product-ui-manifest.json')); } catch (error) { errors.push(`product-ui-manifest.json 无法解析：${error.message}`); }
 
 if (packageInfo && tokens && componentSpecs) {
   expect(packageInfo.version === tokens.version, 'package.json 与 design-tokens.json 版本不一致。');
@@ -55,6 +73,11 @@ if (packageInfo && tokens && componentSpecs) {
   expect(tokens.shared?.spacing && tokens.shared?.typography && tokens.shared?.motion, 'Token 缺少间距、字体或动效基础体系。');
   expect(tokens.state?.pressed && tokens.state?.selected && tokens.state?.focus, 'Token 缺少 Pressed、Selected 或 Focus 状态。');
   expect(tokens.components?.button && tokens.components?.input && tokens.components?.table, 'Token 缺少核心组件映射。');
+  expect(tokens.shared?.control?.table?.headerHeight === 44, 'Current 表格表头必须为 44px。');
+  expect(tokens.shared?.control?.table?.rowHeight === 60, 'Current 表格数据行必须为 60px。');
+  expect(tokens.components?.table?.rowHeight === tokens.shared?.control?.table?.rowHeight, '表格组件 Token 与共享控件行高不一致。');
+  expect(tokens.shared?.layout?.productShell?.navigationWidth === 200, '数字造机产品导航宽度必须为 200px。');
+  expect(tokens.shared?.layout?.productShell?.topbarHeight === 52, '数字造机产品顶栏高度必须为 52px。');
 
   expect(Array.isArray(componentSpecs.components) && componentSpecs.components.length >= 22, '组件契约必须覆盖当前发布的 22 项基础组件。');
   componentSpecs.components?.forEach((component) => {
@@ -69,6 +92,20 @@ if (packageInfo && tokens && componentSpecs) {
   });
 }
 
+if (packageInfo && productPatterns && runtimeManifest) {
+  expect(packageInfo.version === productPatterns.version, 'package.json 与产品模式版本不一致。');
+  expect(packageInfo.version === runtimeManifest.version, 'package.json 与运行时组件清单版本不一致。');
+  expect(productPatterns.defaultStyle === 'current', '产品模式必须默认使用 Current。');
+  expect(productPatterns.industrialPolicy === 'explicit-opt-in-only', 'Industrial 必须显式启用。');
+  expect(productPatterns.shell?.metrics?.navigationWidth === 200, '产品模式导航宽度必须为 200px。');
+  expect(productPatterns.patterns?.some(pattern => pattern.key === 'management-list'), '产品模式缺少标准管理列表。');
+  expect(productPatterns.patterns?.some(pattern => pattern.key === 'modal-form'), '产品模式缺少 Modal 表单。');
+  expect(productPatterns.patterns?.some(pattern => pattern.key === 'drawer-detail'), '产品模式缺少 Drawer 详情。');
+  expect(runtimeManifest.stable?.some(item => item.export === 'ProductSelect'), '运行时清单缺少 ProductSelect。');
+  expect(runtimeManifest.requiredNext?.includes('ProductShell'), '运行时清单必须声明 ProductShell。');
+  expect(runtimeManifest.forbiddenBusinessImplementations?.includes('native-select'), '运行时清单必须禁止原生业务 Select。');
+}
+
 const guidelines = read('docs/ui-guidelines.md');
 [
   '## 12. 组件状态模型',
@@ -79,7 +116,34 @@ const guidelines = read('docs/ui-guidelines.md');
   '## 20. 页面模板、业务组合与页面级状态',
   '## 21. 动效规范',
   '## 22. 风格预设',
+  '## 23. 数字造机产品一致性规范',
 ].forEach((heading) => expect(guidelines.includes(heading), `UI 总规范缺少章节：${heading}`));
+
+const productShell = read('docs/product-shell.md');
+expect(productShell.includes('ProductNavigation') && productShell.includes('GlobalTopBar'), '产品外壳规范缺少导航或顶栏契约。');
+
+const pageRecipes = read('docs/page-recipes.md');
+['CRUD 交互决策表', '标准管理列表页', 'Modal 新增与编辑', 'Drawer 详情', '导入流程'].forEach((heading) => {
+  expect(pageRecipes.includes(heading), `页面 Recipe 缺少：${heading}。`);
+});
+
+const productUiMapping = read('docs/product-ui-mapping.md');
+['ProductButton', 'ProductIconButton', 'ProductSelect', 'ProductModal', 'ProductDrawer'].forEach((component) => {
+  expect(productUiMapping.includes(component), `ProductUI 映射缺少 ${component}。`);
+});
+
+const onboarding = read('docs/frontend-onboarding.md');
+expect(onboarding.includes('Definition of Done') && onboarding.includes('Industrial 不是制造业页面的默认风格'), '前端接入清单缺少完成定义或 Industrial 边界。');
+
+const visualRegression = read('docs/visual-regression.md');
+['1440×900', '1024×768', '390×844', 'Select Open', 'Drawer Open'].forEach(value => {
+  expect(visualRegression.includes(value), `视觉回归矩阵缺少 ${value}。`);
+});
+
+const auditScript = read('scripts/audit-frontend.mjs');
+['native-select', 'direct-ui-import', 'private-overlay', 'arbitrary-z-index'].forEach(rule => {
+  expect(auditScript.includes(rule), `前端审计脚本缺少 ${rule} 规则。`);
+});
 
 const adapter = read('adapters/ant-design-theme.ts');
 expect(adapter.includes("../tokens/design-tokens.json"), 'Ant Design 适配器没有引用发布 Token。');

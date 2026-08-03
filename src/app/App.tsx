@@ -27,6 +27,7 @@ import { INITIAL_SOFTWARE_PRODUCTS, type SoftwareProduct } from './softwareProdu
 import { buildInitialDictionaryCategories, type DictionaryCategory } from './dictionaryData';
 import { useComponentCatalog } from './components/useComponentCatalog';
 import { ArcoButton, ArcoIconButton, ArcoIconToggleButton, ArcoModal, ArcoTag } from './components/ProductUI';
+import { ManufacturingSystem } from './components/ManufacturingSystem';
 import { getAppThemeVars, type IndustrialColorTheme, type StylePreset, type ThemeMode } from './theme';
 import {
   type HomepageScheme, type PlacedItem,
@@ -38,7 +39,7 @@ const FONT = "'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
 
 type EditorNavKey = 'home' | 'status' | 'components' | 'records' | 'alerts' | 'settings' | 'apps' | 'robotComponents' | 'products' | 'software' | 'installations' | 'dictionary' | 'dataManagement' | 'guidelines';
 type AppThemeMode = ThemeMode;
-type WorkspaceProduct = 'login' | 'workspace' | 'software' | 'authorization' | 'machine';
+type WorkspaceProduct = 'login' | 'workspace' | 'software' | 'authorization' | 'machine' | 'manufacturing';
 
 const ROBOT_THEME_STORAGE_KEY = 'robot-manager-theme-mode';
 const STYLE_PRESET_STORAGE_KEY = 'digital-machine-style-preset';
@@ -73,6 +74,14 @@ function initialDictionaryCategories(): DictionaryCategory[] {
 }
 
 const WORKSPACE_PRODUCTS = [
+  {
+    key: 'manufacturing' as const,
+    icon: Factory,
+    eyebrow: 'MES',
+    title: '智能制造',
+    description: '贯通工单、工装、工作台与生产基础数据，追踪制造全过程。',
+    meta: '生产协同',
+  },
   {
     key: 'software' as const,
     icon: Package,
@@ -147,8 +156,8 @@ function WorkspaceLauncher({
         .workspace-launcher__grid {
           display: grid;
           grid-template-columns: repeat(12, minmax(0, 1fr));
-          grid-template-rows: repeat(2, minmax(180px, 1fr));
-          gap: 16px;
+          grid-template-rows: repeat(3, minmax(118px, 1fr));
+          gap: 12px 16px;
           margin-top: 28px;
         }
         .workspace-product {
@@ -165,7 +174,7 @@ function WorkspaceLauncher({
         }
         .workspace-product--primary {
           grid-column: span 7;
-          grid-row: span 2;
+          grid-row: span 3;
           min-height: 404px;
           padding: 28px;
           border-color: var(--app-border);
@@ -176,7 +185,24 @@ function WorkspaceLauncher({
         }
         .workspace-product--secondary {
           grid-column: span 5;
-          min-height: 194px;
+          min-height: 118px;
+          padding: 16px 20px;
+        }
+        .workspace-product--secondary > div:first-child > div:first-child {
+          width: 34px !important;
+          height: 34px !important;
+          border-radius: 9px !important;
+        }
+        .workspace-product--secondary > div:nth-child(2) {
+          margin-top: 10px !important;
+        }
+        .workspace-product--secondary h2 {
+          font-size: 16px !important;
+        }
+        .workspace-product--secondary p {
+          margin-top: 5px !important;
+          font-size: 12px !important;
+          line-height: 1.45 !important;
         }
         .workspace-product:hover {
           border-color: var(--app-accent-border);
@@ -410,7 +436,7 @@ function WorkspaceLauncher({
               上午好，robot-admin
             </h1>
             <p style={{ margin: '12px 0 0', color: 'var(--app-text)', fontSize: 14, lineHeight: 1.7 }}>
-              从一个工作台进入软件、授权与数字造机能力。
+              从一个工作台进入软件、授权、数字造机与智能制造能力。
             </p>
           </div>
           <div style={{
@@ -1809,6 +1835,10 @@ export default function App() {
         />
       </WorkspaceProductFrame>
     );
+  }
+
+  if (workspaceProduct === 'manufacturing') {
+    return <ManufacturingSystem onBack={returnToWorkspace} themeMode={robotThemeMode} onThemeToggle={toggleRobotThemeMode} />;
   }
 
   if (!isEditing && !isCanvasPreview && activeEditorNav === 'apps') {
