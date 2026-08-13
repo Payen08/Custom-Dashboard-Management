@@ -37,7 +37,7 @@
       "label": "短创建与短编辑",
       "component": "ProductModal",
       "regions": ["Header", "Body", "Footer"],
-      "layout": { "columnsDesktop": 2, "fieldGap": 20, "sectionGap": 24 },
+      "layout": { "columnsDesktop": 2, "fieldGap": 16, "sectionGap": 24 },
       "footer": { "secondary": "cancel", "primaryMax": 1 },
       "scrollOwner": "Body",
       "states": ["open", "dirty", "saving", "field-error", "submit-error", "success"]
@@ -70,5 +70,36 @@
     "multiStep": "workflow-page",
     "delete": "danger-confirm-modal",
     "shortFeedback": "toast"
+  },
+  "interactionRules": {
+    "inputDomains": {
+      "pointer": ["mouse", "touch", "pen"],
+      "keyboard": ["navigation", "text-entry", "shortcut-binding", "shortcut-registry", "shortcut-help"],
+      "assistive": ["screen-reader", "switch-control", "voice-control"]
+    },
+    "shortcutOwnership": "keyboard",
+    "shortcutEntry": "keyboard-and-shortcuts",
+    "ruleFields": ["id", "scope", "trigger", "preconditions", "effect", "priority", "exclusiveGroup", "fallback"],
+    "precedence": [
+      "security-permission-lock-risk",
+      "unsaved-data-integrity-concurrency",
+      "modal-focus-ime",
+      "local-component-scope",
+      "validated-user-configuration",
+      "page-product-platform-default",
+      "safe-fallback"
+    ],
+    "conflictPolicy": {
+      "samePriorityExclusiveEffects": "reject-on-save",
+      "parallelEffects": "only-independent-commutative-idempotent",
+      "writeEffects": "serial-by-default",
+      "noMatch": "safe-fallback-or-no-side-effect"
+    },
+    "dependencyPolicy": {
+      "graph": "directed-acyclic",
+      "cycle": "reject-on-save-with-full-path",
+      "implicitOrder": "forbidden"
+    },
+    "diagnostics": ["matchedRuleIds", "suppressedRuleIds", "finalEffect", "decisionReason"]
   }
 }

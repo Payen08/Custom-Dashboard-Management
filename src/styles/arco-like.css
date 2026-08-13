@@ -15,7 +15,7 @@
   gap: var(--ds-button-icon-gap, 8px);
   font-size: var(--ds-button-font-size-md, var(--ds-font-size-14, 14px));
   font-weight: var(--ds-button-font-weight, var(--ds-font-weight-semibold, 600));
-  line-height: var(--ds-button-line-height, 1);
+  line-height: var(--ds-button-line-height, 20px);
   white-space: nowrap;
   cursor: pointer;
   outline: none;
@@ -108,15 +108,15 @@
 }
 
 .arcoui-button[data-status="danger"] {
-  --arcoui-button-bg: var(--arcoui-danger-soft);
-  --arcoui-button-color: var(--arcoui-danger);
-  --arcoui-button-border: transparent;
+  --arcoui-button-bg: var(--ds-button-danger-soft-bg, var(--arcoui-danger-soft));
+  --arcoui-button-color: var(--ds-button-danger-soft-text, var(--arcoui-danger));
+  --arcoui-button-border: var(--ds-button-danger-soft-border, transparent);
 }
 
 .arcoui-button[data-status="danger"][data-type="primary"] {
-  --arcoui-button-bg: var(--arcoui-danger);
-  --arcoui-button-color: var(--arcoui-danger-contrast);
-  --arcoui-button-border: var(--arcoui-danger);
+  --arcoui-button-bg: var(--ds-button-danger-solid-bg, var(--arcoui-danger));
+  --arcoui-button-color: var(--ds-button-danger-solid-text, var(--arcoui-danger-contrast));
+  --arcoui-button-border: var(--ds-button-danger-solid-border, var(--arcoui-danger));
 }
 
 .arcoui-button[data-status="success"] {
@@ -127,16 +127,16 @@
 
 .arcoui-button[data-status="warning"] {
   --arcoui-button-bg: var(--arcoui-warning-soft);
-  --arcoui-button-color: var(--arcoui-warning);
+  --arcoui-button-color: var(--ds-color-warning-text, var(--arcoui-warning));
   --arcoui-button-border: transparent;
 }
 
 /* Shared metadata tag: use a filled treatment consistently, never an outline. */
 .arcoui-tag {
-  --arcoui-tag-background: var(--arcoui-neutral-soft);
-  --arcoui-tag-color: var(--arcoui-text);
+  --arcoui-tag-background: var(--ds-tag-neutral-bg);
+  --arcoui-tag-color: var(--ds-tag-neutral-text);
   min-height: var(--ds-tag-height-md, 24px);
-  padding: 0 var(--ds-tag-padding-inline, 8px);
+  padding: 0 var(--ds-tag-padding-inline-md, 12px);
   border: 0;
   border-radius: var(--ds-radius-pill, 999px);
   background: var(--arcoui-tag-background);
@@ -146,7 +146,7 @@
   justify-content: center;
   gap: 4px;
   box-sizing: border-box;
-  font-size: var(--ds-font-size-12, 12px);
+  font-size: var(--ds-tag-font-size-md, 12px);
   font-weight: var(--ds-font-weight-medium, 500);
   line-height: 1;
   white-space: nowrap;
@@ -154,29 +154,39 @@
 
 .arcoui-tag[data-size="small"] {
   min-height: var(--ds-tag-height-sm, 20px);
-  padding: 0 7px;
-  font-size: var(--ds-font-size-10, 10px);
+  padding: 0 var(--ds-tag-padding-inline-sm, 8px);
+  font-size: var(--ds-tag-font-size-sm, 12px);
 }
 
 .arcoui-tag[data-tone="accent"] {
-  --arcoui-tag-background: var(--arcoui-accent-soft);
-  --arcoui-tag-color: var(--arcoui-accent-text);
+  --arcoui-tag-background: var(--ds-tag-accent-bg);
+  --arcoui-tag-color: var(--ds-tag-accent-text);
 }
 
 .arcoui-tag[data-tone="success"] {
-  --arcoui-tag-background: var(--arcoui-success-soft);
-  --arcoui-tag-color: var(--arcoui-success);
+  --arcoui-tag-background: var(--ds-tag-success-bg);
+  --arcoui-tag-color: var(--ds-tag-success-text);
 }
 
 .arcoui-tag[data-tone="warning"] {
-  --arcoui-tag-background: var(--arcoui-warning-soft);
-  --arcoui-tag-color: var(--arcoui-warning);
+  --arcoui-tag-background: var(--ds-tag-warning-bg);
+  --arcoui-tag-color: var(--ds-tag-warning-text);
 }
 
 .arcoui-tag[data-tone="danger"] {
-  --arcoui-tag-background: var(--arcoui-danger-soft);
-  --arcoui-tag-color: var(--arcoui-danger);
+  --arcoui-tag-background: var(--ds-tag-danger-bg);
+  --arcoui-tag-color: var(--ds-tag-danger-text);
 }
+
+/* Base-kit variants also set foreground/background; the product semantic
+   Tag contract remains the final visual source of truth. */
+.arcoui-tag.arcoui-tag[data-tone] {
+  border: 0;
+  background: var(--arcoui-tag-background);
+  color: var(--arcoui-tag-color);
+}
+
+.arcoui-tag.arcoui-tag[data-tone] > span { color: currentColor; }
 
 .arcoui-button:not(:disabled):hover {
   background: color-mix(in srgb, var(--arcoui-neutral-soft) 78%, var(--arcoui-surface));
@@ -305,7 +315,7 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  background: var(--arcoui-surface);
+  background: var(--ds-modal-surface, var(--arcoui-surface));
   color: var(--arcoui-text);
   border: 1px solid color-mix(in srgb, var(--arcoui-border) 78%, transparent);
   border-radius: var(--arcoui-card-radius, var(--ds-radius-card, 16px));
@@ -314,18 +324,22 @@
   display: flex;
   flex-direction: column;
   outline: none;
+  box-sizing: border-box;
 }
 
 .arcoui-modal-header {
+  min-height: var(--ds-modal-header-min-height, 64px);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   padding:
     var(--ds-modal-header-padding-top, 22px)
     var(--ds-modal-header-padding-inline, 24px)
     var(--ds-modal-header-padding-bottom, 10px);
-  border-bottom: none;
+  border-bottom: 0;
+  background: var(--ds-modal-surface, var(--arcoui-surface));
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .arcoui-modal-title-area {
@@ -367,7 +381,7 @@
 
 .arcoui-modal-close {
   flex-shrink: 0;
-  margin: -2px -4px 0 0;
+  margin: 0 -4px 0 0;
 }
 
 .arcoui-modal-body {
@@ -376,17 +390,28 @@
     var(--ds-modal-body-padding-inline, 24px)
     var(--ds-modal-body-padding-bottom, 20px);
   overflow: auto;
+  overscroll-behavior: contain;
   min-height: 0;
 }
 
+.arcoui-modal-body[data-layout="flush"] {
+  flex: 1;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+}
+
 .arcoui-modal-footer {
+  min-height: var(--ds-modal-footer-min-height, 64px);
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 10px;
   padding: var(--ds-modal-footer-padding, 0 24px 22px);
-  border-top: none;
+  border-top: 0;
+  background: var(--ds-modal-surface, var(--arcoui-surface));
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .arcoui-drawer-overlay {
@@ -486,11 +511,31 @@
   min-width: 0;
 }
 
+.arcoui-field-heading {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ds-space-3, 12px);
+}
+
 .arcoui-field-label {
   color: var(--arcoui-muted);
   font-size: 12px;
   font-weight: 500;
   line-height: 1.5;
+}
+
+.arcoui-field-description {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--arcoui-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .arcoui-field-hint {
@@ -499,22 +544,101 @@
   line-height: 1.5;
 }
 
+.arcoui-field[data-status="error"] .arcoui-field-hint {
+  color: var(--arcoui-danger, var(--ds-color-danger));
+}
+
+.arcoui-date-picker {
+  width: 100%;
+  min-width: 0;
+}
+
+.arcoui-date-picker-group {
+  width: 100%;
+  min-width: 0;
+  height: var(--ds-date-time-height, var(--ds-field-height-md, 40px));
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--arcoui-border, var(--ds-color-border));
+  border-radius: var(--arcoui-control-radius, var(--ds-radius-control));
+  background: var(--arcoui-surface, var(--ds-color-surface));
+  color: var(--arcoui-heading, var(--ds-color-heading));
+  transition: border-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out), box-shadow var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out);
+}
+
+.arcoui-date-picker-group:hover { border-color: var(--ds-input-border-hover); }
+.arcoui-date-picker-group[data-focus-within] { border-color: var(--ds-input-border-focus); box-shadow: 0 0 0 var(--ds-state-focus-ring-width) var(--ds-state-focus-ring); }
+.arcoui-date-picker[data-invalid] .arcoui-date-picker-group { border-color: var(--ds-input-border-error); }
+.arcoui-date-picker[data-disabled] .arcoui-date-picker-group { border-color: var(--ds-color-border); background: var(--ds-state-disabled-bg); color: var(--ds-state-disabled-text); cursor: not-allowed; }
+
+.arcoui-date-picker-input {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding-inline: var(--ds-space-3);
+  white-space: nowrap;
+}
+
+.arcoui-date-picker-segment {
+  border-radius: var(--ds-radius-xs);
+  color: inherit;
+  font-size: var(--ds-font-size-14);
+  outline: none;
+}
+
+.arcoui-date-picker-segment[data-placeholder] { color: var(--ds-input-placeholder); }
+.arcoui-date-picker-segment[data-focused] { background: var(--ds-color-accent-soft); color: var(--ds-color-accent); }
+.arcoui-date-picker-suffix { height: 100%; display: flex; align-items: center; }
+.arcoui-date-picker-trigger { width: var(--ds-field-height-md); height: 100%; display: grid; place-items: center; border: 0; background: transparent; color: var(--ds-color-icon); cursor: pointer; }
+.arcoui-date-picker-trigger:hover { background: var(--ds-state-hover-bg); color: var(--ds-color-heading); }
+.arcoui-date-picker-indicator { display: inline-flex; }
+
+.arcoui-date-picker-popover {
+  z-index: var(--ds-z-modal-popover) !important;
+  padding: var(--ds-space-3);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-overlay);
+  background: var(--ds-popover-surface, var(--ds-color-surface));
+  color: var(--ds-color-text);
+  box-shadow: var(--ds-shadow-overlay);
+  outline: none;
+}
+
+.arcoui-calendar { display: grid; gap: var(--ds-space-3); }
+.arcoui-calendar-header { display: grid; grid-template-columns: var(--ds-date-time-cell-size) 1fr var(--ds-date-time-cell-size); align-items: center; gap: var(--ds-space-2); }
+.arcoui-calendar-heading { grid-column: 2; grid-row: 1; color: var(--ds-color-heading); font-size: var(--ds-font-size-14); font-weight: var(--ds-font-weight-semibold); text-align: center; }
+.arcoui-calendar-nav { width: var(--ds-date-time-cell-size); height: var(--ds-date-time-cell-size); display: grid; place-items: center; border: 0; border-radius: var(--ds-radius-button); background: transparent; color: var(--ds-color-icon); cursor: pointer; }
+.arcoui-calendar-nav[slot="previous"] { grid-column: 1; grid-row: 1; }
+.arcoui-calendar-nav[slot="next"] { grid-column: 3; grid-row: 1; }
+.arcoui-calendar-nav:hover { background: var(--ds-state-hover-bg); color: var(--ds-color-heading); }
+.arcoui-calendar-grid { border-collapse: separate; border-spacing: var(--ds-space-1); }
+.arcoui-calendar-header-cell { width: var(--ds-date-time-cell-size); height: 24px; color: var(--ds-color-muted); font-size: var(--ds-font-size-12); font-weight: var(--ds-font-weight-medium); text-align: center; }
+.arcoui-calendar-cell { width: var(--ds-date-time-cell-size); height: var(--ds-date-time-cell-size); border-radius: var(--ds-radius-button); color: var(--ds-color-text); font-size: var(--ds-font-size-12); text-align: center; outline: none; cursor: pointer; }
+.arcoui-calendar-cell[data-hovered] { background: var(--ds-state-hover-bg); color: var(--ds-color-heading); }
+.arcoui-calendar-cell[data-selected] { background: var(--ds-date-time-selected-bg); color: var(--ds-date-time-selected-text); font-weight: var(--ds-font-weight-semibold); }
+.arcoui-calendar-cell[data-focused] { outline: var(--ds-state-focus-ring-width) solid var(--ds-state-focus-ring); outline-offset: var(--ds-state-focus-ring-offset); }
+.arcoui-calendar-cell[data-outside-month] { color: var(--ds-state-disabled-text); }
+.arcoui-calendar-cell[data-disabled] { color: var(--ds-state-disabled-text); cursor: not-allowed; }
+
 .arcoui-input {
   width: 100%;
-  height: var(--ds-field-height-md, 36px);
+  height: var(--ds-field-height-md, 40px);
   border-radius: var(--arcoui-control-radius, var(--ds-radius-control, 10px));
-  border: 1px solid transparent;
-  background: color-mix(in srgb, var(--arcoui-soft) 88%, var(--arcoui-surface));
+  border: 1px solid var(--arcoui-border, var(--ds-color-border));
+  background: var(--arcoui-surface, var(--ds-color-surface));
   color: var(--arcoui-heading);
-  font-size: var(--ds-font-size-14, 13px);
+  font-size: var(--ds-font-size-14, 14px);
   padding: 0 var(--ds-space-3, 12px);
   outline: none;
   box-sizing: border-box;
-  transition: border-color var(--ds-motion-duration-fast, 120ms) var(--ds-motion-ease-in-out, ease), box-shadow var(--ds-motion-duration-fast, 120ms) var(--ds-motion-ease-in-out, ease), background var(--ds-motion-duration-fast, 120ms) var(--ds-motion-ease-in-out, ease);
+  transition: border-color var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease), box-shadow var(--ds-motion-duration-mid, 160ms) var(--ds-motion-ease-in-out, ease);
 }
 
 .arcoui-input:hover {
-  background: color-mix(in srgb, var(--arcoui-soft) 72%, var(--arcoui-surface));
+  border-color: var(--arcoui-border-strong, var(--ds-color-border-strong));
 }
 
 .arcoui-input.is-readonly,
@@ -553,7 +677,7 @@
   overflow: auto;
   border: 1px solid var(--ds-color-border);
   border-radius: var(--ds-radius-overlay);
-  background: var(--ds-color-surface);
+  background: var(--ds-popover-surface, var(--ds-color-surface));
   color: var(--ds-color-heading);
   box-shadow: var(--ds-shadow-overlay);
   outline: none;
@@ -585,7 +709,10 @@
 .arcoui-select-option[data-hovered],
 .arcoui-select-option[data-focused] { background: var(--ds-select-option-bg-hover); color: var(--ds-color-heading); }
 .arcoui-select-option[data-pressed] { background: var(--ds-select-option-bg-pressed); }
-.arcoui-select-option[data-selected] { background: var(--ds-select-option-bg-selected); color: var(--ds-select-option-text-selected); }
+.arcoui-select-option[data-selected] {
+  background: var(--ds-select-option-bg-selected);
+  color: var(--ds-select-option-text-selected);
+}
 .arcoui-select-option[data-disabled] { opacity: var(--ds-opacity-disabled); cursor: not-allowed; }
 
 @keyframes arcoui-select-enter {
@@ -608,12 +735,12 @@
 
 .arcoui-modal-content .arcoui-input {
   border-color: var(--arcoui-border);
-  background: var(--arcoui-surface);
+  background: var(--ds-modal-control-bg, var(--arcoui-surface));
 }
 
 .arcoui-modal-content .arcoui-input:hover {
   border-color: var(--arcoui-border-strong);
-  background: var(--arcoui-surface);
+  background: var(--ds-modal-control-bg, var(--arcoui-surface));
 }
 
 .arcoui-checkbox-row {
@@ -658,6 +785,15 @@
 .arcoui-checkbox-row[data-selected] .arcoui-checkbox [data-slot="checkbox-control"] {
   border-color: var(--ds-checkbox-border-checked);
   background: var(--ds-checkbox-bg-checked);
+}
+
+.arcoui-checkbox-row[data-indeterminate] .arcoui-checkbox [data-slot="checkbox-control"] {
+  border-color: var(--ds-checkbox-indeterminate-bg);
+  background: var(--ds-checkbox-indeterminate-bg);
+}
+
+.arcoui-checkbox-row[data-indeterminate] .arcoui-checkbox [data-slot="checkbox-indicator"] {
+  color: var(--ds-checkbox-indicator-indeterminate) !important;
 }
 
 .arcoui-checkbox-row[data-disabled] {
