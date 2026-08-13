@@ -3,7 +3,7 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import {
   Activity, ArrowLeft, ArrowRight, Bell, BookKey, BookOpen, Box, CheckCircle2, ChevronRight, ClipboardList, Clock3, Cpu, Database, Download, Eye, Factory, FileKey2, FileText,
-  Home, LogOut, Moon, Package, Palette, PanelLeft, Pencil, RotateCcw, Save, Search, ShieldCheck, Sun, Trash2, User, Wand2,
+  Home, LogOut, Moon, MousePointerClick, Package, Palette, PanelLeft, Pencil, RotateCcw, Save, Search, ShieldCheck, Sun, Trash2, User, Wand2,
 } from 'lucide-react';
 import { PanelList } from './components/PanelList';
 import { ComponentLibrary } from './components/ComponentLibrary';
@@ -37,7 +37,7 @@ import {
 
 const FONT = "'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
 
-type EditorNavKey = 'home' | 'status' | 'components' | 'records' | 'alerts' | 'settings' | 'apps' | 'robotComponents' | 'products' | 'software' | 'installations' | 'dictionary' | 'dataManagement' | 'guidelines';
+type EditorNavKey = 'home' | 'status' | 'components' | 'records' | 'alerts' | 'settings' | 'apps' | 'robotComponents' | 'products' | 'software' | 'installations' | 'dictionary' | 'dataManagement' | 'guidelines' | 'interactionSpecs';
 type AppThemeMode = ThemeMode;
 type WorkspaceProduct = 'login' | 'workspace' | 'software' | 'authorization' | 'machine' | 'manufacturing';
 
@@ -787,6 +787,7 @@ const EDITOR_NAV_META: Record<EditorNavKey, { label: string; description: string
   dictionary: { label: '字典配置', description: '维护业务字段、枚举取值与级联依赖关系' },
   dataManagement: { label: '数据管理', description: '管理字段字典、构型模板与参数定义' },
   guidelines: { label: '设计规范', description: '查看已发布 Token、组件状态与交付规范' },
+  interactionSpecs: { label: '交互规范', description: '查看交互规范与交互示范' },
 };
 
 // ── Edit mode props passed through to GlobalTopBar ─────
@@ -1043,6 +1044,7 @@ function EditorNavRail({
     { key: 'dictionary' as const, icon: BookKey, label: '字典配置' },
     { key: 'dataManagement' as const, icon: Database, label: '数据管理' },
     { key: 'guidelines' as const, icon: BookOpen, label: '设计规范' },
+    { key: 'interactionSpecs' as const, icon: MousePointerClick, label: '交互规范' },
     // 外设库、用户管理模块暂时隐藏，页面能力保留以便后续恢复。
   ];
 
@@ -1992,6 +1994,24 @@ export default function App() {
         onWorkspace={returnToWorkspace}
       >
         <DesignGuidelines themeMode={robotThemeMode} />
+      </AppShell>
+    );
+  }
+
+  if (!isEditing && !isCanvasPreview && activeEditorNav === 'interactionSpecs') {
+    return (
+      <AppShell
+        active={activeEditorNav}
+        themeMode={robotThemeMode}
+        onThemeToggle={toggleRobotThemeMode}
+        stylePreset={stylePreset}
+        onStyleToggle={toggleStylePreset}
+        industrialColorTheme={industrialColorTheme}
+        onIndustrialColorThemeChange={changeIndustrialColorTheme}
+        onNavChange={handleShellNavChange}
+        onWorkspace={returnToWorkspace}
+      >
+        <DesignGuidelines themeMode={robotThemeMode} initialTopicKey="interaction-state" scope="interaction" />
       </AppShell>
     );
   }
