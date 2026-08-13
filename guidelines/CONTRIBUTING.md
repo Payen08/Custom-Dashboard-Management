@@ -12,11 +12,11 @@
 
 | 修改内容 | 必须更新 |
 | --- | --- |
-| 颜色、间距、字号、圆角、状态或组件 Token | `tokens/design-tokens.json`，必要时同步适配器和组件契约 |
+| 颜色、间距、字号、圆角、状态或组件 Token | `tokens/design-tokens.json`，必要时同步适配器和组件契约；运行 `npm run generate:resolved`，不得手改已解析表 |
 | 组件参数、状态、键盘行为或验收项 | `components/component-specs.json`，必要时同步 UI 总规范 |
 | 页面模板、业务组合、响应式、内容或无障碍 | `docs/ui-guidelines.md` |
 | Ant Design 映射 | `adapters/ant-design-theme.ts`；不得在此新增未发布 Token |
-| 发布版本 | `package.json`、两个 JSON 的 `version`、`CHANGELOG.md` |
+| 发布版本 | `package.json`、三个 JSON 清单/契约、产品模式清单和 `CHANGELOG.md` |
 
 ## Merge Request 最低要求
 
@@ -30,9 +30,9 @@
 ## 发布流程
 
 1. 确认变更属于 Major、Minor 或 Patch。
-2. 同步 `package.json`、`tokens/design-tokens.json`、`components/component-specs.json` 的版本。
+2. 同步 `package.json`、Token、组件契约、产品模式和运行时清单的版本。
 3. 在 `CHANGELOG.md` 顶部新增发布日期、变更和迁移说明。
-4. 执行 `npm run check`。
+4. 执行 `npm run generate:resolved` 和 `npm run check`。
 5. 合并到受保护的 `main` 后创建 `vX.Y.Z` Git tag。
 
 破坏性变更必须同时给出替代 Token/组件、迁移示例、兼容期限和移除版本。

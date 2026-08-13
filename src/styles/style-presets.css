@@ -70,18 +70,18 @@ html[data-style='industrial'] .arcoui-button[data-type='secondary'] {
 }
 
 html[data-style='industrial'] .arcoui-button[data-status='danger']:not([data-type='primary']) {
-  --arcoui-button-bg: var(--ds-color-danger-soft);
-  --arcoui-button-color: var(--ds-color-danger);
-  --arcoui-button-border: color-mix(in srgb, var(--ds-color-danger) 24%, var(--ds-color-border));
-  background: var(--ds-color-danger-soft);
-  border-color: color-mix(in srgb, var(--ds-color-danger) 24%, var(--ds-color-border));
-  color: var(--ds-color-danger);
+  --arcoui-button-bg: var(--ds-button-danger-soft-bg);
+  --arcoui-button-color: var(--ds-button-danger-soft-text);
+  --arcoui-button-border: var(--ds-button-danger-soft-border);
+  background: var(--ds-button-danger-soft-bg);
+  border-color: var(--ds-button-danger-soft-border);
+  color: var(--ds-button-danger-soft-text);
 }
 
 html[data-style='industrial'] .arcoui-button[data-status='danger']:not([data-type='primary']):not(:disabled):hover {
   background: color-mix(in srgb, var(--ds-color-danger) 10%, var(--ds-color-surface));
   border-color: color-mix(in srgb, var(--ds-color-danger) 42%, var(--ds-color-border));
-  color: var(--ds-color-danger);
+  color: var(--ds-color-danger-text);
 }
 
 html[data-style='industrial'] .arcoui-button[data-status='danger']:not([data-type='primary']):not(:disabled):active {
@@ -145,7 +145,7 @@ html[data-style='industrial'] .ds-page--list > .ds-page-header {
 html[data-style='industrial'] .ds-page--list > .ds-table-surface {
   width: auto;
   margin: 0 16px 16px;
-  border: 1px solid var(--ds-table-border);
+  border: 1px solid var(--ds-table-outer-border);
   border-radius: var(--ds-radius-card) !important;
 }
 

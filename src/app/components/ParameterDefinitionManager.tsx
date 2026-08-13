@@ -387,6 +387,7 @@ export function ParameterDefinitionManager() {
           </div>
           {form.type === 'enum' && <section className="parameter-enum-editor">
             <header><div><strong>枚举项</strong><span>组件参数表单中将以下拉选项展示</span></div><ProductButton size="small" icon={<Plus size={13} />} onClick={addEnumOption}>新增枚举项</ProductButton></header>
+            <div className="parameter-enum-editor__columns" aria-hidden="true"><span>显示名称</span><span>标识符</span><span>操作</span></div>
             <div className="parameter-enum-editor__list">
               {form.enumOptions.map(item => <div className="parameter-enum-editor__row" key={item.id}>
                 <ProductTextInput value={item.name} placeholder="显示名称" aria-label="枚举项显示名称" onChange={event => setForm({ ...form, enumOptions: form.enumOptions.map(optionItem => optionItem.id === item.id ? { ...optionItem, name: event.target.value } : optionItem) })} />
@@ -394,14 +395,14 @@ export function ParameterDefinitionManager() {
                 <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label="删除枚举项" onClick={() => setForm({ ...form, defaultValue: form.defaultValue === item.key ? '' : form.defaultValue, enumOptions: form.enumOptions.filter(optionItem => optionItem.id !== item.id) })} />
               </div>)}
             </div>
-            {enumInvalid && <small>请完整填写枚举项，并确保标识符不重复。</small>}
+            {enumInvalid && <small role="alert">请完整填写枚举项，并确保标识符不重复。</small>}
           </section>}
           <ProductField label="默认值">{defaultValueControl(form)}</ProductField>
           <ProductCheckbox label="启用字段" checked={form.enabled} onChange={event => setForm({ ...form, enabled: event.target.checked })} />
         </div>}
       </ProductModal>
 
-      <ProductModal open={Boolean(deleteTarget)} onOpenChange={open => !open && setDeleteTarget(null)} title="确认删除字段" description="删除后，组件参数表单将不再加载该字段。" status="danger" footer={<><ProductButton onClick={() => setDeleteTarget(null)}>取消</ProductButton><ProductButton type="primary" status="danger" onClick={confirmDelete}>确认删除</ProductButton></>}>
+      <ProductModal open={Boolean(deleteTarget)} onOpenChange={open => !open && setDeleteTarget(null)} title="删除字段" description="确认要删除该字段吗？删除后，组件参数表单将不再加载该字段。" status="danger" footer={<><ProductButton onClick={() => setDeleteTarget(null)}>取消</ProductButton><ProductButton type="primary" status="danger" onClick={confirmDelete}>删除</ProductButton></>}>
         <p className="parameter-definition-delete-copy">确定删除“{deleteTarget?.field.name ?? ''}”吗？该操作不可撤销。</p>
       </ProductModal>
     </div>

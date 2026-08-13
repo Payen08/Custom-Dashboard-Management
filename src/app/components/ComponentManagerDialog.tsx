@@ -235,7 +235,6 @@ export function ComponentManagerDialog({
       }}
       title={isForm ? (view === 'add' ? '导入组件' : `编辑组件 · ${form.name}`) : '组件管理'}
       size={isForm ? 'lg' : 'xl'}
-      bodyStyle={{ padding: isForm ? '20px 24px 24px' : '0 24px 20px' }}
       footer={isForm ? (
         <>
           <ArcoButton onClick={() => setView('manage')}>取消</ArcoButton>

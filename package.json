@@ -6,7 +6,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
-    "check:spec": "node guidelines/scripts/validate.mjs",
+    "check:spec": "node guidelines/scripts/generate-resolved-tokens.mjs --check && node guidelines/scripts/validate.mjs",
     "check:design-system": "npm run check:spec && node scripts/check-design-system.mjs",
     "check": "npm run check:design-system && npm run build"
   },
@@ -69,7 +69,9 @@
     "recharts": "2.15.2",
     "sonner": "2.0.3",
     "tailwind-merge": "3.2.0",
+    "three": "^0.185.1",
     "tw-animate-css": "1.3.8",
+    "urdf-loader": "^0.13.1",
     "vaul": "1.1.2"
   },
   "devDependencies": {

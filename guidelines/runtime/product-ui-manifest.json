@@ -33,6 +33,13 @@
     "ProductBreadcrumb",
     "ProductContentState"
   ],
+  "publishedContractsRuntimePending": [
+    "ProductTree",
+    "ProductTable",
+    "ProductDateTimePicker",
+    "ProductSteps",
+    "ProductContentState"
+  ],
   "forbiddenDirectImports": [
     "@heroui/react",
     "@mui/material",

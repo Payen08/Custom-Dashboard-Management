@@ -1,0 +1,216 @@
+{
+  "urdf": {
+    "joints": [
+      {
+        "name": "joint1_left",
+        "reportedJointName": "joint1_left",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 0,
+          "y": 0,
+          "z": -1
+        },
+        "parentLinkName": "base",
+        "childLinkName": "l1"
+      },
+      {
+        "name": "joint2_left",
+        "reportedJointName": "joint2_left",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "parentLinkName": "l1",
+        "childLinkName": "l2"
+      },
+      {
+        "name": "joint3_left",
+        "reportedJointName": "joint3_left",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 0,
+          "y": 0,
+          "z": -1
+        },
+        "parentLinkName": "l2",
+        "childLinkName": "l3"
+      },
+      {
+        "name": "joint4_left",
+        "reportedJointName": "joint4_left",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "parentLinkName": "l3",
+        "childLinkName": "l4"
+      },
+      {
+        "name": "joint5_left",
+        "reportedJointName": "joint5_left",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 0,
+          "y": 0,
+          "z": -1
+        },
+        "parentLinkName": "l4",
+        "childLinkName": "l5"
+      },
+      {
+        "name": "joint6_left",
+        "reportedJointName": "joint6_left",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 1,
+          "y": 0,
+          "z": 0
+        },
+        "parentLinkName": "l5",
+        "childLinkName": "l6"
+      },
+      {
+        "name": "joint7_left",
+        "reportedJointName": "joint7_left",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 1,
+          "y": 0,
+          "z": 0
+        },
+        "parentLinkName": "l6",
+        "childLinkName": "l7"
+      },
+      {
+        "name": "joint1_right",
+        "reportedJointName": "joint1_right",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "parentLinkName": "base",
+        "childLinkName": "r1"
+      },
+      {
+        "name": "joint2_right",
+        "reportedJointName": "joint2_right",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 0,
+          "y": 0,
+          "z": 1
+        },
+        "parentLinkName": "r1",
+        "childLinkName": "r2"
+      },
+      {
+        "name": "joint3_right",
+        "reportedJointName": "joint3_right",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 0,
+          "y": 0,
+          "z": 1
+        },
+        "parentLinkName": "r2",
+        "childLinkName": "r3"
+      },
+      {
+        "name": "joint4_right",
+        "reportedJointName": "joint4_right",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 0,
+          "y": 0,
+          "z": -1
+        },
+        "parentLinkName": "r3",
+        "childLinkName": "r4"
+      },
+      {
+        "name": "joint5_right",
+        "reportedJointName": "joint5_right",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 0,
+          "y": 0,
+          "z": 1
+        },
+        "parentLinkName": "r4",
+        "childLinkName": "r5"
+      },
+      {
+        "name": "joint6_right",
+        "reportedJointName": "joint6_right",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "parentLinkName": "r5",
+        "childLinkName": "r6"
+      },
+      {
+        "name": "joint7_right",
+        "reportedJointName": "joint7_right",
+        "positionScale": 1,
+        "positionOffsetDeg": 0,
+        "rotationReference": "absolute",
+        "rotationSpace": "local",
+        "axis": {
+          "x": 0,
+          "y": 0,
+          "z": 1
+        },
+        "parentLinkName": "r6",
+        "childLinkName": "r7"
+      }
+    ]
+  }
+}

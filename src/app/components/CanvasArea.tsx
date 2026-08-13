@@ -6,16 +6,45 @@ import {
   COMPONENT_DEFS, GRID_COLS, GRID_ROWS, CELL_W, CELL_H, CANVAS_W, CANVAS_H, isFree,
 } from '../shared';
 import { ArcoButton, ArcoTag } from './ProductUI';
+import { AdaptiveText, useI18n, type AppLocale } from '../i18n';
+
+const CANVAS_COPY = {
+  'zh-Hans': { runtime:'运行时长', cycle:'生产节拍', efficiency:'生产效率', completed:'完成任务', pieces:'件', deviceStatus:'设备状态', sensor:'感盘', arm:'机械臂', gripper:'夹具', camera:'相机', laser:'激光扫描', module:'可选模块', io:'I/O模块', normal:'正常', offline:'离线', alerts:'告警信息', items:'条', map:'实时地图与机器人状态', online:'在线', speed:'速度', trays:'料盘情况', trayProgress:'233种进 3/9', raw:'生料盘', temp:'暂料盘', trayCompletion:'料盘生产完成状态', done:'已完工', running:'进行中', pending:'待开始', activeTasks:'正在执行的任务', tasks:'个', cancel:'取消', taskQueue:'任务队列', recentTasks:'近20条任务记录', start:'开始时间', trips:'往来次数', details:'详细', moveCharge:'[移动圆柱充电电池]', moveTarget:'[移动圆柱到目标位置]', moveArea:'[移动物料至A区]', vision:'[视觉定位任务]', handling:'搬运 · 自动化工具' },
+  en: { runtime:'Runtime', cycle:'Cycle time', efficiency:'Efficiency', completed:'Tasks completed', pieces:'', deviceStatus:'Device status', sensor:'Sensor plate', arm:'Robot arm', gripper:'Gripper', camera:'Camera', laser:'Laser scanner', module:'Optional module', io:'I/O module', normal:'Normal', offline:'Offline', alerts:'Alerts', items:'items', map:'Live map & robot status', online:'Online', speed:'Speed', trays:'Tray status', trayProgress:'233 inbound · 3/9', raw:'Raw trays', temp:'Buffer trays', trayCompletion:'Production status', done:'Done', running:'In progress', pending:'Pending', activeTasks:'Active tasks', tasks:'tasks', cancel:'Cancel', taskQueue:'Task queue', recentTasks:'Last 20 task records', start:'Start time', trips:'Round trips', details:'Details', moveCharge:'[Move cylinder to charger]', moveTarget:'[Move cylinder to target]', moveArea:'[Move material to Area A]', vision:'[Visual positioning task]', handling:'Handling · Automation tool' },
+  ms: { runtime:'Masa operasi', cycle:'Masa kitaran', efficiency:'Kecekapan', completed:'Tugas selesai', pieces:'unit', deviceStatus:'Status peranti', sensor:'Plat sensor', arm:'Lengan robot', gripper:'Pencengkam', camera:'Kamera', laser:'Pengimbas laser', module:'Modul pilihan', io:'Modul I/O', normal:'Normal', offline:'Luar talian', alerts:'Makluman', items:'item', map:'Peta langsung & status robot', online:'Dalam talian', speed:'Kelajuan', trays:'Status dulang', trayProgress:'233 masuk · 3/9', raw:'Dulang mentah', temp:'Dulang penimbal', trayCompletion:'Status pengeluaran', done:'Selesai', running:'Sedang berjalan', pending:'Belum mula', activeTasks:'Tugas aktif', tasks:'tugas', cancel:'Batal', taskQueue:'Baris gilir tugas', recentTasks:'20 rekod tugas terkini', start:'Masa mula', trips:'Perjalanan', details:'Butiran', moveCharge:'[Alih silinder ke pengecas]', moveTarget:'[Alih silinder ke sasaran]', moveArea:'[Alih bahan ke Kawasan A]', vision:'[Tugas kedudukan visual]', handling:'Pengendalian · Alat automasi' },
+  vi: { runtime:'Thời gian chạy', cycle:'Chu kỳ', efficiency:'Hiệu suất', completed:'Tác vụ hoàn tất', pieces:'mục', deviceStatus:'Trạng thái thiết bị', sensor:'Đĩa cảm biến', arm:'Cánh tay robot', gripper:'Bộ kẹp', camera:'Camera', laser:'Máy quét laser', module:'Mô-đun tùy chọn', io:'Mô-đun I/O', normal:'Bình thường', offline:'Ngoại tuyến', alerts:'Cảnh báo', items:'mục', map:'Bản đồ trực tiếp & trạng thái robot', online:'Trực tuyến', speed:'Tốc độ', trays:'Trạng thái khay', trayProgress:'233 đầu vào · 3/9', raw:'Khay nguyên liệu', temp:'Khay đệm', trayCompletion:'Trạng thái sản xuất', done:'Hoàn tất', running:'Đang chạy', pending:'Chờ bắt đầu', activeTasks:'Tác vụ đang chạy', tasks:'tác vụ', cancel:'Hủy', taskQueue:'Hàng đợi tác vụ', recentTasks:'20 bản ghi gần nhất', start:'Thời gian bắt đầu', trips:'Số lượt', details:'Chi tiết', moveCharge:'[Di chuyển trụ đến bộ sạc]', moveTarget:'[Di chuyển trụ đến đích]', moveArea:'[Di chuyển vật liệu đến Khu A]', vision:'[Tác vụ định vị hình ảnh]', handling:'Vận chuyển · Công cụ tự động' },
+  'zh-Hant': { runtime:'運行時長', cycle:'生產節拍', efficiency:'生產效率', completed:'完成任務', pieces:'件', deviceStatus:'設備狀態', sensor:'感測盤', arm:'機械臂', gripper:'夾具', camera:'相機', laser:'雷射掃描', module:'可選模組', io:'I/O模組', normal:'正常', offline:'離線', alerts:'告警資訊', items:'條', map:'即時地圖與機器人狀態', online:'在線', speed:'速度', trays:'料盤情況', trayProgress:'233種進 3/9', raw:'生料盤', temp:'暫料盤', trayCompletion:'料盤生產完成狀態', done:'已完工', running:'進行中', pending:'待開始', activeTasks:'正在執行的任務', tasks:'個', cancel:'取消', taskQueue:'任務佇列', recentTasks:'近20條任務記錄', start:'開始時間', trips:'往來次數', details:'詳細', moveCharge:'[移動圓柱充電電池]', moveTarget:'[移動圓柱到目標位置]', moveArea:'[移動物料至A區]', vision:'[視覺定位任務]', handling:'搬運 · 自動化工具' },
+} satisfies Record<AppLocale, Record<string, string>>;
+
+const CANVAS_SHORT_COPY: Record<AppLocale, Record<string, string>> = {
+  'zh-Hans': { runtime:'时长', cycle:'节拍', efficiency:'效率', completed:'已完成', deviceStatus:'设备', map:'地图与状态', trayCompletion:'生产状态', activeTasks:'执行中', taskQueue:'队列', recentTasks:'近20条' },
+  en: { runtime:'Runtime', cycle:'Cycle', efficiency:'Efficiency', completed:'Completed', deviceStatus:'Devices', map:'Map & status', trayCompletion:'Production', activeTasks:'Active', taskQueue:'Queue', recentTasks:'Last 20' },
+  ms: { runtime:'Operasi', cycle:'Kitaran', efficiency:'Cekap', completed:'Selesai', deviceStatus:'Peranti', map:'Peta & status', trayCompletion:'Pengeluaran', activeTasks:'Aktif', taskQueue:'Giliran', recentTasks:'20 terkini' },
+  vi: { runtime:'Thời gian', cycle:'Chu kỳ', efficiency:'Hiệu suất', completed:'Hoàn tất', deviceStatus:'Thiết bị', map:'Bản đồ & trạng thái', trayCompletion:'Sản xuất', activeTasks:'Đang chạy', taskQueue:'Hàng đợi', recentTasks:'20 gần nhất' },
+  'zh-Hant': { runtime:'時長', cycle:'節拍', efficiency:'效率', completed:'已完成', deviceStatus:'設備', map:'地圖與狀態', trayCompletion:'生產狀態', activeTasks:'執行中', taskQueue:'佇列', recentTasks:'近20條' },
+};
+
+function useCanvasCopy() {
+  const { locale } = useI18n();
+  return CANVAS_COPY[locale];
+}
+
+function useCanvasShortCopy() {
+  const { locale } = useI18n();
+  return CANVAS_SHORT_COPY[locale];
+}
 
 // ── Widget renderers (faithful to dashboard screenshot) ───────────────────────
 
 // 1. 运行指标 ─────────────────────────────────────────────────────────────────
 function KpiMetricsWidget() {
+  const c = useCanvasCopy();
+  const s = useCanvasShortCopy();
   const metrics = [
-    { label: '运行时长', value: '11:45',  unit: '',    color: 'var(--app-accent)' },
-    { label: '生产节拍', value: '4.2',    unit: 's',   color: 'var(--app-success)' },
-    { label: '生产效率', value: '0.8',    unit: '/s',  color: 'var(--app-info)' },
-    { label: '完成任务', value: '12',     unit: '件',  color: 'var(--app-warning)' },
+    { label: c.runtime, short: s.runtime, value: '11:45', unit: '', color: 'var(--app-accent)' },
+    { label: c.cycle, short: s.cycle, value: '4.2', unit: 's', color: 'var(--app-success)' },
+    { label: c.efficiency, short: s.efficiency, value: '0.8', unit: '/s', color: 'var(--app-info)' },
+    { label: c.completed, short: s.completed, value: '12', unit: c.pieces, color: 'var(--app-warning)' },
   ];
   return (
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -29,7 +58,7 @@ function KpiMetricsWidget() {
             <span style={{ color: m.color, fontSize: 22, fontWeight: 600, lineHeight: 1 }}>{m.value}</span>
             <span style={{ color: m.color, fontSize: 12, fontWeight: 600 }}>{m.unit}</span>
           </div>
-          <span style={{ color: 'var(--app-muted)', fontSize: 12 }}>{m.label}</span>
+          <AdaptiveText copy={{ standard: m.label, short: m.short }} style={{ display: 'block', width: '100%', height: 17, color: 'var(--app-muted)', fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden' }} />
         </div>
       ))}
     </div>
@@ -38,18 +67,15 @@ function KpiMetricsWidget() {
 
 // 2. 设备状态 ─────────────────────────────────────────────────────────────────
 function DeviceStatusWidget() {
+  const c = useCanvasCopy();
+  const s = useCanvasShortCopy();
   const devices = [
-    { name: '感盘',     icon: '○', status: 'ok' },
-    { name: '机械臂',   icon: '✋', status: 'ok' },
-    { name: '夹具',     icon: '⚙', status: 'ok' },
-    { name: '相机',     icon: '◉', status: 'ok' },
-    { name: '激光扫描', icon: '≋', status: 'ok' },
-    { name: '请选模块', icon: '□', status: 'off' },
-    { name: 'I/O模块',  icon: '⊞', status: 'ok' },
+    { name: c.sensor, icon: '○', status: 'ok' }, { name: c.arm, icon: '✋', status: 'ok' }, { name: c.gripper, icon: '⚙', status: 'ok' },
+    { name: c.camera, icon: '◉', status: 'ok' }, { name: c.laser, icon: '≋', status: 'ok' }, { name: c.module, icon: '□', status: 'off' }, { name: c.io, icon: '⊞', status: 'ok' },
   ];
   return (
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '12px 10px', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500, marginBottom: 8, paddingLeft: 4 }}>设备状态</div>
+      <AdaptiveText copy={{ standard: c.deviceStatus, short: s.deviceStatus }} style={{ display: 'block', height: 17, color: 'var(--app-muted)', fontSize: 12, fontWeight: 500, marginBottom: 8, paddingLeft: 4, whiteSpace: 'nowrap', overflow: 'hidden' }} />
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {devices.map((d, i) => (
           <div key={i} style={{
@@ -65,7 +91,7 @@ function DeviceStatusWidget() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <div style={{ width: 6, height: 6, borderRadius: 99, background: d.status === 'ok' ? 'var(--app-success)' : 'var(--app-border-strong)' }} />
               <span style={{ color: d.status === 'ok' ? 'var(--app-success)' : 'var(--app-muted)', fontSize: 10, fontWeight: 600 }}>
-                {d.status === 'ok' ? '正常' : '离线'}
+                {d.status === 'ok' ? c.normal : c.offline}
               </span>
             </div>
           </div>
@@ -77,6 +103,7 @@ function DeviceStatusWidget() {
 
 // 3. 告警信息 ─────────────────────────────────────────────────────────────────
 function AlertInfoWidget() {
+  const c = useCanvasCopy();
   const alerts = [
     { text: '机械臂轨迹规划失败', detail: '位置: A25 | 14:32', level: 'error', action: '处理',  actionColor: 'var(--app-danger)' },
     { text: '视觉定位相机超时',   detail: '位置: B区 | 14:28', level: 'error', action: '处理中', actionColor: 'var(--app-warning)' },
@@ -86,8 +113,8 @@ function AlertInfoWidget() {
   return (
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '12px 14px', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>告警信息</span>
-        <ArcoTag tone="danger" size="small">{alerts.length} 条</ArcoTag>
+        <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>{c.alerts}</span>
+        <ArcoTag tone="danger" size="small">{alerts.length} {c.items}</ArcoTag>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 7 }}>
         {alerts.map((a, i) => (
@@ -111,6 +138,8 @@ function AlertInfoWidget() {
 
 // 4. 实时地图与机器人状态 ───────────────────────────────────────────────────────
 function MapViewWidget() {
+  const c = useCanvasCopy();
+  const s = useCanvasShortCopy();
   return (
     <div style={{ width: '100%', height: '100%', background: 'var(--app-heading)', position: 'relative', overflow: 'hidden' }}>
       {/* 3D floor grid */}
@@ -177,8 +206,8 @@ function MapViewWidget() {
 
       {/* Title */}
       <div style={{ position: 'absolute', top: 12, left: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ color: 'var(--app-scene-text)', fontSize: 14, fontWeight: 500 }}>实时地图与机器人状态</span>
-        <ArcoTag tone="success" size="small">● 在线</ArcoTag>
+        <AdaptiveText copy={{ standard: c.map, short: s.map }} style={{ display: 'block', height: 20, maxWidth: 220, color: 'var(--app-scene-text)', fontSize: 14, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden' }} />
+        <ArcoTag tone="success" size="small">● {c.online}</ArcoTag>
       </div>
 
       {/* Expand icon */}
@@ -191,7 +220,7 @@ function MapViewWidget() {
         </span>
       </div>
       <div style={{ position: 'absolute', bottom: 10, right: 14, background: 'var(--app-overlay)', borderRadius: 8, padding: '4px 10px' }}>
-        <span style={{ color: 'var(--app-muted)', fontSize: 10, fontFamily: 'monospace' }}>速度: 0.8 m/s</span>
+        <span style={{ color: 'var(--app-muted)', fontSize: 10, fontFamily: 'monospace' }}>{c.speed}: 0.8 m/s</span>
       </div>
     </div>
   );
@@ -199,6 +228,8 @@ function MapViewWidget() {
 
 // 5. 料盘情况 ──────────────────────────────────────────────────────────────────
 function TrayStatusWidget() {
+  const c = useCanvasCopy();
+  const s = useCanvasShortCopy();
   const rawTrays  = [
     { id: 1, state: 'active'  },
     { id: 2, state: 'active'  },
@@ -211,12 +242,9 @@ function TrayStatusWidget() {
   ];
   const tempTrays = rawTrays.map(t => ({ ...t, state: 'empty' as const }));
   const prodStatus = [
-    { num: 6, label: '已完工', color: 'var(--app-success)', bg: 'var(--app-success-soft)', count: 12 },
-    { num: 5, label: '已完工', color: 'var(--app-success)', bg: 'var(--app-success-soft)', count: 11 },
-    { num: 4, label: '已完工', color: 'var(--app-success)', bg: 'var(--app-success-soft)', count: 10 },
-    { num: 3, label: '已完工', color: 'var(--app-success)', bg: 'var(--app-success-soft)', count: 9  },
-    { num: 2, label: '进行中', color: 'var(--app-accent)', bg: 'var(--app-accent-soft)', count: 5  },
-    { num: 1, label: '待开始', color: 'var(--app-muted)', bg: 'var(--app-border)', count: 7  },
+    { num: 6, label: c.done, color: 'var(--app-success)', bg: 'var(--app-success-soft)', count: 12 },
+    { num: 5, label: c.done, color: 'var(--app-success)', bg: 'var(--app-success-soft)', count: 11 }, { num: 4, label: c.done, color: 'var(--app-success)', bg: 'var(--app-success-soft)', count: 10 }, { num: 3, label: c.done, color: 'var(--app-success)', bg: 'var(--app-success-soft)', count: 9  },
+    { num: 2, label: c.running, color: 'var(--app-accent)', bg: 'var(--app-accent-soft)', count: 5  }, { num: 1, label: c.pending, color: 'var(--app-muted)', bg: 'var(--app-border)', count: 7  },
   ];
 
   const trayStyle = (state: string) =>
@@ -228,8 +256,8 @@ function TrayStatusWidget() {
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>料盘情况</span>
-        <span style={{ color: 'var(--app-muted)', fontSize: 10 }}>233种进 3/9</span>
+        <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>{c.trays}</span>
+        <span style={{ color: 'var(--app-muted)', fontSize: 10 }}>{c.trayProgress}</span>
       </div>
 
       {/* Tray grids row */}
@@ -237,7 +265,7 @@ function TrayStatusWidget() {
         {/* Raw trays (生料盘) */}
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 600 }}>生料盘</span>
+            <span style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 600 }}>{c.raw}</span>
             <span style={{ color: 'var(--app-accent)', fontSize: 10, fontWeight: 500 }}>4/0</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
@@ -255,7 +283,7 @@ function TrayStatusWidget() {
         {/* Temp trays (暂料盘) */}
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 600 }}>暂料盘</span>
+            <span style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 600 }}>{c.temp}</span>
             <span style={{ color: 'var(--app-muted)', fontSize: 10, fontWeight: 500 }}>0/0</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
@@ -267,7 +295,7 @@ function TrayStatusWidget() {
 
         {/* Production completion */}
         <div style={{ flex: 1.5 }}>
-          <div style={{ color: 'var(--app-text)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>料盘生产完成状态</div>
+          <AdaptiveText copy={{ standard: c.trayCompletion, short: s.trayCompletion }} style={{ display: 'block', height: 17, color: 'var(--app-text)', fontSize: 12, fontWeight: 600, marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden' }} />
           <div style={{ display: 'flex', gap: 4 }}>
             {prodStatus.map(p => (
               <div key={p.num} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
@@ -287,15 +315,16 @@ function TrayStatusWidget() {
 
 // 6. 正在执行的任务 ─────────────────────────────────────────────────────────────
 function ActiveTasksWidget() {
+  const c = useCanvasCopy();
+  const s = useCanvasShortCopy();
   const tasks = [
-    { name: '[移动圆柱充电电池]',  sub: '搬运 · 某某于工具', color: 'var(--app-success)' },
-    { name: '[移动圆柱到目标位置]', sub: '搬运 · 某某于工具', color: 'var(--app-accent)' },
+    { name: c.moveCharge, sub: c.handling, color: 'var(--app-success)' }, { name: c.moveTarget, sub: c.handling, color: 'var(--app-accent)' },
   ];
   return (
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '12px 14px', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>正在执行的任务</span>
-        <ArcoTag tone="success" size="small">{tasks.length} 个</ArcoTag>
+        <AdaptiveText copy={{ standard: c.activeTasks, short: s.activeTasks }} style={{ display: 'block', height: 17, maxWidth: 150, color: 'var(--app-muted)', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden' }} />
+        <ArcoTag tone="success" size="small">{tasks.length} {c.tasks}</ArcoTag>
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
         {tasks.map((t, i) => (
@@ -314,7 +343,7 @@ function ActiveTasksWidget() {
               </div>
             </div>
             <ArcoButton long size="small" status="danger" icon={<X size={12} />}>
-              取消
+              {c.cancel}
             </ArcoButton>
           </div>
         ))}
@@ -325,20 +354,19 @@ function ActiveTasksWidget() {
 
 // 7. 任务队列 ──────────────────────────────────────────────────────────────────
 function TaskQueueWidget() {
+  const c = useCanvasCopy();
+  const s = useCanvasShortCopy();
   const items = [
-    { name: '[移动圆柱充电电池]',   start: '2026-05-29 10:40:00', trips: '2026-05-29 10:13:54', Icon: Rocket },
-    { name: '[移动运动到目标位置]',  start: '2026-05-29 10:20:30', trips: '2026-05-29 09:58:00', Icon: Bot },
-    { name: '[移动运送物料至A区]',   start: '2026-05-29 10:13:54', trips: '2026-05-29 09:45:10', Icon: Package },
-    { name: '[移动圆柱充电电池]',   start: '2026-05-29 09:55:00', trips: '2026-05-29 09:32:00', Icon: Rocket },
-    { name: '[视觉定位任务]',       start: '2026-05-29 09:40:00', trips: '2026-05-29 09:18:00', Icon: Eye },
+    { name: c.moveCharge, start: '2026-05-29 10:40:00', trips: '2026-05-29 10:13:54', Icon: Rocket }, { name: c.moveTarget, start: '2026-05-29 10:20:30', trips: '2026-05-29 09:58:00', Icon: Bot },
+    { name: c.moveArea, start: '2026-05-29 10:13:54', trips: '2026-05-29 09:45:10', Icon: Package }, { name: c.moveCharge, start: '2026-05-29 09:55:00', trips: '2026-05-29 09:32:00', Icon: Rocket }, { name: c.vision, start: '2026-05-29 09:40:00', trips: '2026-05-29 09:18:00', Icon: Eye },
   ];
   return (
     <div style={{ width: '100%', height: '100%', background: 'var(--app-surface)', padding: '12px 14px', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexShrink: 0 }}>
-        <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>任务队列</span>
+        <AdaptiveText copy={{ standard: c.taskQueue, short: s.taskQueue }} style={{ display: 'block', height: 17, maxWidth: 120, color: 'var(--app-muted)', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <ArcoTag tone="accent" size="small">20 条</ArcoTag>
-          <span style={{ color: 'var(--app-border-strong)', fontSize: 10 }}>近20条任务记录 ›</span>
+          <ArcoTag tone="accent" size="small">20 {c.items}</ArcoTag>
+          <AdaptiveText copy={{ standard: c.recentTasks, short: s.recentTasks }} style={{ display: 'block', height: 14, maxWidth: 110, color: 'var(--app-border-strong)', fontSize: 10, whiteSpace: 'nowrap', overflow: 'hidden' }} />
         </div>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -356,14 +384,14 @@ function TaskQueueWidget() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: 'var(--app-heading)', fontSize: 12, fontWeight: 600, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
                 <div style={{ color: 'var(--app-muted)', fontSize: 10, marginBottom: 1 }}>
-                  <span style={{ color: 'var(--app-border-strong)' }}>月始时间</span> {item.start}
+                  <span style={{ color: 'var(--app-border-strong)' }}>{c.start}</span> {item.start}
                 </div>
                 <div style={{ color: 'var(--app-muted)', fontSize: 10 }}>
-                  <span style={{ color: 'var(--app-border-strong)' }}>往来次数</span> {item.trips}
+                  <span style={{ color: 'var(--app-border-strong)' }}>{c.trips}</span> {item.trips}
                 </div>
               </div>
               <ArcoButton type="secondary" size="mini" style={{ flexShrink: 0 }}>
-                详细
+                {c.details}
               </ArcoButton>
             </div>
           </div>

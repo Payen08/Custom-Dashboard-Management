@@ -3,6 +3,7 @@ import { Plus, MoreHorizontal, LayoutGrid, Pencil, Copy, Trash2, Download, Searc
 import { type HomepageScheme } from '../shared';
 import { ArcoButton, ArcoIconButton, ArcoModal, ArcoTag, ArcoTextInput } from './ProductUI';
 import { ComponentManagerDialog } from './ComponentManagerDialog';
+import { AdaptiveText, useI18n } from '../i18n';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +33,7 @@ export function PanelList({
   onRequestDeleteScheme,
   onExportScheme,
 }: PanelListProps) {
+  const { copy, t } = useI18n();
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -44,10 +46,18 @@ export function PanelList({
     return `${scheme.name} ${scheme.version} ${scheme.lastEdited}`.toLowerCase().includes(query);
   });
 
-  function schemeTag(scheme: HomepageScheme) {
-    if (scheme.name.includes('AGV')) return 'AGV搬运机器人';
-    if (scheme.name.includes('巡检')) return '巡检机器人';
-    return 'MCR复合机器人';
+  function displaySchemeName(scheme: HomepageScheme) {
+    if (scheme.name === 'MCR复合机器人') return t('compositeRobot');
+    if (scheme.name === 'AGV搬运机器人') return t('agvRobot');
+    if (scheme.name === '巡检机器人') return t('inspectionRobot');
+    return scheme.name;
+  }
+
+  function displaySchemeCopy(scheme: HomepageScheme) {
+    if (scheme.name === 'MCR复合机器人') return copy('compositeRobot');
+    if (scheme.name === 'AGV搬运机器人') return copy('agvRobot');
+    if (scheme.name === '巡检机器人') return copy('inspectionRobot');
+    return { standard: scheme.name };
   }
 
   function openRename(id: string) {
@@ -85,8 +95,10 @@ export function PanelList({
       {/* Header */}
       <div style={{ padding: '24px 16px 18px', borderBottom: '1px solid var(--app-border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-          <h1 style={{ color: 'var(--app-heading)', fontSize: 20, fontWeight: 600, margin: 0 }}>自定义首页</h1>
-          <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>{schemes.length} 个方案</span>
+          <h1 style={{ minWidth: 0, color: 'var(--app-heading)', fontSize: 20, fontWeight: 600, margin: 0 }}>
+            <AdaptiveText copy={copy('customHomepage')} style={{ display: 'block', height: 28, maxWidth: 250, whiteSpace: 'nowrap', overflow: 'hidden' }} />
+          </h1>
+          <span style={{ color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>{schemes.length} {t('schemes')}</span>
         </div>
         <label style={{ position: 'relative', display: 'block' }}>
           <Search
@@ -97,7 +109,7 @@ export function PanelList({
           <ArcoTextInput
             value={schemeQuery}
             onChange={e => setSchemeQuery(e.target.value)}
-            placeholder="搜索"
+            placeholder={t('search')}
             style={{ height: 40, borderRadius: 8, paddingLeft: 38 }}
           />
         </label>
@@ -112,7 +124,7 @@ export function PanelList({
               key={scheme.id}
               role="button"
               tabIndex={0}
-              aria-label={`选择首页方案：${scheme.name}`}
+              aria-label={`${t('selectScheme')}${displaySchemeName(scheme)}`}
               onClick={() => onSelectScheme(scheme.id)}
               onKeyDown={event => {
                 if (event.key === 'Enter' || event.key === ' ') {
@@ -139,8 +151,11 @@ export function PanelList({
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <span
+                    <AdaptiveText
+                      copy={displaySchemeCopy(scheme)}
                       style={{
+                        display: 'block',
+                        height: 24,
                         color: active ? 'var(--app-accent)' : 'var(--app-heading)',
                         fontSize: 16,
                         fontWeight: 600,
@@ -149,12 +164,10 @@ export function PanelList({
                         whiteSpace: 'nowrap',
                         maxWidth: 200,
                       }}
-                    >
-                      {scheme.name}
-                    </span>
+                    />
                   </div>
-                  <div style={{ color: 'var(--app-muted)', fontSize: 14, marginBottom: 8 }}>{scheme.lastEdited} 更新</div>
-                  <ArcoTag tone="accent">{schemeTag(scheme)}</ArcoTag>
+                  <div style={{ color: 'var(--app-muted)', fontSize: 14, marginBottom: 8 }}>{t('updated')} {scheme.lastEdited}</div>
+                  <ArcoTag tone="accent"><AdaptiveText copy={displaySchemeCopy(scheme)} style={{ display: 'block', height: 18, maxWidth: 176, whiteSpace: 'nowrap', overflow: 'hidden' }} /></ArcoTag>
                 </div>
 
                 <DropdownMenu>
@@ -163,8 +176,8 @@ export function PanelList({
                       type="text"
                       size="small"
                       icon={<MoreHorizontal size={16} />}
-                      aria-label={`${scheme.name}的更多操作`}
-                      title="更多操作"
+                      aria-label={`${displaySchemeName(scheme)} · ${t('moreActions')}`}
+                      title={t('moreActions')}
                       onClick={event => event.stopPropagation()}
                       className="ds-context-menu-trigger group-hover:opacity-100"
                       style={{ marginTop: 2, opacity: active ? 1 : undefined }}
@@ -172,17 +185,17 @@ export function PanelList({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" sideOffset={8} className="ds-context-menu">
                     <DropdownMenuItem className="ds-context-menu__item" onSelect={() => openRename(scheme.id)}>
-                      <Pencil size={16} />重命名
+                      <Pencil size={16} /><AdaptiveText copy={copy('rename')} style={{ display: 'block', height: 20, maxWidth: 176, whiteSpace: 'nowrap', overflow: 'hidden' }} />
                     </DropdownMenuItem>
                     <DropdownMenuItem className="ds-context-menu__item" onSelect={() => handleCopy(scheme.id)}>
-                      <Copy size={16} />复制方案
+                      <Copy size={16} /><AdaptiveText copy={copy('copyScheme')} style={{ display: 'block', height: 20, maxWidth: 176, whiteSpace: 'nowrap', overflow: 'hidden' }} />
                     </DropdownMenuItem>
                     <DropdownMenuItem className="ds-context-menu__item" onSelect={() => onExportScheme(scheme.id)}>
-                      <Download size={16} />导出首页
+                      <Download size={16} /><AdaptiveText copy={copy('exportHomepage')} style={{ display: 'block', height: 20, maxWidth: 176, whiteSpace: 'nowrap', overflow: 'hidden' }} />
                     </DropdownMenuItem>
                     <DropdownMenuSeparator className="ds-context-menu__separator" />
                     <DropdownMenuItem className="ds-context-menu__item" variant="destructive" disabled={!canDelete} onSelect={() => openDelete(scheme.id)}>
-                      <Trash2 size={16} />删除首页
+                      <Trash2 size={16} /><AdaptiveText copy={copy('deleteHomepage')} style={{ display: 'block', height: 20, maxWidth: 176, whiteSpace: 'nowrap', overflow: 'hidden' }} />
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -192,7 +205,7 @@ export function PanelList({
         })}
         {filteredSchemes.length === 0 && (
           <div className="ds-empty" style={{ minHeight: 0, border: '1px dashed var(--app-border-strong)', background: 'var(--app-soft)' }}>
-            未找到匹配的首页
+            {t('noMatchingHomepage')}
           </div>
         )}
       </div>
@@ -205,7 +218,7 @@ export function PanelList({
           icon={<LayoutGrid size={14} />}
           long
         >
-          组件管理
+          <AdaptiveText copy={copy('componentManagement')} style={{ display: 'block', maxWidth: 104, whiteSpace: 'nowrap', overflow: 'hidden' }} />
         </ArcoButton>
         <ArcoButton
           onClick={handleAdd}
@@ -214,7 +227,7 @@ export function PanelList({
           icon={<Plus size={14} />}
           long
         >
-          新增首页
+          <AdaptiveText copy={copy('addHomepage')} style={{ display: 'block', maxWidth: 104, whiteSpace: 'nowrap', overflow: 'hidden' }} />
         </ArcoButton>
       </div>
 
@@ -224,12 +237,12 @@ export function PanelList({
       <ArcoModal
         open={renamingId !== null}
         onOpenChange={open => { if (!open) setRenamingId(null); }}
-        title="重命名面板"
+        title={t('renamePanel')}
         size="sm"
         footer={(
           <>
-            <ArcoButton onClick={() => setRenamingId(null)}>取消</ArcoButton>
-            <ArcoButton type="primary" onClick={confirmRename} disabled={!renameValue.trim()}>确认</ArcoButton>
+            <ArcoButton onClick={() => setRenamingId(null)}>{t('cancel')}</ArcoButton>
+            <ArcoButton type="primary" onClick={confirmRename} disabled={!renameValue.trim()}>{t('confirm')}</ArcoButton>
           </>
         )}
       >
@@ -238,7 +251,7 @@ export function PanelList({
               onChange={e => setRenameValue(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') confirmRename(); if (e.key === 'Escape') setRenamingId(null); }}
               autoFocus
-              placeholder="请输入首页名称"
+              placeholder={t('homepageNamePlaceholder')}
             />
       </ArcoModal>
 

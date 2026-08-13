@@ -1,0 +1,113 @@
+.robot-library-list-page {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--robot-page-padding);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--robot-page);
+  color: var(--robot-text);
+  box-sizing: border-box;
+}
+
+.robot-library-list-header {
+  margin-bottom: var(--robot-section-gap);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--robot-section-gap);
+  flex: 0 0 auto;
+}
+
+.robot-library-list-heading { min-width: 0; }
+.robot-library-list-heading h1 {
+  margin: 0;
+  color: var(--robot-heading);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.robot-library-list-heading p {
+  margin: 4px 0 0;
+  color: var(--robot-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+.robot-library-list-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+.robot-library-list-search { width: 280px; min-width: 0; }
+.robot-library-list-toolbar .arcoui-button,
+.robot-library-list-search.arcoui-input { min-height: var(--ds-field-height-md, 40px); }
+.robot-library-list-content {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px 2px 20px;
+}
+.robot-library-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-content: start;
+  gap: var(--robot-section-gap);
+}
+
+.robot-card-section-header {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.robot-card-section-header::after {
+  content: '';
+  position: absolute;
+  right: var(--ds-space-4);
+  bottom: 0;
+  left: var(--ds-space-4);
+  height: 1px;
+  background: var(--robot-border);
+}
+
+.robot-component-page .software-config-edit,
+.robot-component-page .robot-detail-tool-button[data-icon-only='true'] {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 32px;
+  border: 0;
+  border-radius: var(--ds-radius-control);
+  background: var(--robot-soft);
+  color: var(--robot-muted);
+  box-shadow: none;
+  cursor: pointer;
+  transition: background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out), color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out);
+}
+
+.robot-component-page .software-config-edit:hover,
+.robot-component-page .robot-detail-tool-button[data-icon-only='true']:hover {
+  border-color: transparent;
+  background: var(--robot-accent-soft);
+  color: var(--robot-accent-text);
+}
+
+.robot-component-page .software-config-edit:focus-visible,
+.robot-component-page .robot-detail-tool-button[data-icon-only='true']:focus-visible {
+  outline: 2px solid var(--robot-accent-border);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .robot-library-list-header { align-items: stretch; flex-direction: column; }
+  .robot-library-list-toolbar, .robot-library-list-search { width: 100%; }
+  .robot-library-list-search { flex: 1; }
+  .robot-library-card-grid { grid-template-columns: minmax(0, 1fr); }
+}

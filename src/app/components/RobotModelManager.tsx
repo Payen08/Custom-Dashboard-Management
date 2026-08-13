@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
-  ArrowLeft, Box, CheckCircle2, ChevronDown, ChevronRight, Eye, FileCode2, FileJson, FileUp, LayoutGrid,
+  ArrowLeft, Box, CheckCircle2, ChevronDown, ChevronRight, FileCode2, FileJson, FileUp, LayoutGrid,
   LockKeyhole, MoreHorizontal, Pencil, Plus, RefreshCw, Save, Search, SlidersHorizontal, Trash2, X,
 } from 'lucide-react';
 import {
@@ -37,6 +37,24 @@ import {
   type ConfigurationTemplate,
   type SlotKind,
 } from './ConfigurationTemplateManager';
+import '../../styles/business/robot-library-shared.css';
+import { useI18n, type AppLocale } from '../i18n';
+
+const MODEL_LIBRARY_COPY: Record<AppLocale, Record<string, string>> = {
+  'zh-Hans': { title:'型号模板', description:'管理所有机器人型号，点击进入查看与编辑详情。', search:'搜索', create:'新建型号', preview:'3D 预览', published:'已发布', unpublished:'未发布', version:'版本', components:'组件', peripherals:'外设', updated:'更新于', edit:'编辑', delete:'删除', noModels:'暂无型号，点击“新建型号”创建第一个机器人型号。', noMatch:'没有匹配的型号。', mcr:'MCR复合机器人', composite:'复合机器人', humanoid:'人形双足机器人', agv:'AGV搬运机器人' },
+  en: { title:'Model Templates', description:'Manage robot models and open a card to view or edit its details.', search:'Search', create:'Create', preview:'3D Preview', published:'Published', unpublished:'Unpublished', version:'Version', components:'Components', peripherals:'Peripherals', updated:'Updated', edit:'Edit', delete:'Delete', noModels:'No models yet. Create the first robot model.', noMatch:'No matching models.', mcr:'MCR Composite Robot', composite:'Composite Robot', humanoid:'Humanoid Biped Robot', agv:'AGV Transport Robot' },
+  ms: { title:'Templat Model', description:'Urus model robot dan buka kad untuk melihat atau mengedit butiran.', search:'Cari', create:'Cipta', preview:'Pratonton 3D', published:'Diterbitkan', unpublished:'Belum diterbitkan', version:'Versi', components:'Komponen', peripherals:'Peranti', updated:'Dikemas kini', edit:'Edit', delete:'Padam', noModels:'Tiada model. Cipta model robot pertama.', noMatch:'Tiada model sepadan.', mcr:'Robot Komposit MCR', composite:'Robot Komposit', humanoid:'Robot Humanoid Dwiped', agv:'Robot Pengangkut AGV' },
+  vi: { title:'Mẫu mô hình', description:'Quản lý mô hình robot và mở thẻ để xem hoặc chỉnh sửa chi tiết.', search:'Tìm kiếm', create:'Tạo', preview:'Xem trước 3D', published:'Đã phát hành', unpublished:'Chưa phát hành', version:'Phiên bản', components:'Thành phần', peripherals:'Ngoại vi', updated:'Đã cập nhật', edit:'Chỉnh sửa', delete:'Xóa', noModels:'Chưa có mô hình. Hãy tạo mô hình robot đầu tiên.', noMatch:'Không có mô hình phù hợp.', mcr:'Robot tổ hợp MCR', composite:'Robot tổ hợp', humanoid:'Robot hai chân hình người', agv:'Robot vận chuyển AGV' },
+  'zh-Hant': { title:'型號範本', description:'管理所有機器人型號，點擊卡片查看或編輯詳情。', search:'搜尋', create:'新增', preview:'3D 預覽', published:'已發佈', unpublished:'未發佈', version:'版本', components:'元件', peripherals:'外設', updated:'更新於', edit:'編輯', delete:'刪除', noModels:'暫無型號，請新增第一個機器人型號。', noMatch:'沒有相符的型號。', mcr:'MCR複合機器人', composite:'複合機器人', humanoid:'人形雙足機器人', agv:'AGV搬運機器人' },
+};
+
+const COMPONENT_LIBRARY_COPY: Record<AppLocale, Record<string, string>> = {
+  'zh-Hans': { title:'组件库', description:'管理机器人组件，点击卡片查看模型结构与参数配置。', search:'搜索', create:'新增组件', preview:'3D 预览', builtin:'内置', custom:'自定义', type:'类型', subtype:'子类型', slots:'槽位', arm:'机械臂整臂', chassis:'底盘', wheeled:'轮式底盘', updated:'更新于', view:'查看详情', delete:'删除', noMatch:'没有匹配的组件。', createTitle:'创建组件', cancel:'取消', next:'下一步', saveGenerate:'保存并生成', componentName:'组件名称', nameExample:'例如：六轴协作机械臂整臂', identifier:'英文标识符', identifierHelp:'创建后不可修改，并作为 Link 名称前缀。', identifierExample:'例如：cobot_arm_6', componentType:'组件类型', noType:'暂无可用类型', selectSubtype:'请选择子类型', template:'构型模板', selectTemplate:'请选择构型模板', templateHelp:'模板决定底座、关节和连杆的装配顺序，以及各槽位允许使用的规格。', itemDescription:'描述', descriptionPlaceholder:'请输入组件描述', base:'底座', joint:'关节', link:'连杆', selectModule:'请选择模块', allowedSpecs:'允许规格', noSpecs:'暂无可用规格', deleteTitle:'删除组件', deleteConfirm:'确认删除该组件吗？对应装配配置将一并移除。', requiredIdentifier:'请输入英文标识符', invalidIdentifier:'需以英文字母开头，仅支持字母、数字和下划线', duplicateIdentifier:'该标识符已存在' },
+  en: { title:'Component Library', description:'Manage robot components and open a card to view structure and parameters.', search:'Search', create:'Create', preview:'3D Preview', builtin:'Built-in', custom:'Custom', type:'Type', subtype:'Subtype', slots:'Slots', arm:'Robot Arm', chassis:'Chassis', wheeled:'Wheeled Chassis', updated:'Updated', view:'View details', delete:'Delete', noMatch:'No matching components.', createTitle:'Create Component', cancel:'Cancel', next:'Next', saveGenerate:'Save & Generate', componentName:'Component Name', nameExample:'e.g. Six-axis collaborative robot arm', identifier:'Identifier', identifierHelp:'Cannot be changed after creation; used as the Link name prefix.', identifierExample:'e.g. cobot_arm_6', componentType:'Component Type', noType:'No available types', selectSubtype:'Select a subtype', template:'Configuration Template', selectTemplate:'Select a template', templateHelp:'The template defines the assembly order for the base, joints, and links, plus the allowed slot specifications.', itemDescription:'Description', descriptionPlaceholder:'Enter a component description', base:'Base', joint:'Joint', link:'Link', selectModule:'Select a module', allowedSpecs:'Allowed specs', noSpecs:'No available specs', deleteTitle:'Delete Component', deleteConfirm:'Delete this component? Its assembly configuration will also be removed.', requiredIdentifier:'Enter an identifier', invalidIdentifier:'Start with a letter; use letters, numbers, and underscores only', duplicateIdentifier:'This identifier already exists' },
+  ms: { title:'Pustaka Komponen', description:'Urus komponen robot dan buka kad untuk melihat struktur serta parameter.', search:'Cari', create:'Cipta', preview:'Pratonton 3D', builtin:'Terbina', custom:'Tersuai', type:'Jenis', subtype:'Subjenis', slots:'Slot', arm:'Lengan Robot', chassis:'Casis', wheeled:'Casis Beroda', updated:'Dikemas kini', view:'Lihat butiran', delete:'Padam', noMatch:'Tiada komponen sepadan.', createTitle:'Cipta Komponen', cancel:'Batal', next:'Seterusnya', saveGenerate:'Simpan & Jana', componentName:'Nama Komponen', nameExample:'cth. lengan robot kolaboratif enam paksi', identifier:'Pengecam', identifierHelp:'Tidak boleh diubah selepas dicipta; digunakan sebagai awalan nama Link.', identifierExample:'cth. cobot_arm_6', componentType:'Jenis Komponen', noType:'Tiada jenis tersedia', selectSubtype:'Pilih subjenis', template:'Templat Konfigurasi', selectTemplate:'Pilih templat', templateHelp:'Templat menentukan turutan pemasangan tapak, sendi dan pautan serta spesifikasi slot yang dibenarkan.', itemDescription:'Penerangan', descriptionPlaceholder:'Masukkan penerangan komponen', base:'Tapak', joint:'Sendi', link:'Pautan', selectModule:'Pilih modul', allowedSpecs:'Spesifikasi dibenarkan', noSpecs:'Tiada spesifikasi tersedia', deleteTitle:'Padam Komponen', deleteConfirm:'Padam komponen ini? Konfigurasi pemasangannya turut dibuang.', requiredIdentifier:'Masukkan pengecam', invalidIdentifier:'Mulakan dengan huruf; gunakan huruf, nombor dan garis bawah sahaja', duplicateIdentifier:'Pengecam ini telah wujud' },
+  vi: { title:'Thư viện thành phần', description:'Quản lý thành phần robot và mở thẻ để xem cấu trúc cùng tham số.', search:'Tìm kiếm', create:'Tạo', preview:'Xem trước 3D', builtin:'Tích hợp', custom:'Tùy chỉnh', type:'Loại', subtype:'Loại phụ', slots:'Khe', arm:'Tay máy', chassis:'Khung gầm', wheeled:'Khung gầm bánh xe', updated:'Đã cập nhật', view:'Xem chi tiết', delete:'Xóa', noMatch:'Không có thành phần phù hợp.', createTitle:'Tạo thành phần', cancel:'Hủy', next:'Tiếp theo', saveGenerate:'Lưu & Tạo', componentName:'Tên thành phần', nameExample:'VD: tay máy cộng tác sáu trục', identifier:'Mã định danh', identifierHelp:'Không thể đổi sau khi tạo; được dùng làm tiền tố tên Link.', identifierExample:'VD: cobot_arm_6', componentType:'Loại thành phần', noType:'Không có loại khả dụng', selectSubtype:'Chọn loại phụ', template:'Mẫu cấu hình', selectTemplate:'Chọn mẫu', templateHelp:'Mẫu xác định thứ tự lắp ráp đế, khớp và liên kết cùng quy cách được phép cho từng khe.', itemDescription:'Mô tả', descriptionPlaceholder:'Nhập mô tả thành phần', base:'Đế', joint:'Khớp', link:'Liên kết', selectModule:'Chọn mô-đun', allowedSpecs:'Quy cách cho phép', noSpecs:'Không có quy cách', deleteTitle:'Xóa thành phần', deleteConfirm:'Xóa thành phần này? Cấu hình lắp ráp cũng sẽ bị xóa.', requiredIdentifier:'Nhập mã định danh', invalidIdentifier:'Bắt đầu bằng chữ; chỉ dùng chữ, số và dấu gạch dưới', duplicateIdentifier:'Mã định danh đã tồn tại' },
+  'zh-Hant': { title:'元件庫', description:'管理機器人元件，點擊卡片查看模型結構與參數設定。', search:'搜尋', create:'新增元件', preview:'3D 預覽', builtin:'內建', custom:'自訂', type:'類型', subtype:'子類型', slots:'槽位', arm:'機械臂整臂', chassis:'底盤', wheeled:'輪式底盤', updated:'更新於', view:'查看詳情', delete:'刪除', noMatch:'沒有相符的元件。', createTitle:'建立元件', cancel:'取消', next:'下一步', saveGenerate:'儲存並產生', componentName:'元件名稱', nameExample:'例如：六軸協作機械臂整臂', identifier:'英文識別碼', identifierHelp:'建立後無法修改，並作為 Link 名稱前綴。', identifierExample:'例如：cobot_arm_6', componentType:'元件類型', noType:'暫無可用類型', selectSubtype:'請選擇子類型', template:'構型範本', selectTemplate:'請選擇構型範本', templateHelp:'範本決定底座、關節和連桿的裝配順序，以及各槽位允許使用的規格。', itemDescription:'描述', descriptionPlaceholder:'請輸入元件描述', base:'底座', joint:'關節', link:'連桿', selectModule:'請選擇模組', allowedSpecs:'允許規格', noSpecs:'暫無可用規格', deleteTitle:'刪除元件', deleteConfirm:'確認刪除此元件嗎？對應裝配設定將一併移除。', requiredIdentifier:'請輸入英文識別碼', invalidIdentifier:'需以英文字母開頭，僅支援字母、數字和底線', duplicateIdentifier:'此識別碼已存在' },
+};
 
 type PublishStatus = 'published' | 'draft';
 type TopologyKind = 'link' | 'joint' | 'mesh';
@@ -1452,7 +1470,7 @@ function inputStyle(): React.CSSProperties {
   };
 }
 
-function RobotCardPreview({ model }: { model: RobotModel }) {
+function RobotCardPreview({ model, previewLabel = '3D 预览' }: { model: RobotModel; previewLabel?: string }) {
   const isHumanoid = model.type.includes('人形');
   const safeId = model.id.replace(/[^a-zA-Z0-9_-]/g, '');
   const gradientId = `model-card-gradient-${safeId}`;
@@ -1509,7 +1527,7 @@ function RobotCardPreview({ model }: { model: RobotModel }) {
           )}
         </g>
       </svg>
-      <span className="model-card-preview-label">3D 预览</span>
+      <span className="model-card-preview-label">{previewLabel}</span>
     </div>
   );
 }
@@ -2052,7 +2070,7 @@ function TopologyParamPanel({
 
   return (
     <section className="robot-topology-param-panel" style={{ position: 'relative', background: 'var(--robot-surface)', border: '1px solid var(--robot-border)', borderRadius: 'var(--robot-card-radius)', overflow: 'hidden', boxShadow: 'var(--robot-shadow)', flexShrink: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ minHeight: 64, padding: '12px 16px', borderBottom: '1px solid var(--robot-border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="robot-card-section-header" style={{ minHeight: 64, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{
           borderRadius: 999,
           background: kindMeta.background,
@@ -2289,7 +2307,7 @@ function DeviceStructureParamPanel({
   const changeOrigin = (key: keyof OriginPose, value: string) => onChange({ ...node.origin, [key]: Number(value) || 0 });
   return (
     <section className="robot-topology-param-panel" style={{ position: 'relative', background: 'var(--robot-surface)', border: '1px solid var(--robot-border)', borderRadius: 'var(--robot-card-radius)', overflow: 'hidden', boxShadow: 'var(--robot-shadow)', flexShrink: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ minHeight: 64, padding: '12px 16px', borderBottom: '1px solid var(--robot-border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="robot-card-section-header" style={{ minHeight: 64, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ borderRadius: 999, background: meta.background, color: meta.color, fontSize: 10, fontWeight: 600, padding: '3px 8px' }}>{meta.label}</span>
         <strong style={{ minWidth: 0, flex: 1, overflow: 'hidden', color: 'var(--robot-heading)', fontSize: 14, fontWeight: 600, textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.label}</strong>
       </div>
@@ -2467,7 +2485,7 @@ function SoftwareVersionDialog({
       title="软件版本"
       size="xl"
       contentStyle={{ height: 'min(720px, var(--ds-modal-max-height))' }}
-      bodyStyle={{ padding: 0, flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}
+      bodyLayout="flush"
       footer={(
         <>
           <ArcoButton scope="robot" onClick={() => onOpenChange(false)}>关闭</ArcoButton>
@@ -2633,6 +2651,10 @@ export function RobotModelManager({
   softwareProducts?: SoftwareProduct[];
   dictionaryCategories?: DictionaryCategory[];
 } = {}) {
+  const { locale } = useI18n();
+  const listCopy = MODEL_LIBRARY_COPY[locale];
+  const localizedModelName = (model: RobotModel) => model.id === 'robot-mcr' ? listCopy.mcr : model.id === 'robot-humanoid' ? listCopy.humanoid : model.id === 'robot-agv' ? listCopy.agv : model.name;
+  const localizedModelType = (model: RobotModel) => model.id === 'robot-mcr' ? listCopy.composite : model.id === 'robot-humanoid' ? listCopy.humanoid : model.id === 'robot-agv' ? listCopy.agv : model.type;
   const [models, setModels] = useState<RobotModel[]>(INITIAL_ROBOT_MODELS);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [editingScene, setEditingScene] = useState(false);
@@ -2778,12 +2800,11 @@ export function RobotModelManager({
     return (
       <>
         {publishLockToast}
-        <div className="robot-manager-page robot-manager-page--list" style={{
+        <div className="robot-manager-page robot-manager-page--list robot-library-list-page" style={{
           ...robotThemeVars(themeMode, stylePreset, industrialColorTheme),
           flex: 1,
           minWidth: 0,
           height: '100%',
-          padding: 'var(--robot-page-padding)',
           display: 'flex',
           flexDirection: 'column',
           background: 'var(--robot-page)',
@@ -2793,27 +2814,23 @@ export function RobotModelManager({
           transition: 'background-color var(--ds-motion-duration-slow) var(--ds-motion-ease-in-out), color var(--ds-motion-duration-slow) var(--ds-motion-ease-in-out)',
         }}>
           {/* Header */}
-          <div className="robot-manager-page__header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--robot-section-gap)', flexShrink: 0, gap: 'var(--robot-section-gap)' }}>
-            <div style={{ minWidth: 0 }}>
-              <h1 style={{ color: 'var(--robot-heading)', fontSize: 20, fontWeight: 600, margin: 0 }}>型号库</h1>
-              <p style={{ color: 'var(--robot-muted)', fontSize: 14, margin: '4px 0 0' }}>
-                管理所有机器人型号，点击进入查看与编辑详情。
-              </p>
+          <header className="robot-manager-page__header robot-library-list-header">
+            <div className="robot-library-list-heading">
+              <h1>{listCopy.title}</h1>
+              <p>{listCopy.description}</p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            <div className="robot-library-list-toolbar">
               <ArcoTextInput
                 scope="robot"
-                placeholder="搜索型号名称、类型…"
+                className="robot-library-list-search"
+                placeholder={listCopy.search}
                 icon={<Search size={14} />}
                 value={searchQuery}
                 onChange={e => setSearchQuery((e.target as HTMLInputElement).value)}
-                style={{ width: 260 }}
               />
-              <RobotButton variant="primary" onPress={openCreateDialog}>
-                <Plus size={14} />新建型号
-              </RobotButton>
+              <ArcoButton scope="robot" type="primary" icon={<Plus size={15} />} onClick={openCreateDialog}>{listCopy.create}</ArcoButton>
             </div>
-          </div>
+          </header>
 
           <style>{`
             .robot-detail-button {
@@ -2863,7 +2880,7 @@ export function RobotModelManager({
             .robot-detail-chip[data-tone="success"] { background: var(--robot-success-soft); color: var(--robot-success); }
             .robot-detail-chip[data-tone="danger"] { background: var(--robot-danger-soft); color: var(--robot-danger); }
             .model-library-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 2px 20px; }
-            .model-library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); align-content: start; gap: 16px; }
+            .model-library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); align-content: start; gap: var(--robot-section-gap); }
             .model-library-card {
               min-width: 0;
               overflow: hidden;
@@ -2918,9 +2935,9 @@ export function RobotModelManager({
             }
           `}</style>
 
-          <div className="model-library-scroll">
+          <div className="model-library-scroll robot-library-list-content">
             {filteredModels.length > 0 ? (
-              <div className="model-library-grid">
+              <div className="model-library-grid robot-library-card-grid">
                 {filteredModels.map(model => {
                   const status = STATUS_META[model.status];
                   return (
@@ -2928,34 +2945,34 @@ export function RobotModelManager({
                       <button
                         type="button"
                         className="model-card-main"
-                        aria-label={`查看${model.name}详情`}
+                        aria-label={`${listCopy.edit} ${localizedModelName(model)}`}
                         onClick={() => { setActiveId(model.id); setEditingScene(false); setSelectedTopologyId('base_link'); }}
                       >
-                        <RobotCardPreview model={model} />
+                        <RobotCardPreview model={model} previewLabel={listCopy.preview} />
                         <div className="model-card-content">
                           <div className="model-card-title-row">
                             <div style={{ minWidth: 0 }}>
-                              <h2 className="model-card-title">{model.name}</h2>
-                              <p className="model-card-type">{model.type}</p>
+                              <h2 className="model-card-title">{localizedModelName(model)}</h2>
+                              <p className="model-card-type">{localizedModelType(model)}</p>
                             </div>
-                            <RobotChip tone={model.status === 'published' ? 'success' : 'default'}>{status.label}</RobotChip>
+                            <RobotChip tone={model.status === 'published' ? 'success' : 'default'}>{model.status === 'published' ? listCopy.published : listCopy.unpublished}</RobotChip>
                           </div>
                           <div className="model-card-stats">
-                            <div className="model-card-stat"><span>版本</span><strong>{model.version}</strong></div>
-                            <div className="model-card-stat"><span>组件</span><strong>{model.componentCount}</strong></div>
-                            <div className="model-card-stat"><span>外设</span><strong>{model.peripherals.length}</strong></div>
+                            <div className="model-card-stat"><span>{listCopy.version}</span><strong>{model.version}</strong></div>
+                            <div className="model-card-stat"><span>{listCopy.components}</span><strong>{model.componentCount}</strong></div>
+                            <div className="model-card-stat"><span>{listCopy.peripherals}</span><strong>{model.peripherals.length}</strong></div>
                           </div>
                         </div>
                       </button>
                       <footer className="model-card-footer">
-                        <span className="model-card-updated">更新于 {model.updatedAt}</span>
+                        <span className="model-card-updated">{listCopy.updated} {model.updatedAt}</span>
                         <div className="model-card-actions">
                           <RobotButton
                             variant="ghost"
                             size="sm"
                             isIconOnly
-                            ariaLabel={`编辑${model.name}`}
-                            title={model.status === 'published' ? '取消发布后可编辑' : '编辑'}
+                            ariaLabel={`${listCopy.edit}: ${localizedModelName(model)}`}
+                            title={listCopy.edit}
                             onPress={() => {
                               if (model.status === 'published') {
                                 notifyPublishLock();
@@ -2972,8 +2989,8 @@ export function RobotModelManager({
                             variant="danger"
                             size="sm"
                             isIconOnly
-                            ariaLabel={`删除${model.name}`}
-                            title={model.status === 'published' ? '取消发布后可删除' : '删除'}
+                            ariaLabel={`${listCopy.delete}: ${localizedModelName(model)}`}
+                            title={listCopy.delete}
                             onPress={() => {
                               if (model.status === 'published') {
                                 notifyPublishLock();
@@ -2994,8 +3011,8 @@ export function RobotModelManager({
             ) : (
               <div className="model-library-empty">
                 {models.length === 0
-                  ? '暂无型号，点击「新建型号」创建第一个机器人型号。'
-                  : `没有匹配「${searchQuery}」的型号。`}
+                  ? listCopy.noModels
+                  : listCopy.noMatch}
               </div>
             )}
           </div>
@@ -3355,13 +3372,23 @@ export function RobotModelManager({
           box-shadow: var(--robot-shadow-soft);
         }
         .robot-detail-card-header {
+          position: relative;
           min-height: 68px;
           padding: 12px 16px;
           display: flex;
           align-items: center;
           gap: 8px;
           flex-shrink: 0;
-          border-bottom: 1px solid var(--robot-border);
+          border-bottom: 0;
+        }
+        .robot-detail-card-header::after {
+          content: '';
+          position: absolute;
+          right: 16px;
+          bottom: 0;
+          left: 16px;
+          height: 1px;
+          background: var(--robot-border);
         }
         .robot-detail-card-title {
           flex: 1;
@@ -3441,13 +3468,23 @@ export function RobotModelManager({
         .robot-detail-chip[data-tone="danger"] { background: var(--robot-danger-soft); color: var(--robot-heading); }
         .robot-info-card { height: auto; flex: 0 0 auto; display: flex; flex-direction: column; }
         .robot-info-header {
+          position: relative;
           min-height: 84px;
           padding: 16px;
           display: flex;
           align-items: center;
           gap: 12px;
           flex-shrink: 0;
-          border-bottom: 1px solid var(--robot-border);
+          border-bottom: 0;
+        }
+        .robot-info-header::after {
+          content: '';
+          position: absolute;
+          right: 16px;
+          bottom: 0;
+          left: 16px;
+          height: 1px;
+          background: var(--robot-border);
         }
         .robot-model-back {
           width: 44px;
@@ -3877,7 +3914,7 @@ export function RobotModelManager({
             <ArcoButton scope="robot" type="primary" status="danger" onClick={() => {
               if (deleteTopologyTargetId) handleDeleteTopologyNode(deleteTopologyTargetId);
               setDeleteTopologyTargetId(null);
-            }}>确认删除</ArcoButton>
+            }}>删除</ArcoButton>
           </>
         )}
       >
@@ -4168,6 +4205,7 @@ interface CreatedArmComponent {
   typeId: string;
   subtypeId: string;
   templateId: string;
+  description?: string;
   assembly: Record<string, string>;
   createdAt?: string;
 }
@@ -4245,7 +4283,7 @@ function buildArmTopology(identifier: string, slots: ConfigurationSlot[]): Topol
   return [root];
 }
 
-function ComponentCardPreview({ kind }: { kind: 'chassis' | 'arm' }) {
+function ComponentCardPreview({ kind, previewLabel }: { kind: 'chassis' | 'arm'; previewLabel: string }) {
   return (
     <div className="model-card-preview" aria-hidden="true">
       <svg viewBox="0 0 420 230" preserveAspectRatio="xMidYMid slice">
@@ -4258,7 +4296,7 @@ function ComponentCardPreview({ kind }: { kind: 'chassis' | 'arm' }) {
           <g transform="translate(210 178)"><ellipse cx="0" cy="10" rx="66" ry="14" fill="var(--robot-accent)" opacity=".18" /><rect x="-42" y="-20" width="84" height="40" rx="10" fill="var(--robot-soft)" stroke="var(--robot-accent-border)" strokeWidth="3" /><line x1="0" y1="-20" x2="26" y2="-82" stroke="var(--robot-accent)" strokeWidth="17" strokeLinecap="round" /><line x1="26" y1="-82" x2="78" y2="-126" stroke="var(--robot-accent-text)" strokeWidth="15" strokeLinecap="round" /><circle cx="78" cy="-126" r="13" fill="var(--robot-accent-border)" stroke="var(--robot-accent-soft)" strokeWidth="4" /></g>
         )}
       </svg>
-      <span className="model-card-preview-label">3D 预览</span>
+      <span className="model-card-preview-label">{previewLabel}</span>
     </div>
   );
 }
@@ -4274,6 +4312,13 @@ export function RobotComponentLibrary({
   industrialColorTheme?: IndustrialColorTheme;
   dictionaryCategories?: DictionaryCategory[];
 }) {
+  const { locale } = useI18n();
+  const copy = COMPONENT_LIBRARY_COPY[locale];
+  const collaborativeArm = locale === 'zh-Hans' ? '协作机械臂' : locale === 'zh-Hant' ? '協作機械臂' : locale === 'ms' ? 'Lengan robot kolaboratif' : locale === 'vi' ? 'Tay máy cộng tác' : 'Collaborative Robot Arm';
+  const sixAxisArm = locale === 'zh-Hans' ? '六轴协作机械臂' : locale === 'zh-Hant' ? '六軸協作機械臂' : locale === 'ms' ? 'Lengan Kolaboratif 6 Paksi' : locale === 'vi' ? 'Tay máy cộng tác 6 trục' : '6-axis Collaborative Robot Arm';
+  const axisLabel = locale === 'zh-Hans' ? '轴' : locale === 'zh-Hant' ? '軸' : locale === 'ms' ? 'paksi' : locale === 'vi' ? 'trục' : 'axes';
+  const displaySubtype = (item: { key?: string; name: string }) => item.key === 'collaborative_arm' || item.name === '协作机械臂' ? collaborativeArm : item.name;
+  const displayTemplate = (item: { id: string; name: string }) => item.id === 'config-cobot-6' ? sixAxisArm : item.name;
   const activeTheme = themeMode ?? initialThemeMode();
   const [topology, setTopology] = useState<TopologyNode[]>(() => mcrTopology());
   const [selectedId, setSelectedId] = useState('base_link');
@@ -4298,7 +4343,7 @@ export function RobotComponentLibrary({
   const [componentSearchQuery, setComponentSearchQuery] = useState('');
   const [componentDeleteTargetId, setComponentDeleteTargetId] = useState<string | null>(null);
   const [activeComponent, setActiveComponent] = useState({ name: '仙工底盘', identifier: 'xiangong-base' });
-  const [armForm, setArmForm] = useState({ name: '', identifier: '', typeId: '', subtypeId: '', templateId: '' });
+  const [armForm, setArmForm] = useState({ name: '', identifier: '', typeId: '', subtypeId: '', templateId: '', description: '' });
   const [armAssembly, setArmAssembly] = useState<Record<string, string>>({});
   const [previewModuleId, setPreviewModuleId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -4328,15 +4373,15 @@ export function RobotComponentLibrary({
   }, [armForm.typeId, componentDictionary, componentSubtypeField, componentTypeField]);
   const identifierError = useMemo(() => {
     const identifier = armForm.identifier.trim();
-    if (!identifier) return '请输入英文标识符';
-    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(identifier)) return '需以英文字母开头，仅支持字母、数字和下划线';
-    if (identifier === 'xiangong-base' || createdArmComponents.some(item => item.identifier.toLowerCase() === identifier.toLowerCase())) return '该标识符已存在';
+    if (!identifier) return copy.requiredIdentifier;
+    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(identifier)) return copy.invalidIdentifier;
+    if (identifier === 'xiangong-base' || createdArmComponents.some(item => item.identifier.toLowerCase() === identifier.toLowerCase())) return copy.duplicateIdentifier;
     return '';
-  }, [armForm.identifier, createdArmComponents]);
+  }, [armForm.identifier, createdArmComponents, copy]);
   const previewModule = assemblyModules.find(item => item.id === previewModuleId) ?? null;
   const componentCards = useMemo(() => [{
-    id: 'xiangong-base', name: '仙工底盘', identifier: 'xiangong-base', kind: 'chassis' as const,
-    subtype: '轮式底盘', specification: '标准型', slotCount: 1, updatedAt: '2026-07-01 14:32', builtin: true,
+    id: 'xiangong-base', name: locale === 'zh-Hans' ? '仙工底盘' : locale === 'zh-Hant' ? '仙工底盤' : 'SEER Chassis', identifier: 'xiangong-base', kind: 'chassis' as const,
+    subtype: copy.wheeled, specification: 'Standard', slotCount: 1, updatedAt: '2026-07-01 14:32', builtin: true,
   }, ...createdArmComponents.map(item => {
     const template = configurationTemplates.find(candidate => candidate.id === item.templateId);
     const subtype = componentSubtypeField?.values.find(value => value.id === item.subtypeId)?.name ?? '机械臂整臂';
@@ -4345,7 +4390,7 @@ export function RobotComponentLibrary({
       subtype, specification: template?.name ?? '构型模板', slotCount: template?.slots.length ?? Object.keys(item.assembly).length,
       updatedAt: item.createdAt ?? '刚刚', builtin: false,
     };
-  })], [componentSubtypeField, configurationTemplates, createdArmComponents]);
+  })], [componentSubtypeField, configurationTemplates, createdArmComponents, copy, locale]);
   const filteredComponentCards = useMemo(() => {
     const query = componentSearchQuery.trim().toLowerCase();
     return componentCards.filter(item => !query || item.name.toLowerCase().includes(query) || item.identifier.toLowerCase().includes(query) || item.subtype.toLowerCase().includes(query));
@@ -4421,7 +4466,7 @@ export function RobotComponentLibrary({
           [componentTypeField?.id ?? 'component-type']: typeId,
         })
       : [];
-    setArmForm({ name: '', identifier: '', typeId, subtypeId: subtypes[0]?.id ?? '', templateId: templates[0]?.id ?? '' });
+    setArmForm({ name: '', identifier: '', typeId, subtypeId: subtypes[0]?.id ?? '', templateId: templates[0]?.id ?? '', description: '' });
     setArmAssembly({});
     setCreateArmStep(1);
     setCreateArmOpen(true);
@@ -4457,6 +4502,7 @@ export function RobotComponentLibrary({
       typeId: armForm.typeId,
       subtypeId: armForm.subtypeId,
       templateId: armForm.templateId,
+      description: armForm.description.trim(),
       assembly: { ...armAssembly },
       createdAt: new Date().toLocaleString('zh-CN', { hour12: false }),
     };
@@ -4555,7 +4601,8 @@ export function RobotComponentLibrary({
       <style>{`
         .component-library-grid { display: grid; grid-template-columns: 320px minmax(560px, 1fr) 330px; gap: var(--robot-section-gap); min-height: 0; flex: 1; overflow: hidden; }
         .component-library-card { min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--robot-border); border-radius: var(--robot-card-radius); background: var(--robot-surface); box-shadow: var(--robot-shadow-soft); }
-        .component-library-card__header { min-height: 64px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--robot-border); }
+        .component-library-card__header { position: relative; min-height: 64px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 0; }
+        .component-library-card__header::after { content: ''; position: absolute; right: 16px; bottom: 0; left: 16px; height: 1px; background: var(--robot-border); }
         .component-library-card__header h1, .component-library-card__header h2 { margin: 0; color: var(--robot-heading); font-size: 16px; line-height: 24px; font-weight: 600; }
         .component-library-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: var(--robot-section-gap); overflow: hidden; }
         .component-library-info { flex: 0 0 312px; display: flex; flex-direction: column; }
@@ -4629,23 +4676,27 @@ export function RobotComponentLibrary({
         .arm-create-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: var(--robot-control-radius); background: var(--robot-soft); }
         .arm-create-step { min-height: 40px; border: 0; border-radius: calc(var(--robot-control-radius) - 2px); background: transparent; color: var(--robot-muted); font: inherit; font-size: 14px; font-weight: 600; cursor: default; }
         .arm-create-step[data-selected="true"] { background: var(--robot-surface); color: var(--robot-accent-text); box-shadow: var(--robot-shadow-soft); }
-        .arm-create-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 20px; }
+        .arm-create-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ds-modal-section-gap); }
         .arm-create-form__wide { grid-column: 1 / -1; }
         .arm-create-help, .arm-create-error { margin: 6px 0 0; font-size: 12px; line-height: 18px; }
         .arm-create-help { color: var(--robot-muted); }
         .arm-create-error { color: var(--robot-danger); }
         .arm-assembly-summary { margin-top: 16px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--robot-border); border-radius: var(--robot-inner-radius); background: var(--robot-soft); color: var(--robot-muted); font-size: 13px; }
         .arm-assembly-summary strong { color: var(--robot-heading); }
-        .arm-assembly-list { max-height: min(52vh, 520px); margin-top: 14px; overflow-y: auto; display: grid; gap: 10px; padding-right: 4px; }
-        .arm-assembly-row { min-width: 0; padding: 14px; display: grid; grid-template-columns: 112px minmax(150px, .8fr) minmax(260px, 1.4fr); gap: 14px; align-items: center; border: 1px solid var(--robot-border); border-radius: var(--robot-inner-radius); background: var(--robot-surface); }
+        .arm-assembly-list { overflow: hidden; display: grid; border: 1px solid var(--robot-border); border-radius: var(--robot-inner-radius); background: var(--robot-surface); }
+        .arm-assembly-row { min-width: 0; min-height: 112px; padding: 20px 24px; display: grid; grid-template-columns: minmax(200px, .72fr) minmax(360px, 1.28fr); gap: 24px; align-items: center; background: var(--robot-surface); }
+        .arm-assembly-row + .arm-assembly-row { border-top: 1px solid var(--robot-border); }
         .arm-assembly-slot { display: flex; align-items: center; gap: 10px; }
-        .arm-assembly-slot__code { width: 38px; height: 32px; display: grid; place-items: center; border-radius: 8px; background: var(--robot-accent-soft); color: var(--robot-accent-text); font-size: 12px; font-weight: 700; }
-        .arm-assembly-slot strong { display: block; color: var(--robot-heading); font-size: 14px; }
-        .arm-assembly-slot span { color: var(--robot-muted); font-size: 12px; }
-        .arm-assembly-specs { min-width: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-        .arm-assembly-specs span { padding: 3px 8px; border-radius: 999px; background: var(--robot-soft); color: var(--robot-muted); font-size: 12px; white-space: nowrap; }
-        .arm-assembly-picker { min-width: 0; display: flex; align-items: center; gap: 8px; }
-        .arm-assembly-picker .arcoui-select-wrap { min-width: 0; flex: 1; }
+        .arm-assembly-slot__code { min-width: 48px; height: 32px; padding: 0 10px; display: grid; place-items: center; border-radius: var(--robot-control-radius); background: var(--robot-accent-soft); color: var(--robot-accent-text); font-size: 13px; font-weight: 700; box-sizing: border-box; }
+        .arm-assembly-slot strong { color: var(--robot-heading); font-size: 15px; font-weight: 600; }
+        .arm-assembly-picker { min-width: 0; min-height: 72px; padding: 10px 14px; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center; border: 1px solid var(--robot-border); border-radius: var(--robot-inner-radius); background: var(--robot-surface); }
+        .arm-assembly-picker:focus-within { border-color: var(--robot-accent); box-shadow: 0 0 0 2px var(--robot-accent-soft); }
+        .arm-assembly-picker__icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: var(--robot-control-radius); background: var(--robot-soft); color: var(--robot-muted); }
+        .arm-assembly-picker__field { min-width: 0; display: grid; gap: 2px; }
+        .arm-assembly-picker__field .arcoui-select-wrap { min-width: 0; width: 100%; }
+        .arm-assembly-picker__field .arcoui-select { height: 28px; padding-inline: 0 28px; border: 0; background: transparent; color: var(--robot-heading); font-size: 15px; font-weight: 600; box-shadow: none; }
+        .arm-assembly-picker__field .arcoui-select-wrap > svg { right: 2px; }
+        .arm-assembly-picker__specs { min-width: 0; overflow: hidden; color: var(--robot-muted); font-size: 12px; line-height: 18px; text-overflow: ellipsis; white-space: nowrap; }
         .arm-module-preview { min-height: 310px; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(220px, .8fr); gap: 18px; }
         .arm-module-preview__scene { min-height: 280px; display: grid; place-items: center; overflow: hidden; border-radius: var(--robot-inner-radius); background: var(--robot-scene-bg); }
         .arm-module-preview__shape { width: 170px; height: 170px; position: relative; border-radius: 42% 58% 45% 55%; background: linear-gradient(145deg, var(--robot-accent-soft), var(--robot-accent)); box-shadow: 0 28px 60px rgba(20, 18, 110, .28); transform: rotate(-18deg); }
@@ -4657,51 +4708,51 @@ export function RobotComponentLibrary({
         .arm-module-preview__meta dt { color: var(--robot-muted); font-size: 12px; }
         .arm-module-preview__meta dd { margin: 0; color: var(--robot-text); font-size: 14px; }
         @media (max-width: 1240px) { .component-library-grid { grid-template-columns: 300px minmax(380px, 1fr); overflow-y: auto; } .component-library-right { grid-column: 1 / -1; min-height: 680px; display: grid; grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 760px) { .component-library-grid { grid-template-columns: minmax(0, 1fr); } .component-library-right { grid-column: auto; display: flex; } .arm-create-form, .arm-module-preview { grid-template-columns: 1fr; } .arm-assembly-row { grid-template-columns: 1fr; } }
+        @media (max-width: 760px) { .component-library-grid { grid-template-columns: minmax(0, 1fr); } .component-library-right { grid-column: auto; display: flex; } .arm-create-form, .arm-module-preview { grid-template-columns: 1fr; } .arm-assembly-row { grid-template-columns: 1fr; gap: 12px; padding: 16px; } }
       `}</style>
 
       {activeComponentId === null ? (
         <section className="component-library-list">
-          <header className="component-library-list__header">
-            <div>
-              <h1>组件库</h1>
-              <p>管理机器人组件，点击卡片进入查看模型结构与参数配置。</p>
+          <header className="component-library-list__header robot-library-list-header">
+            <div className="robot-library-list-heading">
+              <h1>{copy.title}</h1>
+              <p>{copy.description}</p>
             </div>
-            <div className="component-library-list__tools">
-              <ArcoTextInput scope="robot" icon={<Search size={14} />} value={componentSearchQuery} onChange={event => setComponentSearchQuery(event.target.value)} placeholder="搜索组件名称、标识符…" style={{ width: 260 }} />
-              <ArcoButton scope="robot" type="primary" icon={<Plus size={15} />} onClick={openCreateArm}>新增组件</ArcoButton>
+            <div className="component-library-list__tools robot-library-list-toolbar">
+              <ArcoTextInput scope="robot" className="robot-library-list-search" icon={<Search size={14} />} value={componentSearchQuery} onChange={event => setComponentSearchQuery(event.target.value)} placeholder={copy.search} />
+              <ArcoButton scope="robot" type="primary" icon={<Plus size={15} />} onClick={openCreateArm}>{copy.create}</ArcoButton>
             </div>
           </header>
-          <div className="component-library-list__scroll">
+          <div className="component-library-list__scroll robot-library-list-content">
             {filteredComponentCards.length ? (
-              <div className="model-library-grid">
+              <div className="model-library-grid robot-library-card-grid">
                 {filteredComponentCards.map(component => (
                   <article key={component.id} className="model-library-card">
-                    <button type="button" className="model-card-main" onClick={() => openComponentDetail(component.id)} aria-label={`查看${component.name}详情`}>
-                      <ComponentCardPreview kind={component.kind} />
+                    <button type="button" className="model-card-main" onClick={() => openComponentDetail(component.id)} aria-label={`${copy.view}: ${component.name}`}>
+                      <ComponentCardPreview kind={component.kind} previewLabel={copy.preview} />
                       <div className="model-card-content">
                         <div className="model-card-title-row">
                           <div style={{ minWidth: 0 }}><h2 className="model-card-title">{component.name}</h2><p className="model-card-type">{component.identifier}</p></div>
-                          <span className="robot-detail-chip" data-tone={component.builtin ? 'accent' : undefined}>{component.builtin ? '内置' : '自定义'}</span>
+                          <span className="robot-detail-chip" data-tone={component.builtin ? 'accent' : undefined}>{component.builtin ? copy.builtin : copy.custom}</span>
                         </div>
                         <div className="model-card-stats">
-                          <div className="model-card-stat"><span>类型</span><strong>{component.kind === 'arm' ? '机械臂整臂' : '底盘'}</strong></div>
-                          <div className="model-card-stat"><span>子类型</span><strong>{component.subtype}</strong></div>
-                          <div className="model-card-stat"><span>槽位</span><strong>{component.slotCount}</strong></div>
+                          <div className="model-card-stat"><span>{copy.type}</span><strong>{component.kind === 'arm' ? copy.arm : copy.chassis}</strong></div>
+                          <div className="model-card-stat"><span>{copy.subtype}</span><strong>{component.subtype}</strong></div>
+                          <div className="model-card-stat"><span>{copy.slots}</span><strong>{component.slotCount}</strong></div>
                         </div>
                       </div>
                     </button>
                     <footer className="model-card-footer">
-                      <span className="model-card-updated">更新于 {component.updatedAt}</span>
+                      <span className="model-card-updated">{copy.updated} {component.updatedAt}</span>
                       <div className="model-card-actions">
-                        <ArcoIconButton scope="robot" type="text" size="small" icon={<Pencil size={14} />} aria-label={`查看${component.name}`} title="查看详情" onClick={() => openComponentDetail(component.id)} />
-                        {!component.builtin ? <ArcoIconButton scope="robot" type="text" status="danger" size="small" icon={<Trash2 size={14} />} aria-label={`删除${component.name}`} title="删除" onClick={() => setComponentDeleteTargetId(component.id)} /> : null}
+                        <ArcoIconButton scope="robot" type="text" size="small" icon={<Pencil size={14} />} aria-label={`${copy.view}: ${component.name}`} title={copy.view} onClick={() => openComponentDetail(component.id)} />
+                        {!component.builtin ? <ArcoIconButton scope="robot" type="text" status="danger" size="small" icon={<Trash2 size={14} />} aria-label={`${copy.delete}: ${component.name}`} title={copy.delete} onClick={() => setComponentDeleteTargetId(component.id)} /> : null}
                       </div>
                     </footer>
                   </article>
                 ))}
               </div>
-            ) : <div className="component-library-empty">没有匹配“{componentSearchQuery}”的组件。</div>}
+            ) : <div className="component-library-empty">{copy.noMatch}</div>}
           </div>
         </section>
       ) : (
@@ -4800,55 +4851,47 @@ export function RobotComponentLibrary({
         onOpenChange={open => { if (!open) setComponentDeleteTargetId(null); }}
         scope="robot"
         status="danger"
-        title="删除组件"
+        title={copy.deleteTitle}
         size="sm"
-        footer={<><ArcoButton scope="robot" onClick={() => setComponentDeleteTargetId(null)}>取消</ArcoButton><ArcoButton scope="robot" type="primary" status="danger" onClick={deleteCreatedComponent}>删除</ArcoButton></>}
+        footer={<><ArcoButton scope="robot" onClick={() => setComponentDeleteTargetId(null)}>{copy.cancel}</ArcoButton><ArcoButton scope="robot" type="primary" status="danger" onClick={deleteCreatedComponent}>{copy.delete}</ArcoButton></>}
       >
-        <p style={{ margin: 0, color: 'var(--robot-muted)', fontSize: 14, lineHeight: 1.7 }}>确认删除“{componentCards.find(item => item.id === componentDeleteTargetId)?.name ?? '该组件'}”吗？对应装配配置将一并移除。</p>
+        <p style={{ margin: 0, color: 'var(--robot-muted)', fontSize: 14, lineHeight: 1.7 }}>{copy.deleteConfirm}</p>
       </ArcoModal>
 
       <ArcoModal
         open={createArmOpen}
         onOpenChange={setCreateArmOpen}
         scope="robot"
-        title="创建机械臂整臂组件"
-        description="填写基础信息并按照构型模板完成模块装配。"
+        title={copy.createTitle}
         size="xl"
-        maxWidth="calc(100vw - 48px)"
-        bodyStyle={{ overflow: 'hidden' }}
         footer={createArmStep === 1 ? <>
-          <ArcoButton scope="robot" onClick={() => setCreateArmOpen(false)}>取消</ArcoButton>
+          <ArcoButton scope="robot" onClick={() => setCreateArmOpen(false)}>{copy.cancel}</ArcoButton>
           <ArcoButton
             scope="robot"
             type="primary"
             disabled={!armForm.name.trim() || Boolean(identifierError) || !armForm.typeId || !armForm.subtypeId || !selectedArmTemplate}
             onClick={goToAssembly}
-          >下一步：模块装配</ArcoButton>
+          >{copy.next}</ArcoButton>
         </> : <>
-          <ArcoButton scope="robot" onClick={() => setCreateArmStep(1)}>上一步</ArcoButton>
+          <ArcoButton scope="robot" onClick={() => setCreateArmOpen(false)}>{copy.cancel}</ArcoButton>
           <ArcoButton
             scope="robot"
             type="primary"
             disabled={!selectedArmTemplate || selectedArmTemplate.slots.some(slot => !armAssembly[slot.id])}
             onClick={submitArmComponent}
-          >提交并生成组件</ArcoButton>
+          >{copy.saveGenerate}</ArcoButton>
         </>}
       >
-        <div className="arm-create-steps" aria-label="创建步骤">
-          <button type="button" className="arm-create-step" data-selected={createArmStep === 1}>1&nbsp; 基础信息与构型</button>
-          <button type="button" className="arm-create-step" data-selected={createArmStep === 2}>2&nbsp; 模块装配</button>
-        </div>
-
         {createArmStep === 1 ? (
           <div className="arm-create-form">
-            <ArcoField label="组件名称" required>
-              <ArcoTextInput scope="robot" value={armForm.name} onChange={event => setArmForm(current => ({ ...current, name: event.target.value }))} placeholder="例如：六轴协作机械臂整臂" autoFocus />
+            <ArcoField label={copy.componentName} required>
+              <ArcoTextInput scope="robot" value={armForm.name} onChange={event => setArmForm(current => ({ ...current, name: event.target.value }))} placeholder={copy.nameExample} autoFocus />
             </ArcoField>
-            <ArcoField label="英文标识符" required>
-              <ArcoTextInput scope="robot" value={armForm.identifier} onChange={event => setArmForm(current => ({ ...current, identifier: event.target.value }))} placeholder="例如：cobot_arm_6" />
-              {armForm.identifier && identifierError ? <p className="arm-create-error">{identifierError}</p> : <p className="arm-create-help">创建后不可修改，并作为 Link 名称前缀。</p>}
+            <ArcoField label={copy.identifier} description={copy.identifierHelp} required>
+              <ArcoTextInput scope="robot" value={armForm.identifier} onChange={event => setArmForm(current => ({ ...current, identifier: event.target.value }))} placeholder={copy.identifierExample} />
+              {armForm.identifier && identifierError ? <p className="arm-create-error">{identifierError}</p> : null}
             </ArcoField>
-            <ArcoField label="组件类型" required>
+            <ArcoField label={copy.componentType} required>
               <ArcoSelect scope="robot" value={armForm.typeId} onChange={event => {
                 const typeId = event.target.value;
                 const subtypes = componentDictionary && componentSubtypeField
@@ -4856,64 +4899,63 @@ export function RobotComponentLibrary({
                   : [];
                 setArmForm(current => ({ ...current, typeId, subtypeId: subtypes[0]?.id ?? '' }));
               }}>
-                {armTypeValue ? <option value={armTypeValue.id}>机械臂整臂</option> : <option value="">暂无可用类型</option>}
+                {armTypeValue ? <option value={armTypeValue.id}>{copy.arm}</option> : <option value="">{copy.noType}</option>}
               </ArcoSelect>
             </ArcoField>
-            <ArcoField label="子类型" required>
+            <ArcoField label={copy.subtype} required>
               <ArcoSelect scope="robot" value={armForm.subtypeId} onChange={event => setArmForm(current => ({ ...current, subtypeId: event.target.value }))}>
-                <option value="">请选择子类型</option>
-                {allowedSubtypes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                <option value="">{copy.selectSubtype}</option>
+                {allowedSubtypes.map(item => <option key={item.id} value={item.id}>{displaySubtype(item)}</option>)}
               </ArcoSelect>
             </ArcoField>
             <div className="arm-create-form__wide">
-              <ArcoField label="构型模板" required>
+              <ArcoField label={copy.template} required>
                 <ArcoSelect scope="robot" value={armForm.templateId} onChange={event => { setArmForm(current => ({ ...current, templateId: event.target.value })); setArmAssembly({}); }}>
-                  <option value="">请选择构型模板</option>
-                  {enabledTemplates.map(item => <option key={item.id} value={item.id}>{item.name} · {item.dof} 轴</option>)}
+                  <option value="">{copy.selectTemplate}</option>
+                  {enabledTemplates.map(item => <option key={item.id} value={item.id}>{displayTemplate(item)} · {item.dof} {axisLabel}</option>)}
                 </ArcoSelect>
-                <p className="arm-create-help">模板决定底座、关节和连杆的装配顺序，以及各槽位允许使用的规格。</p>
+                <p className="arm-create-help">{copy.templateHelp}</p>
+              </ArcoField>
+            </div>
+            <div className="arm-create-form__wide">
+              <ArcoField label={copy.itemDescription}>
+                <ArcoTextArea scope="robot" rows={4} value={armForm.description} onChange={event => setArmForm(current => ({ ...current, description: event.target.value }))} placeholder={copy.descriptionPlaceholder} />
               </ArcoField>
             </div>
             {selectedArmTemplate ? (
               <div className="arm-create-form__wide arm-assembly-summary">
                 <CheckCircle2 size={17} color="var(--robot-success)" />
-                <span><strong>{selectedArmTemplate.name}</strong> 将生成 {selectedArmTemplate.slots.length} 个槽位：1 个底座、{selectedArmTemplate.dof} 个关节、{selectedArmTemplate.dof} 个连杆。</span>
+                <span><strong>{displayTemplate(selectedArmTemplate)}</strong> {locale === 'zh-Hans' ? `将生成 ${selectedArmTemplate.slots.length} 个槽位：1 个底座、${selectedArmTemplate.dof} 个关节、${selectedArmTemplate.dof} 个连杆。` : locale === 'zh-Hant' ? `將產生 ${selectedArmTemplate.slots.length} 個槽位：1 個底座、${selectedArmTemplate.dof} 個關節、${selectedArmTemplate.dof} 個連桿。` : locale === 'ms' ? `akan menjana ${selectedArmTemplate.slots.length} slot: 1 tapak, ${selectedArmTemplate.dof} sendi dan ${selectedArmTemplate.dof} pautan.` : locale === 'vi' ? `sẽ tạo ${selectedArmTemplate.slots.length} khe: 1 đế, ${selectedArmTemplate.dof} khớp và ${selectedArmTemplate.dof} liên kết.` : `will generate ${selectedArmTemplate.slots.length} slots: 1 base, ${selectedArmTemplate.dof} joints, and ${selectedArmTemplate.dof} links.`}</span>
               </div>
             ) : null}
           </div>
         ) : selectedArmTemplate ? (
-          <>
-            <div className="arm-assembly-summary">
-              <Box size={17} color="var(--robot-accent)" />
-              <span><strong>{selectedArmTemplate.name}</strong> · 请按运动链顺序完成 {selectedArmTemplate.slots.length} 个槽位，全部选择后才可生成组件。</span>
-            </div>
-            <div className="arm-assembly-list">
+          <div className="arm-assembly-list" aria-label={`${selectedArmTemplate.name}模块装配`}>
               {selectedArmTemplate.slots.map(slot => {
                 const specifications = allowedSpecificationsForSlot(slot);
                 const modules = modulesForSlot(slot);
-                const selectedModule = modules.find(item => item.id === armAssembly[slot.id]);
-                const slotCode = slot.kind === 'base' ? 'BASE' : slot.kind === 'joint' ? `J${slot.id.split('-')[1] ?? ''}` : `L${slot.id.split('-')[1] ?? ''}`;
+                const slotCode = slot.kind === 'base' ? copy.base : slot.kind === 'joint' ? `J${slot.id.split('-')[1] ?? ''}` : `L${slot.id.split('-')[1] ?? ''}`;
+                const slotKindLabel = slot.kind === 'base' ? copy.base : slot.kind === 'joint' ? copy.joint : copy.link;
                 return (
                   <div className="arm-assembly-row" key={slot.id}>
-                    <div className="arm-assembly-slot"><span className="arm-assembly-slot__code">{slotCode}</span><span><strong>{slot.name}</strong><span>{slot.kind === 'base' ? '底座' : slot.kind === 'joint' ? '关节' : '连杆'}</span></span></div>
-                    <div className="arm-assembly-specs" aria-label={`${slot.name}允许规格`}>
-                      {specifications.map(item => <span key={item.id}>{item.name}</span>)}
-                    </div>
+                    <div className="arm-assembly-slot"><span className="arm-assembly-slot__code">{slotCode}</span><strong>{slotKindLabel}</strong></div>
                     <div className="arm-assembly-picker">
-                      <ArcoSelect scope="robot" value={armAssembly[slot.id] ?? ''} onChange={event => setArmAssembly(current => ({ ...current, [slot.id]: event.target.value }))} aria-label={`选择${slot.name}模块`}>
-                        <option value="">请选择匹配模块</option>
-                        {modules.map(item => {
-                          const specification = componentSpecificationField?.values.find(value => value.id === item.specificationId);
-                          return <option key={item.id} value={item.id}>{item.name} · {specification?.name ?? '-'}</option>;
-                        })}
-                      </ArcoSelect>
-                      <ArcoIconButton scope="robot" icon={<Eye size={16} />} aria-label={`预览${slot.name}模块`} title={selectedModule?.previewable ? '预览模块' : '该模块暂无预览'} disabled={!selectedModule?.previewable} onClick={() => setPreviewModuleId(selectedModule?.id ?? null)} />
+                      <span className="arm-assembly-picker__icon" aria-hidden="true"><Box size={19} /></span>
+                      <div className="arm-assembly-picker__field">
+                        <ArcoSelect scope="robot" value={armAssembly[slot.id] ?? ''} onChange={event => setArmAssembly(current => ({ ...current, [slot.id]: event.target.value }))} aria-label={`选择${slot.name}模块`}>
+                          <option value="">{copy.selectModule}</option>
+                          {modules.map(item => {
+                            const specification = componentSpecificationField?.values.find(value => value.id === item.specificationId);
+                            return <option key={item.id} value={item.id}>{item.name} · {specification?.name ?? '-'}</option>;
+                          })}
+                        </ArcoSelect>
+                        <span className="arm-assembly-picker__specs">{copy.allowedSpecs}: {specifications.map(item => item.name).join(', ') || copy.noSpecs}</span>
+                      </div>
                     </div>
                   </div>
                 );
               })}
-            </div>
-          </>
+          </div>
         ) : null}
       </ArcoModal>
 

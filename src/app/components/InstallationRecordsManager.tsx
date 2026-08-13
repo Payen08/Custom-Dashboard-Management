@@ -5,6 +5,15 @@ import {
 import {
   ArcoButton, ArcoField, ArcoIconButton, ArcoModal, ArcoTag, ArcoTextArea, ArcoTextInput,
 } from './ProductUI';
+import { useI18n, type AppLocale } from '../i18n';
+
+const INSTALL_COPY: Record<AppLocale, Record<string, string>> = {
+  'zh-Hans': { title:'装机记录', description:'追踪机器人从软件出库到交付的安装版本、执行过程与责任人', search:'搜索', refresh:'刷新', export:'导出', projectId:'项目编号', projectName:'项目名称', robotId:'机器人编号', robotIp:'机器人 IP', model:'型号', releaseTime:'软件出库时间', processId:'流程编号', itemDescription:'描述', operator:'操作人', actions:'操作', noMatch:'未找到匹配的装机记录', details:'查看详情', edit:'编辑记录', suzhou:'苏州柔性产线项目', hangzhou:'杭州仓储自动化项目', shanghai:'上海实验室验证项目', nanjing:'南京智能工厂项目', desc1:'A 区物料搬运工位首台装机，已完成联调。', desc2:'B 区首台验证设备。', desc3:'交付前软件基线装机。', desc4:'姿态算法与驱动兼容性验证。', desc5:'样机装机归档。', humanoid:'人形双足机器人' },
+  en: { title:'Installation Records', description:'Track installed versions, execution history, and owners from software release through delivery.', search:'Search', refresh:'Refresh', export:'Export', projectId:'Project ID', projectName:'Project Name', robotId:'Robot ID', robotIp:'Robot IP', model:'Model', releaseTime:'Software Release Time', processId:'Process ID', itemDescription:'Description', operator:'Operator', actions:'Actions', noMatch:'No matching installation records.', details:'View Details', edit:'Edit Record', suzhou:'Suzhou Flexible Production Line', hangzhou:'Hangzhou Warehouse Automation', shanghai:'Shanghai Lab Validation', nanjing:'Nanjing Smart Factory', desc1:'First installation at the Area A material-handling station; commissioning completed.', desc2:'First validation unit in Area B.', desc3:'Software baseline installed before delivery.', desc4:'Pose algorithm and driver compatibility validation.', desc5:'Prototype installation archived.', humanoid:'Humanoid Biped Robot' },
+  ms: { title:'Rekod Pemasangan', description:'Jejak versi, proses pelaksanaan dan pemilik dari keluaran perisian hingga penghantaran.', search:'Cari', refresh:'Muat semula', export:'Eksport', projectId:'ID Projek', projectName:'Nama Projek', robotId:'ID Robot', robotIp:'IP Robot', model:'Model', releaseTime:'Masa Keluaran Perisian', processId:'ID Proses', itemDescription:'Penerangan', operator:'Operator', actions:'Tindakan', noMatch:'Tiada rekod pemasangan sepadan.', details:'Lihat Butiran', edit:'Edit Rekod', suzhou:'Barisan Pengeluaran Fleksibel Suzhou', hangzhou:'Automasi Gudang Hangzhou', shanghai:'Pengesahan Makmal Shanghai', nanjing:'Kilang Pintar Nanjing', desc1:'Pemasangan pertama di stesen pengendalian bahan Kawasan A; pentauliahan selesai.', desc2:'Unit pengesahan pertama di Kawasan B.', desc3:'Garis dasar perisian dipasang sebelum penghantaran.', desc4:'Pengesahan algoritma pose dan keserasian pemacu.', desc5:'Pemasangan prototaip diarkibkan.', humanoid:'Robot Humanoid Dwiped' },
+  vi: { title:'Lịch sử cài đặt', description:'Theo dõi phiên bản, quá trình thực hiện và người phụ trách từ khi xuất phần mềm đến bàn giao.', search:'Tìm kiếm', refresh:'Làm mới', export:'Xuất', projectId:'Mã dự án', projectName:'Tên dự án', robotId:'Mã Robot', robotIp:'IP Robot', model:'Mô hình', releaseTime:'Thời gian xuất phần mềm', processId:'Mã quy trình', itemDescription:'Mô tả', operator:'Người thực hiện', actions:'Thao tác', noMatch:'Không có bản ghi cài đặt phù hợp.', details:'Xem chi tiết', edit:'Sửa bản ghi', suzhou:'Dây chuyền linh hoạt Tô Châu', hangzhou:'Tự động hóa kho Hàng Châu', shanghai:'Xác thực phòng thí nghiệm Thượng Hải', nanjing:'Nhà máy thông minh Nam Kinh', desc1:'Cài đặt đầu tiên tại trạm vận chuyển Khu A; đã hoàn tất chạy thử.', desc2:'Thiết bị xác thực đầu tiên tại Khu B.', desc3:'Đã cài đặt bản phần mềm chuẩn trước bàn giao.', desc4:'Xác thực thuật toán tư thế và khả năng tương thích trình điều khiển.', desc5:'Đã lưu hồ sơ cài đặt nguyên mẫu.', humanoid:'Robot hai chân hình người' },
+  'zh-Hant': { title:'裝機記錄', description:'追蹤機器人從軟體出庫到交付的安裝版本、執行過程與負責人', search:'搜尋', refresh:'重新整理', export:'匯出', projectId:'專案編號', projectName:'專案名稱', robotId:'機器人編號', robotIp:'機器人 IP', model:'型號', releaseTime:'軟體出庫時間', processId:'流程編號', itemDescription:'描述', operator:'操作人', actions:'操作', noMatch:'找不到相符的裝機記錄', details:'查看詳情', edit:'編輯記錄', suzhou:'蘇州柔性產線專案', hangzhou:'杭州倉儲自動化專案', shanghai:'上海實驗室驗證專案', nanjing:'南京智慧工廠專案', desc1:'A 區物料搬運工位首台裝機，已完成聯調。', desc2:'B 區首台驗證設備。', desc3:'交付前軟體基線裝機。', desc4:'姿態演算法與驅動相容性驗證。', desc5:'樣機裝機歸檔。', humanoid:'人形雙足機器人' },
+};
 
 interface SoftwareItem {
   name: string;
@@ -128,6 +137,13 @@ function RecordEditModal({ record, onClose, onSave }: { record: InstallationReco
 }
 
 export function InstallationRecordsManager() {
+  const { locale } = useI18n();
+  const copy = INSTALL_COPY[locale];
+  const displayRecord = (record: InstallationRecord) => ({
+    projectName: record.id === 'install-001' || record.id === 'install-002' ? copy.suzhou : record.id === 'install-003' ? copy.hangzhou : record.id === 'install-004' ? copy.shanghai : record.id === 'install-005' ? copy.nanjing : record.projectName,
+    description: ({ 'install-001':copy.desc1, 'install-002':copy.desc2, 'install-003':copy.desc3, 'install-004':copy.desc4, 'install-005':copy.desc5 } as Record<string,string>)[record.id] ?? record.description,
+    model: record.id === 'install-004' ? copy.humanoid : record.model,
+  });
   const [records, setRecords] = useState(INITIAL_RECORDS);
   const [query, setQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -196,38 +212,38 @@ export function InstallationRecordsManager() {
     <div className="ds-page ds-page--list">
       <div className="ds-page__header ds-page-header">
         <div style={{ minWidth: 0 }}>
-          <h1 style={{ color: 'var(--app-heading)', fontSize: 20, fontWeight: 600, margin: 0, lineHeight: 1.3 }}>装机记录</h1>
-          <p style={{ color: 'var(--app-muted)', fontSize: 12, margin: '4px 0 0', fontWeight: 400 }}>追踪机器人从软件出库到交付的安装版本、执行过程与责任人</p>
+          <h1 style={{ color: 'var(--app-heading)', fontSize: 20, fontWeight: 600, margin: 0, lineHeight: 1.3 }}>{copy.title}</h1>
+          <p style={{ color: 'var(--app-muted)', fontSize: 12, margin: '4px 0 0', fontWeight: 400 }}>{copy.description}</p>
         </div>
         <div className="ds-page-toolbar">
           <div style={{ position: 'relative', width: 312 }}>
             <Search size={14} color="var(--app-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-            <ArcoTextInput value={query} onChange={event => setQuery(event.target.value)} placeholder="搜索" aria-label="搜索项目编号、项目名称、机器人编号或 IP" style={{ width: '100%', height: 40, padding: '0 12px 0 36px', fontSize: 14 }} />
+            <ArcoTextInput value={query} onChange={event => setQuery(event.target.value)} placeholder={copy.search} aria-label={copy.search} style={{ width: '100%', height: 40, padding: '0 12px 0 36px', fontSize: 14 }} />
           </div>
-          <ArcoButton type="outline" size="large" icon={<RefreshCw size={14} />} loading={refreshing} onClick={refreshRecords} style={{ background: 'var(--app-surface)' }}>刷新</ArcoButton>
-          <ArcoButton type="outline" size="large" icon={<Upload size={14} />} onClick={exportRecords} style={{ background: 'var(--app-surface)' }}>导出</ArcoButton>
+          <ArcoButton type="outline" size="large" icon={<RefreshCw size={14} />} loading={refreshing} onClick={refreshRecords} style={{ background: 'var(--app-surface)' }}>{copy.refresh}</ArcoButton>
+          <ArcoButton type="outline" size="large" icon={<Upload size={14} />} onClick={exportRecords} style={{ background: 'var(--app-surface)' }}>{copy.export}</ArcoButton>
         </div>
       </div>
 
       <div className="ds-table-surface">
         <div className="ds-table-scroll" ref={tableScrollRef} onScroll={handleTableScroll}>
           <table style={{ width: '100%', minWidth: 1220, borderCollapse: 'separate', borderSpacing: 0, fontSize: 14 }}>
-            <thead><tr style={{ borderBottom: '1px solid var(--app-border)', background: 'var(--app-soft)', textAlign: 'left' }}>
-              <th style={{ ...stickyFirstHeaderStyle, boxShadow: scrollEdges.left ? stickyLeftShadow : 'none' }}>项目编号</th>
-              {['项目名称', '机器人编号', '机器人 IP', '型号', '软件出库时间', '流程编号', '描述', '操作人'].map(title => <th key={title} style={stickyHeaderStyle}>{title}</th>)}
-              <th style={{ ...stickyLastHeaderStyle, boxShadow: scrollEdges.right ? stickyRightShadow : 'none' }}>操作</th>
+            <thead><tr style={{ borderBottom: '1px solid var(--ds-table-header-divider)', background: 'var(--ds-table-header-bg)', textAlign: 'left' }}>
+              <th style={{ ...stickyFirstHeaderStyle, boxShadow: scrollEdges.left ? stickyLeftShadow : 'none' }}>{copy.projectId}</th>
+              {[copy.projectName, copy.robotId, copy.robotIp, copy.model, copy.releaseTime, copy.processId, copy.itemDescription, copy.operator].map(title => <th key={title} style={stickyHeaderStyle}>{title}</th>)}
+              <th style={{ ...stickyLastHeaderStyle, boxShadow: scrollEdges.right ? stickyRightShadow : 'none' }}>{copy.actions}</th>
             </tr></thead>
-            <tbody>{filteredRecords.length === 0 ? <tr><td colSpan={10}><div className="ds-empty">未找到匹配的装机记录</div></td></tr> : filteredRecords.map(record => <tr className="ds-table-row" key={record.id} style={{ color: 'var(--app-text)', borderBottom: '1px solid var(--app-border)' }}>
+            <tbody>{filteredRecords.length === 0 ? <tr><td colSpan={10}><div className="ds-empty">{copy.noMatch}</div></td></tr> : filteredRecords.map(record => <tr className="ds-table-row" key={record.id} style={{ color: 'var(--app-text)', borderBottom: '1px solid var(--ds-table-row-divider)' }}>
               <td style={{ ...stickyFirstCellStyle, boxShadow: scrollEdges.left ? stickyLeftShadow : 'none' }}><span style={{ color: 'var(--app-heading)', fontWeight: 500, fontSize: 14 }}>{record.projectCode}</span></td>
-              <td style={recordCellStyle}>{record.projectName}</td>
+              <td style={recordCellStyle}>{displayRecord(record).projectName}</td>
               <td style={recordCellStyle}><span style={{ color: 'var(--app-heading)', fontWeight: 500, fontSize: 14 }}>{record.robotId}</span></td>
               <td style={{ ...recordCellStyle, fontFamily: 'SF Mono, Monaco, monospace', fontSize: 12 }}>{record.robotIp}</td>
-              <td style={recordCellStyle}><ModelPill>{record.model}</ModelPill></td>
+              <td style={recordCellStyle}><ModelPill>{displayRecord(record).model}</ModelPill></td>
               <td style={recordCellStyle}>{record.deliveredAt}</td>
               <td style={recordCellStyle}>{record.workflowId}</td>
-              <td style={{ ...recordCellStyle, maxWidth: 220 }}><span style={{ display: 'block', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }} title={record.description}>{record.description || '--'}</span></td>
+              <td style={{ ...recordCellStyle, maxWidth: 220 }}><span style={{ display: 'block', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }} title={displayRecord(record).description}>{displayRecord(record).description || '--'}</span></td>
               <td style={recordCellStyle}>{record.operator}</td>
-              <td style={{ ...stickyLastCellStyle, boxShadow: scrollEdges.right ? stickyRightShadow : 'none' }}><div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}><ArcoIconButton size="small" icon={<FileText size={13} />} aria-label="查看详情" title="查看详情" onClick={() => setDetailId(record.id)} /><ArcoIconButton size="small" icon={<Edit3 size={13} />} aria-label="编辑记录" title="编辑记录" onClick={() => setEditingRecord(record)} /></div></td>
+              <td style={{ ...stickyLastCellStyle, boxShadow: scrollEdges.right ? stickyRightShadow : 'none' }}><div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}><ArcoIconButton size="small" icon={<FileText size={13} />} aria-label={copy.details} title={copy.details} onClick={() => setDetailId(record.id)} /><ArcoIconButton size="small" icon={<Edit3 size={13} />} aria-label={copy.edit} title={copy.edit} onClick={() => setEditingRecord(record)} /></div></td>
             </tr>)}</tbody>
           </table>
         </div>
@@ -241,9 +257,9 @@ export function InstallationRecordsManager() {
   );
 }
 
-const productCellStyle: CSSProperties = { height: 60, padding: '0 16px', verticalAlign: 'middle', whiteSpace: 'nowrap', fontSize: 14 };
-const tableHeaderStyle: CSSProperties = { height: 44, padding: '0 16px', color: 'var(--app-muted)', fontWeight: 500, fontSize: 12, whiteSpace: 'nowrap' };
-const recordCellStyle: CSSProperties = { ...productCellStyle, borderBottom: '1px solid var(--app-border)' };
+const productCellStyle: CSSProperties = { height: 60, padding: '0 16px', verticalAlign: 'middle', whiteSpace: 'nowrap', color: 'var(--ds-table-cell-color)', fontWeight: 'var(--ds-table-cell-font-weight)', fontSize: 'var(--ds-table-cell-font-size)' };
+const tableHeaderStyle: CSSProperties = { height: 44, padding: '0 16px', color: 'var(--ds-table-header-color)', fontWeight: 'var(--ds-table-header-font-weight)', fontSize: 'var(--ds-table-header-font-size)', whiteSpace: 'nowrap' };
+const recordCellStyle: CSSProperties = { ...productCellStyle, borderBottom: '1px solid var(--ds-table-row-divider)' };
 const stickyLeftShadow = '10px 0 18px -18px var(--app-shadow-color)';
 const stickyRightShadow = '-10px 0 18px -18px var(--app-shadow-color)';
 const stickyHeaderStyle: CSSProperties = {
@@ -251,8 +267,8 @@ const stickyHeaderStyle: CSSProperties = {
   position: 'sticky',
   top: 0,
   zIndex: 'var(--ds-z-sticky)',
-  background: 'var(--app-soft)',
-  borderBottom: '1px solid var(--app-border)',
+  background: 'var(--ds-table-header-bg)',
+  borderBottom: '1px solid var(--ds-table-header-divider)',
 };
 const stickyFirstHeaderStyle: CSSProperties = {
   ...stickyHeaderStyle,
