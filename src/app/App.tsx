@@ -29,6 +29,7 @@ import { useComponentCatalog } from './components/useComponentCatalog';
 import { ArcoButton, ArcoIconButton, ArcoIconToggleButton, ArcoModal, ArcoTag } from './components/ProductUI';
 import { ManufacturingSystem } from './components/ManufacturingSystem';
 import { getAppThemeVars, type IndustrialColorTheme, type StylePreset, type ThemeMode } from './theme';
+import { LanguageSelect } from './i18n';
 import {
   type HomepageScheme, type PlacedItem,
   COMPONENT_PROPS, GRID_COLS, GRID_ROWS, CANVAS_W, CANVAS_H,
@@ -945,6 +946,7 @@ function GlobalTopBar({
             /
           </span>
         </label>
+        <LanguageSelect compact />
         <ArcoIconToggleButton
           selected={isIndustrial}
           onClick={onStyleToggle}
