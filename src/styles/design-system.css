@@ -13,6 +13,7 @@
   --ds-color-surface: var(--card);
   --ds-color-surface-raised: var(--card);
   --ds-color-soft: var(--muted);
+  --ds-color-button-bg: #ECECF0;
   --ds-color-border: var(--border);
   --ds-color-border-strong: var(--border);
   --ds-color-heading: var(--foreground);
@@ -26,12 +27,17 @@
   --ds-color-focus: var(--ring);
   --ds-color-info: var(--primary);
   --ds-color-info-soft: var(--accent);
+  --ds-color-info-text: var(--ds-color-accent);
   --ds-color-success: #00910E;
   --ds-color-success-soft: #E9F1E7;
+  --ds-color-success-text: #176B25;
   --ds-color-warning: #C68700;
   --ds-color-warning-soft: #FFF8EA;
+  --ds-color-warning-text: #745000;
   --ds-color-danger: var(--destructive);
   --ds-color-danger-soft: #F9E7E7;
+  --ds-color-danger-text: #9F0C0A;
+  --ds-color-danger-contrast: var(--destructive-foreground);
   --ds-color-overlay: rgba(15, 15, 17, 0.42);
 
   /* Typography */
@@ -159,7 +165,20 @@
   --ds-pagination-item-size: 32px;
   --ds-tag-height-sm: 20px;
   --ds-tag-height-md: 24px;
-  --ds-tag-padding-inline: var(--ds-space-2);
+  --ds-tag-padding-inline-sm: var(--ds-space-2);
+  --ds-tag-padding-inline-md: var(--ds-space-3);
+  --ds-tag-font-size-sm: var(--ds-font-size-12);
+  --ds-tag-font-size-md: var(--ds-font-size-12);
+  --ds-tag-neutral-bg: var(--ds-color-soft);
+  --ds-tag-neutral-text: var(--ds-color-heading);
+  --ds-tag-accent-bg: var(--ds-color-accent-soft);
+  --ds-tag-accent-text: var(--ds-color-accent);
+  --ds-tag-success-bg: var(--ds-color-success-soft);
+  --ds-tag-success-text: var(--ds-color-success-text);
+  --ds-tag-warning-bg: var(--ds-color-warning-soft);
+  --ds-tag-warning-text: var(--ds-color-warning-text);
+  --ds-tag-danger-bg: var(--ds-color-danger-soft);
+  --ds-tag-danger-text: var(--ds-color-danger-text);
   --ds-field-height-md: 40px;
   --ds-control-padding-inline-sm: 10px;
   --ds-control-padding-inline-md: 14px;
@@ -194,18 +213,18 @@
   --ds-state-error-ring: color-mix(in srgb, var(--ds-color-danger) 28%, transparent);
   --ds-state-success-bg: var(--ds-color-success-soft);
   --ds-state-success-border: var(--ds-color-success);
-  --ds-state-success-text: var(--ds-color-success);
+  --ds-state-success-text: var(--ds-color-success-text);
 
   /* Button component tokens */
   --ds-button-padding-inline: var(--ds-button-padding-inline-md);
   --ds-button-icon-gap: var(--ds-space-2);
-  --ds-button-primary-bg: var(--ds-color-accent);
-  --ds-button-primary-bg-hover: color-mix(in srgb, var(--ds-color-accent) 88%, var(--ds-color-surface));
-  --ds-button-primary-bg-pressed: color-mix(in srgb, var(--ds-color-accent) 76%, #000);
+  --ds-button-primary-bg: var(--ds-color-brand);
+  --ds-button-primary-bg-hover: color-mix(in srgb, var(--ds-color-brand) 88%, var(--ds-color-surface));
+  --ds-button-primary-bg-pressed: color-mix(in srgb, var(--ds-color-brand) 76%, #000);
   --ds-button-primary-text: var(--ds-color-accent-contrast);
-  --ds-button-primary-border: var(--ds-color-accent);
-  --ds-button-primary-shadow: 0 6px 14px -10px color-mix(in srgb, var(--ds-color-accent) 60%, transparent);
-  --ds-button-primary-shadow-hover: 0 8px 18px -12px color-mix(in srgb, var(--ds-color-accent) 70%, transparent);
+  --ds-button-primary-border: var(--ds-color-brand);
+  --ds-button-primary-shadow: 0 6px 14px -10px color-mix(in srgb, var(--ds-color-brand) 60%, transparent);
+  --ds-button-primary-shadow-hover: 0 8px 18px -12px color-mix(in srgb, var(--ds-color-brand) 70%, transparent);
   --ds-button-secondary-bg: var(--ds-color-accent-soft);
   --ds-button-secondary-bg-hover: color-mix(in srgb, var(--ds-color-accent-soft) 76%, var(--ds-color-surface));
   --ds-button-secondary-bg-pressed: var(--ds-state-pressed-bg);
@@ -218,6 +237,12 @@
   --ds-button-disabled-bg: var(--ds-state-disabled-bg);
   --ds-button-disabled-text: var(--ds-state-disabled-text);
   --ds-button-disabled-border: transparent;
+  --ds-button-danger-soft-bg: var(--ds-color-danger-soft);
+  --ds-button-danger-soft-text: var(--ds-color-danger-text);
+  --ds-button-danger-soft-border: transparent;
+  --ds-button-danger-solid-bg: var(--ds-color-danger);
+  --ds-button-danger-solid-text: var(--ds-color-danger-contrast);
+  --ds-button-danger-solid-border: var(--ds-color-danger);
 
   /* Input and Select component tokens */
   --ds-input-bg: var(--ds-color-surface);
@@ -235,11 +260,11 @@
   --ds-search-border-focus: var(--ds-input-border-focus);
   --ds-radio-bg: var(--ds-color-surface);
   --ds-radio-border: var(--ds-color-border-strong);
-  --ds-radio-bg-checked: var(--ds-color-accent);
+  --ds-radio-bg-checked: var(--ds-color-brand);
   --ds-radio-indicator-checked: var(--ds-color-accent-contrast);
   --ds-switch-bg: var(--ds-color-border-strong);
-  --ds-switch-bg-checked: var(--ds-color-accent);
-  --ds-switch-thumb: var(--ds-color-surface);
+  --ds-switch-bg-checked: var(--ds-color-brand);
+  --ds-switch-thumb: var(--ds-color-accent-contrast);
   --ds-number-border: var(--ds-input-border);
   --ds-pagination-item-bg-hover: var(--ds-state-hover-bg);
   --ds-pagination-item-bg-selected: var(--ds-state-selected-bg);
@@ -249,23 +274,51 @@
   --ds-select-option-bg-selected: var(--ds-state-selected-bg);
   --ds-select-option-text-selected: var(--ds-state-selected-text);
 
+  /* DateTimePicker component tokens */
+  --ds-date-time-height: 40px;
+  --ds-date-time-radius: var(--ds-radius-control);
+  --ds-date-time-cell-size: 32px;
+  --ds-date-time-selected-bg: var(--ds-state-selected-bg);
+  --ds-date-time-selected-text: var(--ds-state-selected-text);
+
   /* Checkbox component tokens */
   --ds-checkbox-control-size: 16px;
   --ds-checkbox-bg: var(--ds-color-surface);
   --ds-checkbox-border: var(--ds-color-border-strong);
-  --ds-checkbox-bg-checked: var(--ds-color-accent);
-  --ds-checkbox-border-checked: var(--ds-color-accent);
+  --ds-checkbox-bg-checked: var(--ds-color-brand);
+  --ds-checkbox-border-checked: var(--ds-color-brand);
   --ds-checkbox-indicator-checked: var(--ds-color-accent-contrast);
+  --ds-checkbox-indeterminate-bg: var(--ds-color-brand);
+  --ds-checkbox-indicator-indeterminate: var(--ds-color-accent-contrast);
   --ds-checkbox-bg-disabled: var(--ds-state-disabled-bg);
   --ds-checkbox-indicator-disabled: var(--ds-state-disabled-text);
 
   /* Table, Tabs and Menu component tokens */
   --ds-table-header-bg: var(--ds-color-soft);
-  --ds-table-border: var(--ds-color-border);
+  --ds-table-outer-border: var(--ds-color-border);
+  --ds-table-header-divider: var(--ds-color-border);
+  --ds-table-row-divider: color-mix(in srgb, var(--ds-color-border) 68%, transparent);
+  --ds-table-column-divider: transparent;
+  --ds-table-fixed-divider: var(--ds-color-border-strong);
+  --ds-table-border: var(--ds-table-outer-border); /* 向后兼容别名 */
+  --ds-table-title-font-size: var(--ds-font-size-16);
+  --ds-table-title-font-weight: var(--ds-font-weight-semibold);
+  --ds-table-title-color: var(--ds-color-heading);
+  --ds-table-header-font-size: var(--ds-font-size-12);
+  --ds-table-header-font-weight: var(--ds-font-weight-medium);
+  --ds-table-header-color: var(--ds-color-text);
+  --ds-table-cell-font-size: var(--ds-font-size-14);
+  --ds-table-cell-font-weight: var(--ds-font-weight-regular);
+  --ds-table-cell-color: var(--ds-color-text);
+  --ds-table-cell-primary-font-weight: var(--ds-font-weight-medium);
+  --ds-table-cell-primary-color: var(--ds-color-heading);
+  --ds-table-cell-secondary-font-size: var(--ds-font-size-12);
+  --ds-table-cell-secondary-color: var(--ds-color-text);
   --ds-table-row-bg-hover: var(--ds-state-hover-bg);
   --ds-table-row-bg-pressed: var(--ds-state-pressed-bg);
   --ds-table-row-bg-selected: var(--ds-state-selected-bg);
   --ds-table-row-text-selected: var(--ds-state-selected-text);
+  --ds-tabs-item-bg-default: var(--ds-color-button-bg);
   --ds-tabs-item-bg-hover: var(--ds-state-hover-bg);
   --ds-tabs-item-bg-pressed: var(--ds-state-pressed-bg);
   --ds-tabs-item-text-selected: var(--ds-state-selected-text);
@@ -274,27 +327,43 @@
   --ds-menu-item-bg-pressed: var(--ds-state-pressed-bg);
   --ds-menu-item-bg-selected: var(--ds-state-selected-bg);
   --ds-menu-item-text-selected: var(--ds-state-selected-text);
+  --ds-navigation-selected-bg: var(--ds-color-accent-soft);
+  --ds-navigation-selected-text: var(--ds-color-accent);
+  --ds-navigation-selected-marker: var(--ds-color-accent);
+  --ds-component-picker-selected-bg: var(--ds-color-accent-soft);
+  --ds-component-picker-selected-text: var(--ds-color-accent);
+  --ds-component-picker-selected-border: var(--ds-color-accent);
 
   /* Overlay component tokens */
+  --ds-modal-surface: var(--ds-color-surface);
+  --ds-modal-control-bg: var(--ds-color-surface);
+  --ds-popover-surface: var(--ds-color-surface);
   --ds-tooltip-max-width: 280px;
   --ds-popover-min-width: 240px;
   --ds-popover-max-width: 420px;
   --ds-drawer-width: 420px;
   --ds-toast-width: 360px;
+  --ds-toast-min-height: 48px;
+  --ds-toast-two-line-min-height: 64px;
+  --ds-toast-padding: 12px 16px;
   --ds-notification-width: 420px;
+  --ds-notification-min-height: 80px;
+  --ds-notification-padding: 16px;
   --ds-modal-width-sm: 420px;
   --ds-modal-width-md: 560px;
   --ds-modal-width-lg: 720px;
   --ds-modal-width-xl: 900px;
   --ds-modal-max-width: calc(100vw - 48px);
   --ds-modal-max-height: calc(100vh - 48px);
-  --ds-modal-header-padding-top: 22px;
+  --ds-modal-header-min-height: 64px;
+  --ds-modal-footer-min-height: 64px;
+  --ds-modal-header-padding-top: 16px;
   --ds-modal-header-padding-inline: 24px;
-  --ds-modal-header-padding-bottom: 10px;
-  --ds-modal-body-padding-top: 16px;
+  --ds-modal-header-padding-bottom: 16px;
+  --ds-modal-body-padding-top: 20px;
   --ds-modal-body-padding-bottom: 20px;
   --ds-modal-body-padding-inline: 24px;
-  --ds-modal-footer-padding: 0 24px 22px;
+  --ds-modal-footer-padding: 12px 24px;
   --ds-modal-section-gap: 20px;
 
   /* Published business container metrics; component rules belong in business/. */
@@ -304,6 +373,24 @@
   --ds-config-panel-width: 320px;
   --ds-chart-container-min-height: 280px;
   --ds-business-card-padding: 16px;
+}
+
+/* Dark overlays use a deeper surface hierarchy without changing the Light UI. */
+.dark {
+  --ds-color-button-bg: #0F0F11;
+  --ds-modal-surface: var(--ds-color-layout);
+  --ds-modal-control-bg: var(--ds-color-soft);
+  --ds-popover-surface: var(--ds-color-soft);
+  --ds-select-option-bg-hover: color-mix(in srgb, var(--ds-color-brand) 12%, var(--ds-color-soft));
+  --ds-select-option-bg-pressed: color-mix(in srgb, var(--ds-color-brand) 22%, var(--ds-color-soft));
+  --ds-select-option-bg-selected: color-mix(in srgb, var(--ds-color-brand) 32%, var(--ds-color-soft));
+  --ds-select-option-text-selected: var(--ds-color-heading);
+  --ds-navigation-selected-bg: var(--ds-color-brand);
+  --ds-navigation-selected-text: var(--ds-color-accent-contrast);
+  --ds-navigation-selected-marker: transparent;
+  --ds-component-picker-selected-bg: var(--ds-color-brand);
+  --ds-component-picker-selected-text: var(--ds-color-accent-contrast);
+  --ds-component-picker-selected-border: var(--ds-color-brand);
 }
 
 /* Responsive rules: reduce gaps before collapsing structure. */

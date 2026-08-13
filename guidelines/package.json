@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node scripts/validate.mjs",
+    "generate:resolved": "node scripts/generate-resolved-tokens.mjs",
+    "check:resolved": "node scripts/generate-resolved-tokens.mjs --check",
+    "check": "npm run check:resolved && node scripts/validate.mjs",
     "audit": "node scripts/audit-frontend.mjs",
     "pack:bundle": "sh scripts/package.sh"
   }

@@ -1,11 +1,14 @@
 import { Children, forwardRef, isValidElement, useId, type CSSProperties, type ReactNode } from 'react';
 import {
   ButtonRoot,
+  Calendar as CalendarRoot,
   CheckboxContent,
   CheckboxControl,
   CheckboxIndicator,
   CheckboxRoot,
   ChipRoot,
+  DateField,
+  DatePicker,
   InputRoot,
   ListBoxItemRoot,
   ListBoxRoot,
@@ -24,6 +27,7 @@ import {
 } from '@heroui/react';
 import { Upload, X } from 'lucide-react';
 import '../../styles/arco-like.css';
+import { useI18n } from '../i18n';
 
 type ArcoScope = 'app' | 'robot';
 type ButtonVisualType = 'default' | 'primary' | 'secondary' | 'text' | 'outline';
@@ -59,7 +63,7 @@ function scopeVars(scope: ArcoScope): CssVars {
     '--arcoui-neutral': `var(--${prefix}-neutral)`,
     '--arcoui-neutral-soft': `var(--${prefix}-neutral-soft)`,
     '--arcoui-danger': `var(--${prefix}-danger)`,
-    '--arcoui-danger-contrast': scope === 'robot' ? 'var(--robot-danger-contrast)' : '#FFFFFF',
+    '--arcoui-danger-contrast': scope === 'robot' ? 'var(--robot-danger-contrast)' : 'var(--ds-color-danger-contrast)',
     '--arcoui-danger-soft': `var(--${prefix}-danger-soft)`,
     '--arcoui-danger-border': `var(--${prefix}-danger-border)`,
     '--arcoui-overlay': scope === 'robot' ? 'var(--robot-overlay)' : 'var(--app-overlay)',
@@ -193,6 +197,7 @@ interface ArcoModalProps {
   width?: number | string;
   maxWidth?: number | string;
   maxHeight?: number | string;
+  bodyLayout?: 'padded' | 'flush';
   bodyStyle?: CSSProperties;
   contentStyle?: CSSProperties;
   closeable?: boolean;
@@ -211,10 +216,13 @@ export function ArcoModal({
   width,
   maxWidth = 'var(--ds-modal-max-width, calc(100vw - 48px))',
   maxHeight = 'var(--ds-modal-max-height, calc(100vh - 48px))',
+  bodyLayout = 'padded',
   bodyStyle,
   contentStyle,
   closeable = true,
 }: ArcoModalProps) {
+  const { locale } = useI18n();
+  const modalCopy = locale === 'zh-Hans' ? { content:'弹窗内容', close:'关闭' } : locale === 'zh-Hant' ? { content:'對話框內容', close:'關閉' } : locale === 'ms' ? { content:'Kandungan dialog', close:'Tutup' } : locale === 'vi' ? { content:'Nội dung hộp thoại', close:'Đóng' } : { content:'Dialog content', close:'Close' };
   const overlayState = useOverlayState({ isOpen: open, onOpenChange });
   const sizeWidth = {
     sm: 'var(--ds-modal-width-sm, 420px)',
@@ -247,7 +255,7 @@ export function ArcoModal({
             <div className="arcoui-modal-title-area">
               <ModalHeading className="arcoui-modal-title">{title}</ModalHeading>
               <p className={description ? 'arcoui-modal-description' : 'arcoui-visually-hidden'}>
-                {description ?? '弹窗内容'}
+                {description ?? modalCopy.content}
               </p>
             </div>
             {closeable && (
@@ -256,14 +264,14 @@ export function ArcoModal({
                   type="text"
                   size="small"
                   icon={<X size={15} />}
-                  aria-label="关闭"
-                  title="关闭"
+                  aria-label={modalCopy.close}
+                  title={modalCopy.close}
                   className="arcoui-modal-close"
                   onClick={() => overlayState.close()}
                 />
             )}
           </div>
-          <div className="arcoui-modal-body" style={bodyStyle}>
+          <div className="arcoui-modal-body" data-layout={bodyLayout} style={bodyStyle}>
             {children}
           </div>
           {footer && <div className="arcoui-modal-footer">{footer}</div>}
@@ -301,6 +309,8 @@ export function ArcoDrawer({
   width = 'var(--ds-drawer-width, 420px)',
   closeable = true,
 }: ArcoDrawerProps) {
+  const { locale } = useI18n();
+  const drawerCopy = locale === 'zh-Hans' ? { content:'抽屉内容', close:'关闭' } : locale === 'zh-Hant' ? { content:'抽屜內容', close:'關閉' } : locale === 'ms' ? { content:'Kandungan panel', close:'Tutup' } : locale === 'vi' ? { content:'Nội dung ngăn bên', close:'Đóng' } : { content:'Drawer content', close:'Close' };
   const overlayState = useOverlayState({ isOpen: open, onOpenChange });
 
   return (
@@ -316,7 +326,7 @@ export function ArcoDrawer({
               <div className="arcoui-modal-title-area">
                 <ModalHeading className="arcoui-modal-title">{title}</ModalHeading>
                 <p className={description ? 'arcoui-modal-description' : 'arcoui-visually-hidden'}>
-                  {description ?? '抽屉内容'}
+                  {description ?? drawerCopy.content}
                 </p>
               </div>
               {closeable && (
@@ -325,8 +335,8 @@ export function ArcoDrawer({
                   type="text"
                   size="small"
                   icon={<X size={15} />}
-                  aria-label="关闭"
-                  title="关闭"
+                  aria-label={drawerCopy.close}
+                  title={drawerCopy.close}
                   onClick={() => overlayState.close()}
                 />
               )}
@@ -344,15 +354,76 @@ interface FieldProps {
   label?: ReactNode;
   children: ReactNode;
   hint?: ReactNode;
+  description?: ReactNode;
+  status?: 'default' | 'error';
 }
 
-export function ArcoField({ label, children, hint }: FieldProps) {
+export function ArcoField({ label, children, hint, description, status = 'default' }: FieldProps) {
   return (
-    <label className="arcoui-field">
-      {label && <span className="arcoui-field-label">{label}</span>}
+    <label className="arcoui-field" data-status={status}>
+      {(label || description) && <span className="arcoui-field-heading">
+        {label && <span className="arcoui-field-label">{label}</span>}
+        {description && <span className="arcoui-field-description">{description}</span>}
+      </span>}
       {children}
-      {hint && <span className="arcoui-field-hint">{hint}</span>}
+      {hint && <span className="arcoui-field-hint" role={status === 'error' ? 'alert' : undefined}>{hint}</span>}
     </label>
+  );
+}
+
+interface ArcoDateTimePickerProps {
+  'aria-label': string;
+  disabled?: boolean;
+  invalid?: boolean;
+  readOnly?: boolean;
+  granularity?: 'day' | 'hour' | 'minute' | 'second';
+}
+
+/** Product date/time picker composed from the approved third-party primitives. */
+export function ArcoDateTimePicker({
+  'aria-label': ariaLabel,
+  disabled = false,
+  invalid = false,
+  readOnly = false,
+  granularity = 'minute',
+}: ArcoDateTimePickerProps) {
+  return (
+    <DatePicker
+      className="arcoui-date-picker"
+      aria-label={ariaLabel}
+      granularity={granularity}
+      isDisabled={disabled}
+      isInvalid={invalid}
+      isReadOnly={readOnly}
+    >
+      <DateField.Group className="arcoui-date-picker-group" fullWidth variant="secondary">
+        <DateField.Input className="arcoui-date-picker-input">
+          {segment => <DateField.Segment className="arcoui-date-picker-segment" segment={segment} />}
+        </DateField.Input>
+        <DateField.Suffix className="arcoui-date-picker-suffix">
+          <DatePicker.Trigger className="arcoui-date-picker-trigger" aria-label={`打开${ariaLabel}`}>
+            <DatePicker.TriggerIndicator className="arcoui-date-picker-indicator" />
+          </DatePicker.Trigger>
+        </DateField.Suffix>
+      </DateField.Group>
+      <DatePicker.Popover className="arcoui-date-picker-popover">
+        <CalendarRoot aria-label={`${ariaLabel}日历`} className="arcoui-calendar">
+          <CalendarRoot.Header className="arcoui-calendar-header">
+            <CalendarRoot.Heading className="arcoui-calendar-heading" />
+            <CalendarRoot.NavButton className="arcoui-calendar-nav" slot="previous" />
+            <CalendarRoot.NavButton className="arcoui-calendar-nav" slot="next" />
+          </CalendarRoot.Header>
+          <CalendarRoot.Grid className="arcoui-calendar-grid">
+            <CalendarRoot.GridHeader>
+              {day => <CalendarRoot.HeaderCell className="arcoui-calendar-header-cell">{day}</CalendarRoot.HeaderCell>}
+            </CalendarRoot.GridHeader>
+            <CalendarRoot.GridBody>
+              {date => <CalendarRoot.Cell className="arcoui-calendar-cell" date={date} />}
+            </CalendarRoot.GridBody>
+          </CalendarRoot.Grid>
+        </CalendarRoot>
+      </DatePicker.Popover>
+    </DatePicker>
   );
 }
 
@@ -419,6 +490,7 @@ export const ArcoSelect = forwardRef<HTMLSelectElement, ArcoSelectProps>(functio
   name,
   required,
   autoFocus,
+  placeholder,
   'aria-label': ariaLabel,
 }, ref) {
   const options = Children.toArray(children).flatMap(child => {
@@ -449,7 +521,7 @@ export const ArcoSelect = forwardRef<HTMLSelectElement, ArcoSelectProps>(functio
       style={{ ...scopeVars(scope), ...style }}
     >
       <SelectTrigger className={cx('arcoui-input arcoui-select', readOnly && 'is-readonly', className)} aria-readonly={readOnly || undefined}>
-        <SelectValue />
+        <SelectValue placeholder={placeholder} />
         <SelectIndicator />
       </SelectTrigger>
       <SelectPopover className="arcoui-select-popover">
@@ -468,6 +540,7 @@ export const ArcoSelect = forwardRef<HTMLSelectElement, ArcoSelectProps>(functio
 interface ArcoCheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   scope?: ArcoScope;
   label?: ReactNode;
+  indeterminate?: boolean;
 }
 
 export function ArcoCheckbox({
@@ -477,6 +550,7 @@ export function ArcoCheckbox({
   style,
   checked,
   defaultChecked,
+  indeterminate = false,
   disabled,
   readOnly,
   onChange,
@@ -491,6 +565,8 @@ export function ArcoCheckbox({
       style={{ ...scopeVars(scope), ...style }}
       isSelected={checked}
       defaultSelected={defaultChecked}
+      isIndeterminate={indeterminate}
+      data-indeterminate={indeterminate || undefined}
       isDisabled={disabled}
       isReadOnly={readOnly}
       isRequired={required}
