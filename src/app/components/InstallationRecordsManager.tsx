@@ -243,7 +243,7 @@ export function InstallationRecordsManager() {
               <td style={recordCellStyle}>{record.workflowId}</td>
               <td style={{ ...recordCellStyle, maxWidth: 220 }}><span style={{ display: 'block', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }} title={displayRecord(record).description}>{displayRecord(record).description || '--'}</span></td>
               <td style={recordCellStyle}>{record.operator}</td>
-              <td style={{ ...stickyLastCellStyle, boxShadow: scrollEdges.right ? stickyRightShadow : 'none' }}><div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}><ArcoIconButton size="small" icon={<FileText size={13} />} aria-label={copy.details} title={copy.details} onClick={() => setDetailId(record.id)} /><ArcoIconButton size="small" icon={<Edit3 size={13} />} aria-label={copy.edit} title={copy.edit} onClick={() => setEditingRecord(record)} /></div></td>
+              <td style={{ ...stickyLastCellStyle, boxShadow: scrollEdges.right ? stickyRightShadow : 'none' }}><div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}><ArcoIconButton size="small" icon={<FileText size={13} />} aria-label={copy.details} tooltip={copy.details} onClick={() => setDetailId(record.id)} /><ArcoIconButton size="small" icon={<Edit3 size={13} />} aria-label={copy.edit} tooltip={copy.edit} onClick={() => setEditingRecord(record)} /></div></td>
             </tr>)}</tbody>
           </table>
         </div>

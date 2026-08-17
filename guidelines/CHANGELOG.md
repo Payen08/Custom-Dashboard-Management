@@ -6,6 +6,11 @@
 - Minor：新增向后兼容的 Token、组件、模板或规则。
 - Patch：不改变契约的文字澄清、错误修正或示例更新。
 
+## 1.8.0 — 2026-08-14
+
+- 新增交互规范 §27.50"操作按钮统一命名、样式与图标提示"：同类型操作（新增 / 编辑 / 删除 / 搜索 / 刷新 / 导出等）命名以《多语言文案规则》全局操作词为唯一词表，样式按"主创建 Primary 40px、工具型 Outline 40px、行内 Danger/普通 IconButton 32px"统一；纯图标操作 Hover / Focus 必须在图标上方显示操作名 Tooltip，且 Tooltip 文案与 `aria-label` 一致。
+- Switch 形状 Token 化：新增 `--ds-switch-track-radius` / `--ds-switch-thumb-radius`，修复 Industrial 预设下轨道为方形而滑块仍为圆形的混合形态；Industrial 预设为 4px 方形轨道 + 2px 方形滑块，Current 预设保持胶囊轨道 + 圆形滑块。
+
 ## 1.7.0 — 2026-08-03
 
 - 新增配置编排业务模式与可切换样式预览，统一参数枚举项、两步创建组件、字段级联、装配模板和槽位规则的 Modal / Drawer 结构、选择组与固定操作区。

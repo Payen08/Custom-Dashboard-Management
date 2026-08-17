@@ -350,8 +350,8 @@ export function ParameterDefinitionManager() {
                     <td><span className="parameter-definition-ellipsis" title={defaultLabel}>{defaultLabel}</span></td>
                     <td><ParameterStatusSwitch checked={field.enabled} label={`${field.name}${field.enabled ? '停用' : '启用'}`} onChange={enabled => updateFieldStatus(selectedGroup.id, field.id, enabled)} /></td>
                     <td><div className="parameter-definition-actions">
-                      <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`编辑${field.name}`} title="编辑" onClick={() => openEdit(selectedGroup.id, field)} />
-                      <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${field.name}`} title="删除" onClick={() => setDeleteTarget({ groupId: selectedGroup.id, field })} />
+                      <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`编辑${field.name}`} tooltip="编辑" onClick={() => openEdit(selectedGroup.id, field)} />
+                      <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${field.name}`} tooltip="删除" onClick={() => setDeleteTarget({ groupId: selectedGroup.id, field })} />
                     </div></td>
                   </tr>;
                 })}</tbody>
@@ -392,7 +392,7 @@ export function ParameterDefinitionManager() {
               {form.enumOptions.map(item => <div className="parameter-enum-editor__row" key={item.id}>
                 <ProductTextInput value={item.name} placeholder="显示名称" aria-label="枚举项显示名称" onChange={event => setForm({ ...form, enumOptions: form.enumOptions.map(optionItem => optionItem.id === item.id ? { ...optionItem, name: event.target.value } : optionItem) })} />
                 <ProductTextInput value={item.key} placeholder="标识符" aria-label="枚举项标识符" onChange={event => setForm({ ...form, defaultValue: form.defaultValue === item.key ? event.target.value : form.defaultValue, enumOptions: form.enumOptions.map(optionItem => optionItem.id === item.id ? { ...optionItem, key: event.target.value } : optionItem) })} />
-                <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label="删除枚举项" onClick={() => setForm({ ...form, defaultValue: form.defaultValue === item.key ? '' : form.defaultValue, enumOptions: form.enumOptions.filter(optionItem => optionItem.id !== item.id) })} />
+                <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label="删除枚举项" tooltip="删除" onClick={() => setForm({ ...form, defaultValue: form.defaultValue === item.key ? '' : form.defaultValue, enumOptions: form.enumOptions.filter(optionItem => optionItem.id !== item.id) })} />
               </div>)}
             </div>
             {enumInvalid && <small role="alert">请完整填写枚举项，并确保标识符不重复。</small>}

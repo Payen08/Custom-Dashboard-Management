@@ -460,6 +460,8 @@ function industrialStyleVars(mode: ThemeMode, palette: ThemePalette): Record<str
   '--ds-table-header-height': '40px',
   '--ds-table-row-height': '48px',
   '--ds-icon-stroke-width': '1.6',
+  '--ds-switch-track-radius': 'var(--ds-radius-control)',
+  '--ds-switch-thumb-radius': 'var(--ds-radius-xs)',
   '--ds-shadow-xs': mode === 'dark' ? '0 1px 0 rgba(0,0,0,0.48)' : '0 1px 0 rgba(29,36,40,0.10)',
   '--ds-shadow-card': 'none',
   '--ds-shadow-overlay': mode === 'dark' ? '0 12px 32px rgba(0,0,0,0.55)' : '0 12px 28px rgba(29,36,40,0.18)',

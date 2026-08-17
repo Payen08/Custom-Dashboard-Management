@@ -1,6 +1,6 @@
 # Design Tokens 已解析速查表
 
-版本 **1.7.0** · 由 `scripts/generate-resolved-tokens.mjs` 从 `tokens/design-tokens.json` 自动生成。
+版本 **1.8.0** · 由 `scripts/generate-resolved-tokens.mjs` 从 `tokens/design-tokens.json` 自动生成。
 
 > 请勿手工编辑。本文件用于检索和评审；机器接入仍以 JSON 为唯一来源。所有主题引用均已按变体展开。
 
@@ -599,6 +599,8 @@
 | `components.switch.width` | `36` | `36` | `36` | `36` | `36` | `36` | `36` | `36` |
 | `components.switch.height` | `20` | `20` | `20` | `20` | `20` | `20` | `20` | `20` |
 | `components.switch.thumbSize` | `16` | `16` | `16` | `16` | `16` | `16` | `16` | `16` |
+| `components.switch.trackRadius` | `999` | `999` | `999` | `999` | `999` | `999` | `999` | `999` |
+| `components.switch.thumbRadius` | `999` | `999` | `999` | `999` | `999` | `999` | `999` | `999` |
 | `components.switch.background` | `#DDDDDD` | `#5E5E5E` | `#C7D0D5` | `#37515F` | `#C7D0D5` | `#37515F` | `#C3C9C6` | `#454D51` |
 | `components.switch.checkedBackground` | `#241F7D` | `#4F46E5` | `#255D76` | `#317895` | `#241F7D` | `#645CC7` | `#353A3D` | `#626B70` |
 | `components.switch.thumb` | `#FFFFFF` | `#FFFFFF` | `#FFFFFF` | `#FFFFFF` | `#FFFFFF` | `#FFFFFF` | `#FFFFFF` | `#FFFFFF` |

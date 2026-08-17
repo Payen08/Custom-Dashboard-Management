@@ -1,5 +1,5 @@
 {
-  "version": "1.7.0",
+  "version": "1.8.0",
   "name": "Product Design Tokens",
   "description": "Frontend handoff source of truth. Values are theme-aware; component tokens reference semantic tokens by path.",
   "theme": {
@@ -269,7 +269,9 @@
       },
       "control": {
         "tableHeaderHeight": 40,
-        "tableRowHeight": 48
+        "tableRowHeight": 48,
+        "switchTrackRadius": 4,
+        "switchThumbRadius": 2
       }
     }
   },
@@ -386,7 +388,7 @@
     },
     "search": { "height": 40, "iconSize": 16, "background": "{theme.color.surface}", "border": "{theme.color.border}", "focusBorder": "{theme.color.accent}" },
     "radio": { "controlSize": 16, "background": "{theme.color.surface}", "border": "{theme.color.borderStrong}", "checked": { "background": "{theme.color.brand}", "indicator": "{theme.color.accentContrast}" } },
-    "switch": { "width": 36, "height": 20, "thumbSize": 16, "background": "{theme.color.borderStrong}", "checkedBackground": "{theme.color.brand}", "thumb": "{theme.color.accentContrast}" },
+    "switch": { "width": 36, "height": 20, "thumbSize": 16, "trackRadius": "{shared.radius.pill}", "thumbRadius": "{shared.radius.pill}", "background": "{theme.color.borderStrong}", "checkedBackground": "{theme.color.brand}", "thumb": "{theme.color.accentContrast}" },
     "number": { "height": 40, "stepperWidth": 28, "border": "{theme.color.border}", "focusBorder": "{theme.color.accent}" },
     "pagination": { "itemSize": 32, "hoverBackground": "{state.hover.background}", "selectedBackground": "{state.selected.background}", "selectedText": "{state.selected.text}" },
     "checkbox": {

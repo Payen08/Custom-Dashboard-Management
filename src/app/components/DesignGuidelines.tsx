@@ -90,6 +90,7 @@ const GUIDE_GROUPS: Array<{ label: string; items: Array<{ key: string; label: st
     { key: 'interaction-refresh-conflict', label: '数据刷新与用户编辑冲突', section: 'components' },
     { key: 'interaction-escape-hatches', label: '恢复与逃生路径', section: 'components' },
     { key: 'interaction-accessibility', label: '无障碍交互', section: 'components' },
+    { key: 'interaction-actions', label: '操作按钮与图标提示', section: 'components' },
   ] },
   { label: '组件', items: [
     { key: 'general', label: '通用', section: 'components' }, { key: 'button', label: '按钮', section: 'components' }, { key: 'navigation', label: '导航', section: 'components' },
@@ -204,6 +205,7 @@ const GUIDELINE_SECTION_MAP: Record<string, GuidelineExcerpt[]> = {
   'interaction-refresh-conflict': [{ marker: '### 27.47 数据刷新与用户编辑冲突', title: '数据刷新与用户编辑冲突' }],
   'interaction-escape-hatches': [{ marker: '### 27.48 恢复与逃生路径', title: '恢复与逃生路径' }],
   'interaction-accessibility': [{ marker: '### 27.49 无障碍交互', title: '无障碍交互' }],
+  'interaction-actions': [{ marker: '### 27.50 操作按钮统一命名、样式与图标提示', title: '操作按钮统一命名、样式与图标提示' }],
 };
 
 const COLOR_GROUPS = [
@@ -572,6 +574,7 @@ const INTERACTION_PREVIEW_META: Record<string, { scenario: string; rule: string;
   'interaction-refresh-conflict': { scenario: '数据刷新与用户编辑冲突', rule: '编辑中不覆盖、不移动当前行，冻结刷新并提示有新数据。', avoid: '不直接覆盖正在编辑的值，不丢失任一方修改。' },
   'interaction-escape-hatches': { scenario: '恢复与逃生路径', rule: '错误与异常状态保留返回、保存副本等安全出口。', avoid: '不把用户困在错误页，不只显示错误码。' },
   'interaction-accessibility': { scenario: '键盘、读屏与视觉的同一任务', rule: '使用语义控件、可见焦点、可访问名称和非颜色状态线索。', avoid: '不用 div 模拟按钮，不将 Tooltip 当作唯一可访问名称。' },
+  'interaction-actions': { scenario: '同类型操作的命名、样式与图标悬停提示', rule: '图标按钮 Hover / Focus 时在图标上方显示操作名 Tooltip，文案与 aria-label 使用同一操作词。', avoid: '不用原生 title 充当提示，不让同一操作跨页面换名或换控件样式。' },
 };
 
 function InteractionSpecPreview({ topicKey, title }: { topicKey: string; title: string }) {
@@ -607,8 +610,25 @@ function PublishedInteractionPreview({ topicKey }: { topicKey: string }) {
   if (topicKey === 'interaction-context-menu') return <ComponentStylePreview componentName="Menu / Dropdown" />;
   if (topicKey === 'interaction-multi-select') return <ComponentStylePreview componentName="Checkbox" />;
   if (topicKey === 'interaction-help') return <ComponentStylePreview componentName="Tooltip / Popover" />;
+  if (topicKey === 'interaction-actions') return <ActionTooltipPreview />;
   if (topicKey === 'interaction-inline-edit' || topicKey === 'interaction-copy-paste' || topicKey === 'interaction-viewport' || topicKey === 'interaction-autosave' || topicKey === 'interaction-conflicts' || topicKey === 'interaction-realtime' || topicKey === 'interaction-reconnect' || topicKey === 'interaction-deep-link' || topicKey === 'interaction-command' || topicKey === 'interaction-interruption' || topicKey === 'interaction-session' || topicKey === 'interaction-optimistic' || topicKey === 'interaction-batch-feedback' || topicKey === 'interaction-task-queue' || topicKey === 'interaction-progress-cancel' || topicKey === 'interaction-reload-recovery' || topicKey === 'interaction-notifications' || topicKey === 'interaction-live-regions' || topicKey === 'interaction-ime' || topicKey === 'interaction-refresh-conflict' || topicKey === 'interaction-escape-hatches') return null;
   return <ComponentStylePreview componentName="Button" />;
+}
+
+function ActionTooltipPreview() {
+  return <div className="ds-guidelines__preview-stack">
+    <div className="ds-guidelines__component-style-preview" aria-label="工具栏与行内操作示范">
+      <ProductButton type="primary" icon={<Plus size={16} />}>新增</ProductButton>
+      <ProductButton type="outline">导出</ProductButton>
+      <ProductButton type="outline">刷新</ProductButton>
+    </div>
+    <div className="ds-guidelines__component-style-preview" aria-label="行内图标操作示范">
+      <ProductIconButton type="text" icon={<FileText size={16} />} aria-label="查看" tooltip="查看" />
+      <ProductIconButton type="text" icon={<Pencil size={16} />} aria-label="编辑" tooltip="编辑" />
+      <ProductIconButton type="text" status="danger" icon={<Trash2 size={16} />} aria-label="删除" tooltip="删除" />
+    </div>
+    <p className="ds-guidelines__component-unpublished">悬停或键盘聚焦图标按钮，在图标上方显示操作名 Tooltip；Tooltip 文案与 aria-label 使用《多语言文案规则》中的同一操作词。</p>
+  </div>;
 }
 
 function OverlayDecisionPreview() {
@@ -716,7 +736,7 @@ function ConfigurationAuthoringPreview() {
 function EnumEditorPattern() {
   return <div className="ds-guidelines__configuration-form">
     <div className="ds-guidelines__configuration-grid"><ProductField label="字段名称"><ProductTextInput defaultValue="驱动方式" /></ProductField><ProductField label="数据类型"><ProductSelect defaultValue="enum"><option value="enum">枚举型</option></ProductSelect></ProductField></div>
-    <section className="ds-guidelines__enum-pattern"><header><div><strong>枚举项</strong><span>组件参数表单中将以下拉选项展示</span></div><ProductButton size="small" icon={<Plus size={13} />}>新增枚举项</ProductButton></header><div className="ds-guidelines__enum-pattern__columns"><span>显示名称</span><span>标识符</span><span>操作</span></div>{[['差速驱动', 'differential'], ['全向驱动', 'omnidirectional']].map(([name, key]) => <div className="ds-guidelines__enum-pattern__row" key={key}><ProductTextInput defaultValue={name} /><ProductTextInput defaultValue={key} /><ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${name}`} /></div>)}</section>
+    <section className="ds-guidelines__enum-pattern"><header><div><strong>枚举项</strong><span>组件参数表单中将以下拉选项展示</span></div><ProductButton size="small" icon={<Plus size={13} />}>新增枚举项</ProductButton></header><div className="ds-guidelines__enum-pattern__columns"><span>显示名称</span><span>标识符</span><span>操作</span></div>{[['差速驱动', 'differential'], ['全向驱动', 'omnidirectional']].map(([name, key]) => <div className="ds-guidelines__enum-pattern__row" key={key}><ProductTextInput defaultValue={name} /><ProductTextInput defaultValue={key} /><ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${name}`} tooltip="删除" /></div>)}</section>
   </div>;
 }
 
@@ -764,7 +784,7 @@ function TableStylePreview({ labels = ['苏州柔性产线项目', '杭州仓储
           <td>{row.deliveredAt}</td>
           <td>{row.workflowId}</td>
           <td><span className="ds-guidelines__component-table__ellipsis" title={row.description}>{row.description}</span></td>
-          <td className="ds-guidelines__table-sticky-last"><div><ProductIconButton size="small" icon={<FileText size={13} />} aria-label="查看详情" /><ProductIconButton size="small" icon={<Pencil size={13} />} aria-label="编辑记录" /></div></td>
+          <td className="ds-guidelines__table-sticky-last"><div><ProductIconButton size="small" icon={<FileText size={13} />} aria-label="查看详情" tooltip="查看详情" /><ProductIconButton size="small" icon={<Pencil size={13} />} aria-label="编辑记录" tooltip="编辑" /></div></td>
         </tr>)}</tbody>
       </table>
     </div>
@@ -1221,7 +1241,7 @@ function ButtonSpecification({ component, themeMode }: { component: ComponentSpe
 function ButtonContentStructurePreview({ name }: { name: string }) {
   if (name === '前置图标 + 文字') return <ProductButton size="small" type="text" icon={<Plus size={14} />}>新建</ProductButton>;
   if (name === '文字 + 后置图标') return <ProductButton size="small" type="text" trailingIcon={<ChevronRight size={14} />}>查看更多</ProductButton>;
-  if (name === '纯图标') return <ProductIconButton size="small" icon={<ClipboardCopy size={14} />} aria-label="复制" />;
+  if (name === '纯图标') return <ProductIconButton size="small" icon={<ClipboardCopy size={14} />} aria-label="复制" tooltip="复制" />;
   if (name === 'Loading 图标 + 文字') return <ProductButton size="small" type="text" loading>保存中</ProductButton>;
   return <ProductButton size="small" type="text">保存</ProductButton>;
 }
@@ -1279,7 +1299,7 @@ function ComponentStylePreview({ componentName }: { componentName: string }) {
   if (componentName === 'Button') return <div className="ds-guidelines__component-style-preview"><ProductButton type="primary">保存</ProductButton><ProductButton>次要操作</ProductButton><ProductButton type="outline">工具操作</ProductButton><ProductButton type="primary" status="danger">删除</ProductButton><ProductButton disabled>禁用</ProductButton><ProductButton type="primary" loading aria-busy="true">保存</ProductButton></div>;
   if (componentName === 'ToggleButton') return <div className="ds-guidelines__component-style-preview"><ProductToggleButton selected={false}>列表视图</ProductToggleButton><ProductToggleButton selected>网格视图</ProductToggleButton><ProductToggleButton selected={false} disabled>吸附开启</ProductToggleButton></div>;
   if (componentName === 'IconToggleButton') return <div className="ds-guidelines__component-style-preview"><ProductIconToggleButton selected={false} icon={<ClipboardCopy size={16} />} aria-label="复制模式" /><ProductIconToggleButton selected icon={<Sparkles size={16} />} aria-label="吸附开启" /><ProductIconToggleButton selected={false} disabled icon={<X size={16} />} aria-label="关闭面板" /></div>;
-  if (componentName === 'IconButton') return <div className="ds-guidelines__component-style-preview"><ProductIconButton icon={<ClipboardCopy size={16} />} aria-label="复制" /><ProductIconButton icon={<Check size={16} />} aria-label="确认" /><ProductIconButton icon={<Sparkles size={16} />} aria-label="更多操作" disabled /></div>;
+  if (componentName === 'IconButton') return <div className="ds-guidelines__component-style-preview"><ProductIconButton icon={<ClipboardCopy size={16} />} aria-label="复制" tooltip="复制" /><ProductIconButton icon={<Check size={16} />} aria-label="确认" tooltip="确认" /><ProductIconButton icon={<Sparkles size={16} />} aria-label="更多操作" tooltip="更多操作" disabled /></div>;
   if (componentName === 'Tag') return <div className="ds-guidelines__component-style-preview"><ProductTag tone="neutral">草稿</ProductTag><ProductTag tone="accent">重点</ProductTag><ProductTag tone="success">已完成</ProductTag><ProductTag tone="warning">需关注</ProductTag><ProductTag tone="danger">失败</ProductTag></div>;
   if (componentName === 'Tabs') return <div className="ds-status-tabs ds-guidelines__component-tabs-preview" role="tablist" aria-label="Tab 样式预览"><button className="ds-status-tab" type="button" role="tab" aria-selected="true">枚举取值</button><button className="ds-status-tab" type="button" role="tab" aria-selected="false">级联配置</button></div>;
   if (componentName === 'Menu / Dropdown') return <div className="ds-context-menu ds-guidelines__component-menu" role="menu" aria-label="节点操作"><button className="ds-context-menu__item" type="button" role="menuitem"><Plus size={15} />新增</button><button className="ds-context-menu__item" type="button" role="menuitem"><Pencil size={15} />编辑</button><button className="ds-context-menu__item" data-variant="destructive" type="button" role="menuitem"><Trash2 size={15} />删除</button></div>;
@@ -1297,7 +1317,7 @@ function ComponentStylePreview({ componentName }: { componentName: string }) {
   if (componentName === 'Pagination') return <nav className="ds-guidelines__component-pagination" aria-label="结果分页"><button type="button" disabled>‹</button><button type="button">1</button><button type="button" aria-current="page">2</button><button type="button">3</button><span>…</span><button type="button">12</button><button type="button">›</button><small>共 240 条</small></nav>;
   if (componentName === 'Modal') return <ModalStylePreview />;
   if (componentName === 'Drawer') return <div className="ds-guidelines__component-drawer"><div><strong>组件类型</strong><span>查看字段、枚举取值与级联配置</span></div><section><small>类型字段</small><p>组件类型</p><p>子类型</p><p>规格</p></section><footer><ProductButton size="small">关闭</ProductButton></footer></div>;
-  if (componentName === 'Tooltip / Popover') return <div className="ds-guidelines__component-popover"><ProductIconButton icon={<ClipboardCopy size={16} />} aria-label="复制链接" /><div><strong>复制链接</strong><span>复制当前型号的访问地址</span></div></div>;
+  if (componentName === 'Tooltip / Popover') return <div className="ds-guidelines__component-popover"><ProductIconButton icon={<ClipboardCopy size={16} />} aria-label="复制链接" tooltip="复制链接" /><div><strong>复制链接</strong><span>复制当前型号的访问地址</span></div></div>;
   if (componentName === 'Toast / Notification') return <ToastNotificationPreview />;
   if (componentName === 'ContentState (Empty / Loading / Error)') return <ContentStateStylePreview />;
   return <div className="ds-guidelines__component-empty"><div aria-hidden="true">—</div><strong>暂无数据</strong><span>可调整筛选条件或创建第一条数据。</span><ProductButton size="small" type="primary">新建</ProductButton></div>;
@@ -1335,7 +1355,7 @@ function ModalStylePreview({ initialKind = 'notice', showVariants = true, title,
     <section className="arcoui-modal-content ds-guidelines__component-modal" data-status={displayPreview.status} aria-label={`${displayPreview.label}弹窗示例`}>
       <div className="arcoui-modal-header">
         <div className="arcoui-modal-title-area"><strong className="arcoui-modal-title">{displayPreview.title}</strong></div>
-        <ProductIconButton type="text" size="small" icon={<X size={15} />} aria-label="关闭" className="arcoui-modal-close" />
+        <ProductIconButton type="text" size="small" icon={<X size={15} />} aria-label="关闭" tooltip="关闭" className="arcoui-modal-close" />
       </div>
       <div className="arcoui-modal-body"><p>{displayPreview.description}</p></div>
       <div className="arcoui-modal-footer"><ProductButton>取消</ProductButton><ProductButton type="primary" status={displayPreview.danger ? 'danger' : 'normal'}>{displayPreview.confirm}</ProductButton></div>
@@ -1345,8 +1365,8 @@ function ModalStylePreview({ initialKind = 'notice', showVariants = true, title,
 
 function ToastNotificationPreview() {
   return <div className="ds-guidelines__component-toast-list" aria-label="消息提示示例">
-    <div className="ds-global-notice" data-kind="toast" data-layout="single" data-tone="success" role="status" aria-live="polite"><span className="ds-global-notice__indicator"><Check size={16} /></span><strong className="ds-global-notice__message">保存成功</strong><ProductIconButton type="text" size="small" icon={<X size={14} />} aria-label="关闭提示" className="ds-global-notice__close" /></div>
-    <div className="ds-global-notice" data-kind="toast" data-layout="two-line" data-tone="warning" role="status" aria-live="polite"><span className="ds-global-notice__indicator"><CircleAlert size={16} /></span><span className="ds-global-notice__content"><strong>存在待处理项</strong><small>请完成必填参数后再发布型号</small></span><ProductIconButton type="text" size="small" icon={<X size={14} />} aria-label="关闭提示" className="ds-global-notice__close" /></div>
+    <div className="ds-global-notice" data-kind="toast" data-layout="single" data-tone="success" role="status" aria-live="polite"><span className="ds-global-notice__indicator"><Check size={16} /></span><strong className="ds-global-notice__message">保存成功</strong><ProductIconButton type="text" size="small" icon={<X size={14} />} aria-label="关闭提示" tooltip="关闭提示" className="ds-global-notice__close" /></div>
+    <div className="ds-global-notice" data-kind="toast" data-layout="two-line" data-tone="warning" role="status" aria-live="polite"><span className="ds-global-notice__indicator"><CircleAlert size={16} /></span><span className="ds-global-notice__content"><strong>存在待处理项</strong><small>请完成必填参数后再发布型号</small></span><ProductIconButton type="text" size="small" icon={<X size={14} />} aria-label="关闭提示" tooltip="关闭提示" className="ds-global-notice__close" /></div>
     <div className="ds-global-notice" data-kind="notification" data-tone="danger" role="alert"><span className="ds-global-notice__indicator"><CircleAlert size={16} /></span><span className="ds-global-notice__content"><strong>保存失败</strong><small>网络连接异常，检查连接后可重新保存</small></span><ProductButton type="secondary" status="danger" size="small" className="ds-global-notice__action">重试</ProductButton></div>
     <div className="ds-global-notice" data-kind="toast" data-layout="two-line" data-tone="info" role="status" aria-live="polite"><span className="ds-global-notice__indicator"><Info size={16} /></span><span className="ds-global-notice__content"><strong>正在导出</strong><small>任务将在完成后通知你</small></span></div>
   </div>;

@@ -387,7 +387,7 @@ export function DictionaryConfigManager({
                         size="small"
                         icon={<Pencil size={14} />}
                         aria-label={`${copy.edit}: ${displayCategory(category).name}`}
-                        title={copy.edit}
+                        tooltip={copy.edit}
                         onClick={() => setCategoryForm({
                           id: category.id,
                           name: category.name,
@@ -403,7 +403,7 @@ export function DictionaryConfigManager({
                           size="small"
                           icon={<Trash2 size={14} />}
                           aria-label={`${copy.delete}: ${displayCategory(category).name}`}
-                          title={copy.delete}
+                          tooltip={copy.delete}
                           onClick={() => setDeleteTarget({ kind: 'category', categoryId: category.id, label: category.name })}
                         />
                       )}
@@ -453,8 +453,8 @@ export function DictionaryConfigManager({
                         <td><ProductTag tone={field.enabled ? 'success' : 'neutral'} size="small">{field.enabled ? detailCopy.enabled : detailCopy.disabled}</ProductTag></td>
                         <td><div className="dictionary-row-actions">
                           <ProductButton type="text" size="small" trailingIcon={<ChevronRight size={14} />} onClick={() => openField(field)}>{detailCopy.view}</ProductButton>
-                          <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`${copy.edit}: ${displayField(field)}`} onClick={() => setFieldForm({ id: field.id, name: field.name, key: field.key, seq: String(field.seq), enabled: field.enabled, source: field.source })} />
-                          {field.source === 'custom' && <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${field.name}`} onClick={() => setDeleteTarget({ kind: 'field', categoryId: drawerCategory.id, fieldId: field.id, label: field.name })} />}
+                          <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`${copy.edit}: ${displayField(field)}`} tooltip={copy.edit} onClick={() => setFieldForm({ id: field.id, name: field.name, key: field.key, seq: String(field.seq), enabled: field.enabled, source: field.source })} />
+                          {field.source === 'custom' && <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${field.name}`} tooltip={copy.delete} onClick={() => setDeleteTarget({ kind: 'field', categoryId: drawerCategory.id, fieldId: field.id, label: field.name })} />}
                         </div></td>
                       </tr>
                     ))}</tbody>
@@ -472,7 +472,7 @@ export function DictionaryConfigManager({
                       fields: category.fields.map(item => item.id === selectedField.id ? { ...item, enabled } : item),
                     }))} />
                     <SourceTag source={selectedField.source} />
-                    <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label="编辑字段" onClick={() => setFieldForm({ id: selectedField.id, name: selectedField.name, key: selectedField.key, seq: String(selectedField.seq), enabled: selectedField.enabled, source: selectedField.source })} />
+                    <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label="编辑字段" tooltip={copy.edit} onClick={() => setFieldForm({ id: selectedField.id, name: selectedField.name, key: selectedField.key, seq: String(selectedField.seq), enabled: selectedField.enabled, source: selectedField.source })} />
                   </div>
                 </div>
                 <div className="dictionary-detail-tabbar">
@@ -503,8 +503,8 @@ export function DictionaryConfigManager({
                             }))} /></td>
                             <td><div className="dictionary-row-actions">
                               {item.source === 'builtin' && <LockKeyhole size={13} aria-label="内置取值" />}
-                              <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`编辑${item.name}`} onClick={() => setValueForm({ ...item })} />
-                              {item.source === 'custom' && <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${item.name}`} onClick={() => setDeleteTarget({ kind: 'value', categoryId: drawerCategory.id, fieldId: selectedField.id, valueId: item.id, label: item.name })} />}
+                              <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`编辑${item.name}`} tooltip={copy.edit} onClick={() => setValueForm({ ...item })} />
+                              {item.source === 'custom' && <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${item.name}`} tooltip={copy.delete} onClick={() => setDeleteTarget({ kind: 'value', categoryId: drawerCategory.id, fieldId: selectedField.id, valueId: item.id, label: item.name })} />}
                             </div></td>
                           </tr>
                         ))}</tbody>
@@ -533,8 +533,8 @@ export function DictionaryConfigManager({
                               cascadeRules: category.cascadeRules.map(item => item.id === rule.id ? { ...item, enabled } : item),
                             }))} /></td>
                             <td><div className="dictionary-row-actions">
-                              <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label="编辑级联" onClick={() => setRuleForm({ ...rule })} />
-                              {rule.source === 'custom' ? <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label="删除级联" onClick={() => setDeleteTarget({ kind: 'rule', categoryId: drawerCategory.id, ruleId: rule.id, label: `${parentValue?.name ?? ''} → ${child?.name ?? ''}` })} /> : <LockKeyhole size={13} aria-label="内置级联" />}
+                              <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label="编辑级联" tooltip={copy.edit} onClick={() => setRuleForm({ ...rule })} />
+                              {rule.source === 'custom' ? <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label="删除级联" tooltip={copy.delete} onClick={() => setDeleteTarget({ kind: 'rule', categoryId: drawerCategory.id, ruleId: rule.id, label: `${parentValue?.name ?? ''} → ${child?.name ?? ''}` })} /> : <LockKeyhole size={13} aria-label="内置级联" />}
                             </div></td>
                           </tr>;
                         })}</tbody>

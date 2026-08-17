@@ -245,13 +245,13 @@ html[data-style='industrial'] .robot-detail-right {
 html[data-style='industrial'] .robot-manager-page--list > .robot-manager-page__header {
   min-height: 72px;
   margin-bottom: 0 !important;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--ds-color-border-strong);
-  background: var(--robot-surface);
+  padding: 12px 16px 0;
+  border: 0;
+  background: transparent;
 }
 
 html[data-style='industrial'] .robot-manager-page--list > .model-library-scroll {
-  padding: 12px 16px 16px !important;
+  padding: 0 16px 16px !important;
 }
 
 html[data-style='industrial'] .component-library-card,

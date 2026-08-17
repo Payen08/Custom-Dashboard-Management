@@ -209,7 +209,7 @@ export function PropertiesPanel({ item, componentDefs = COMPONENT_DEFS, showTitl
             size="small"
             icon={<X size={14} />}
             aria-label="关闭组件属性"
-            title="关闭组件属性"
+            tooltip="关闭组件属性"
           />
         )}
       </div>

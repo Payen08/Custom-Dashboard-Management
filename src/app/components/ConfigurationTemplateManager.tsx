@@ -314,8 +314,8 @@ export function ConfigurationTemplateManager({ categories }: { categories: Dicti
                   <td><div className="configuration-template-status"><ProductTag tone={item.enabled ? 'success' : 'neutral'} size="small">{item.enabled ? '已启用' : '已停用'}</ProductTag><TemplateStatusSwitch checked={item.enabled} label={`${item.name}${item.enabled ? '停用' : '启用'}`} onChange={enabled => setTemplates(current => current.map(template => template.id === item.id ? { ...template, enabled } : template))} /></div></td>
                   <td><div className="configuration-template-actions">
                     <ProductButton size="small" icon={<Settings2 size={13} />} onClick={() => openConfiguration(item)}>装配模板</ProductButton>
-                    <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`编辑${item.name}`} title="编辑" onClick={() => openEdit(item)} />
-                    <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${item.name}`} title="删除" onClick={() => setDeleteTarget(item)} />
+                    <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`编辑${item.name}`} tooltip="编辑" onClick={() => openEdit(item)} />
+                    <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${item.name}`} tooltip="删除" onClick={() => setDeleteTarget(item)} />
                   </div></td>
                 </tr>
               ))}

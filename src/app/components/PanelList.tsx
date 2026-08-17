@@ -177,7 +177,7 @@ export function PanelList({
                       size="small"
                       icon={<MoreHorizontal size={16} />}
                       aria-label={`${displaySchemeName(scheme)} · ${t('moreActions')}`}
-                      title={t('moreActions')}
+                      tooltip={t('moreActions')}
                       onClick={event => event.stopPropagation()}
                       className="ds-context-menu-trigger group-hover:opacity-100"
                       style={{ marginTop: 2, opacity: active ? 1 : undefined }}
