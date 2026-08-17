@@ -18,6 +18,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import loginWorkspaceBackground from '../../imports/login-workspace-bg.png';
+import { AdaptiveText, LanguageSelect, useI18n } from '../i18n';
 
 const FONT = "'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
 const SERVICE_CONFIG_STORAGE_KEY = 'moying-workspace-service-config';
@@ -44,14 +45,14 @@ const IDLE_TEST_STATE: ServiceTestState = {
 
 const SERVICE_FIELDS: Array<{
   key: ServiceFieldKey;
-  label: string;
+  labelKey: string;
   helper: string;
   placeholder: string;
 }> = [
-  { key: 'BASE_URL', label: '后端服务地址', helper: 'BASE_URL', placeholder: '例如：http://localhost:10882' },
-  { key: 'MINIO_HOST', label: '文件服务地址', helper: 'MINIO_HOST', placeholder: '例如：http://localhost:9000' },
-  { key: 'NODE_BACKEND_HOST', label: '前端服务地址', helper: 'NODE_BACKEND_HOST', placeholder: '例如：http://localhost:3000' },
-  { key: 'MQTT_HOST', label: '消息队列地址', helper: 'MQTT_HOST', placeholder: '例如：mqtt://localhost:1883' },
+  { key: 'BASE_URL', labelKey: 'backendAddress', helper: 'BASE_URL', placeholder: 'http://localhost:10882' },
+  { key: 'MINIO_HOST', labelKey: 'fileAddress', helper: 'MINIO_HOST', placeholder: 'http://localhost:9000' },
+  { key: 'NODE_BACKEND_HOST', labelKey: 'frontendAddress', helper: 'NODE_BACKEND_HOST', placeholder: 'http://localhost:3000' },
+  { key: 'MQTT_HOST', labelKey: 'mqttAddress', helper: 'MQTT_HOST', placeholder: 'mqtt://localhost:1883' },
 ];
 
 function loadServiceConfig(): ServiceConfig {
@@ -111,11 +112,12 @@ export function WorkspaceLogin({
   const [serviceMessage, setServiceMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const isDark = themeMode === 'dark';
+  const { copy, t } = useI18n();
 
   function submitLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!account.trim() || !password) {
-      setLoginError('请输入账号和密码');
+      setLoginError(t('credentialsRequired'));
       return;
     }
     setLoginError('');
@@ -252,6 +254,16 @@ export function WorkspaceLogin({
           color: var(--app-text);
           cursor: pointer;
         }
+        .workspace-login__preferences {
+          position: fixed;
+          top: 32px;
+          right: 40px;
+          z-index: 3;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .workspace-login__preferences .workspace-login__theme { position: static; }
         .workspace-login__main {
           width: 100%;
           min-height: 100%;
@@ -435,7 +447,7 @@ export function WorkspaceLogin({
           .workspace-login__main { padding: 112px 24px 48px; align-items: flex-start; }
           .workspace-login__form { width: min(500px, 100%); padding: 24px; border-radius: 16px; background: color-mix(in srgb, var(--app-surface) 92%, transparent); backdrop-filter: blur(12px); }
           .workspace-login__brand { top: 24px; left: 24px; }
-          .workspace-login__theme { top: 24px; right: 24px; }
+          .workspace-login__preferences { top: 24px; right: 24px; }
           .service-config { width: 100%; }
         }
         @media (max-width: 640px) {
@@ -458,25 +470,28 @@ export function WorkspaceLogin({
 
       <div className="workspace-login__brand">
         <span className="workspace-login__logo"><PanelTop size={22} /></span>
-        <strong>墨影工作台</strong>
+        <strong>{t('workbench')}</strong>
       </div>
 
-      <button
-        type="button"
-        className="workspace-login__theme"
-        onClick={onThemeToggle}
-        aria-label={isDark ? '切换为浅色模式' : '切换为暗色模式'}
-        title={isDark ? '切换为浅色模式' : '切换为暗色模式'}
-      >
-        {isDark ? <Sun size={18} /> : <Moon size={18} />}
-      </button>
+      <div className="workspace-login__preferences">
+        <LanguageSelect />
+        <button
+          type="button"
+          className="workspace-login__theme"
+          onClick={onThemeToggle}
+          aria-label={t(isDark ? 'lightMode' : 'darkMode')}
+          title={t(isDark ? 'lightMode' : 'darkMode')}
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+      </div>
 
       <main className="workspace-login__main">
         {view === 'login' ? (
           <form className="workspace-login__form" onSubmit={submitLogin}>
-            <p className="workspace-login__eyebrow">登录到</p>
+            <p className="workspace-login__eyebrow">{t('signInTo')}</p>
             <div className="workspace-login__title-row">
-              <h1 className="workspace-login__title">墨影工作台</h1>
+              <h1 className="workspace-login__title">{t('workbench')}</h1>
               <span className="workspace-login__profile">myWorkspace</span>
             </div>
 
@@ -488,8 +503,8 @@ export function WorkspaceLogin({
                   value={account}
                   onChange={event => setAccount(event.target.value)}
                   autoComplete="username"
-                  placeholder="请输入账号"
-                  aria-label="账号"
+                  placeholder={t('accountPlaceholder')}
+                  aria-label={t('account')}
                 />
               </div>
               <div className="workspace-login__field">
@@ -500,15 +515,15 @@ export function WorkspaceLogin({
                   value={password}
                   onChange={event => setPassword(event.target.value)}
                   autoComplete="current-password"
-                  placeholder="请输入密码"
-                  aria-label="密码"
+                  placeholder={t('passwordPlaceholder')}
+                  aria-label={t('password')}
                 />
                 <button
                   type="button"
                   className="workspace-login__password-toggle"
                   onClick={() => setShowPassword(current => !current)}
-                  aria-label={showPassword ? '隐藏密码' : '显示密码'}
-                  title={showPassword ? '隐藏密码' : '显示密码'}
+                  aria-label={t(showPassword ? 'hidePassword' : 'showPassword')}
+                  title={t(showPassword ? 'hidePassword' : 'showPassword')}
                 >
                   {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                 </button>
@@ -516,26 +531,26 @@ export function WorkspaceLogin({
             </div>
 
             <div className="workspace-login__error" role="alert">{loginError}</div>
-            <button type="submit" className="workspace-login__primary">登录</button>
+            <button type="submit" className="workspace-login__primary">{t('signIn')}</button>
             <button type="button" className="workspace-login__service-entry" onClick={() => setView('services')}>
               <Link2 size={16} />
-              修改服务地址
+              <AdaptiveText copy={copy('editServices')} style={{ display: 'block', maxWidth: 240, whiteSpace: 'nowrap', overflow: 'hidden' }} />
             </button>
           </form>
         ) : (
-          <section className="service-config" aria-label="服务地址配置">
+          <section className="service-config" aria-label={t('serviceAddresses')}>
             <header className="service-config__header">
               <div className="service-config__heading">
-                <button type="button" className="service-config__back" onClick={() => setView('login')} aria-label="返回登录" title="返回登录">
+                <button type="button" className="service-config__back" onClick={() => setView('login')} aria-label={t('backToLogin')} title={t('backToLogin')}>
                   <ArrowLeft size={19} />
                 </button>
-                <h1>服务地址</h1>
+                <h1>{t('serviceAddresses')}</h1>
               </div>
               <div className="service-config__actions">
                 <input ref={importInputRef} type="file" accept="application/json,.json" hidden onChange={importServiceConfig} />
-                <button type="button" className="service-config__button" onClick={() => importInputRef.current?.click()}><FileUp size={16} />导入</button>
-                <button type="button" className="service-config__button" onClick={exportServiceConfig}><Download size={16} />导出</button>
-                <button type="button" className="service-config__button" onClick={testAllAddresses}><PlugZap size={16} />测试全部</button>
+                <button type="button" className="service-config__button" onClick={() => importInputRef.current?.click()}><FileUp size={16} />{t('import')}</button>
+                <button type="button" className="service-config__button" onClick={exportServiceConfig}><Download size={16} />{t('export')}</button>
+                <button type="button" className="service-config__button" onClick={testAllAddresses}><PlugZap size={16} /><AdaptiveText copy={copy('testAll')} style={{ display: 'block', maxWidth: 128, whiteSpace: 'nowrap', overflow: 'hidden' }} /></button>
               </div>
             </header>
 
@@ -545,7 +560,7 @@ export function WorkspaceLogin({
                   const state = testState[field.key];
                   return (
                     <label key={field.key}>
-                      <span className="service-config__label">{field.label}<code>{field.helper}</code></span>
+                      <span className="service-config__label">{t(field.labelKey)}<code>{field.helper}</code></span>
                       <span className="service-config__input-row">
                         <input
                           className="service-config__input"
@@ -555,7 +570,7 @@ export function WorkspaceLogin({
                             setTestState(current => ({ ...current, [field.key]: 'idle' }));
                             setServiceMessage(null);
                           }}
-                          placeholder={field.placeholder}
+                          placeholder={`${t('example')} ${field.placeholder}`}
                         />
                         <button
                           type="button"
@@ -563,14 +578,14 @@ export function WorkspaceLogin({
                           data-state={state}
                           onClick={() => testAddress(field.key)}
                           disabled={state === 'testing'}
-                          aria-label={`测试${field.label}`}
-                          title={`测试${field.label}`}
+                          aria-label={`${t('testAll', 'short')} ${t(field.labelKey)}`}
+                          title={`${t('testAll', 'short')} ${t(field.labelKey)}`}
                         >
                           {state === 'testing' ? <LoaderCircle size={17} data-loading="true" /> : state === 'success' ? <CheckCircle2 size={17} /> : state === 'error' ? <XCircle size={17} /> : <PlugZap size={17} />}
                         </button>
                       </span>
                       <span className="service-config__status" data-state={state}>
-                        {state === 'testing' ? '正在测试连接...' : state === 'success' ? '地址格式与连接配置可用' : state === 'error' ? '地址不可用，请检查协议和端口' : ''}
+                        {state === 'testing' ? t('testing') : state === 'success' ? t('testSuccess') : state === 'error' ? t('testError') : ''}
                       </span>
                     </label>
                   );
@@ -579,7 +594,7 @@ export function WorkspaceLogin({
 
               <footer className="service-config__footer">
                 <span className="service-config__message" data-tone={serviceMessage?.tone} role="status">{serviceMessage?.text ?? ''}</span>
-                <button type="button" className="service-config__button service-config__save" data-variant="primary" onClick={saveServiceConfig}><Save size={16} />保存</button>
+                <button type="button" className="service-config__button service-config__save" data-variant="primary" onClick={saveServiceConfig}><Save size={16} /><AdaptiveText copy={copy('save')} style={{ display: 'block', maxWidth: 96, whiteSpace: 'nowrap', overflow: 'hidden' }} /></button>
               </footer>
             </div>
           </section>

@@ -23,6 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
   TextAreaRoot,
+  TooltipContent,
+  TooltipRoot,
   useOverlayState,
 } from '@heroui/react';
 import { Upload, X } from 'lucide-react';
@@ -76,6 +78,28 @@ function cx(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ');
 }
 
+interface ArcoTooltipProps {
+  content: ReactNode;
+  children: ReactNode;
+  placement?: 'top' | 'bottom' | 'left' | 'right';
+  delay?: number;
+}
+
+/**
+ * Short explanation overlay for icon-only and compact triggers. The content
+ * must repeat the trigger's accessible name; it never carries unique actions.
+ */
+export function ArcoTooltip({ content, children, placement = 'top', delay = 300 }: ArcoTooltipProps) {
+  return (
+    <TooltipRoot delay={delay}>
+      {children}
+      <TooltipContent placement={placement} offset={6} className="arcoui-tooltip">
+        {content}
+      </TooltipContent>
+    </TooltipRoot>
+  );
+}
+
 interface ArcoButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
   type?: ButtonVisualType;
   status?: ButtonStatus;
@@ -86,6 +110,8 @@ interface ArcoButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElem
   iconOnly?: boolean;
   long?: boolean;
   loading?: boolean;
+  /** Operation name shown above the trigger on Hover/Focus; must match aria-label. */
+  tooltip?: string;
   htmlType?: React.ButtonHTMLAttributes<HTMLButtonElement>['type'];
 }
 
@@ -99,6 +125,7 @@ export const ArcoButton = forwardRef<HTMLButtonElement, ArcoButtonProps>(functio
   iconOnly = false,
   long = false,
   loading = false,
+  tooltip,
   disabled,
   htmlType = 'button',
   className,
@@ -106,7 +133,7 @@ export const ArcoButton = forwardRef<HTMLButtonElement, ArcoButtonProps>(functio
   children,
   ...props
 }, ref) {
-  return (
+  const button = (
     <ButtonRoot
       ref={ref}
       type={htmlType}
@@ -130,6 +157,8 @@ export const ArcoButton = forwardRef<HTMLButtonElement, ArcoButtonProps>(functio
       {!loading && !iconOnly && trailingIcon}
     </ButtonRoot>
   );
+
+  return tooltip ? <ArcoTooltip content={tooltip}>{button}</ArcoTooltip> : button;
 });
 
 export function ArcoIconButton(props: Omit<ArcoButtonProps, 'iconOnly'>) {
@@ -265,7 +294,7 @@ export function ArcoModal({
                   size="small"
                   icon={<X size={15} />}
                   aria-label={modalCopy.close}
-                  title={modalCopy.close}
+                  tooltip={modalCopy.close}
                   className="arcoui-modal-close"
                   onClick={() => overlayState.close()}
                 />
@@ -336,7 +365,7 @@ export function ArcoDrawer({
                   size="small"
                   icon={<X size={15} />}
                   aria-label={drawerCopy.close}
-                  title={drawerCopy.close}
+                  tooltip={drawerCopy.close}
                   onClick={() => overlayState.close()}
                 />
               )}

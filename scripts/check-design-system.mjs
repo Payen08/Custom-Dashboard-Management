@@ -123,7 +123,7 @@ expect(/--ds-state-success-(?:bg|border|text)/.test(sourceContent), 'At least on
   expect(guidelines.includes(heading), `Guidelines is missing motion coverage: ${heading}`);
 });
 
-expect(handoffTokens.version === '1.7.0', 'Token handoff version must match the published token contract.');
+expect(handoffTokens.version === '1.8.0', 'Token handoff version must match the published token contract.');
 expect(handoffTokens.theme?.light?.color?.brand === '#241F7D', 'Token handoff is missing the light brand token.');
 expect(handoffTokens.theme?.dark?.color?.brand === '#4F46E5', 'Token handoff is missing the dark brand token.');
 expect(handoffTokens.stylePresets?.current?.status === 'stable', 'Token handoff is missing the stable Current style preset.');

@@ -216,7 +216,7 @@ export function ComponentManagerDialog({
             type="secondary"
             icon={<Plus size={15} />}
             aria-label="添加标签"
-            title="添加标签"
+            tooltip="添加标签"
             onClick={addTag}
             disabled={atLimit || !tagInput.trim()}
             style={{ width: 40, height: 40 }}
@@ -235,7 +235,6 @@ export function ComponentManagerDialog({
       }}
       title={isForm ? (view === 'add' ? '导入组件' : `编辑组件 · ${form.name}`) : '组件管理'}
       size={isForm ? 'lg' : 'xl'}
-      bodyStyle={{ padding: isForm ? '20px 24px 24px' : '0 24px 20px' }}
       footer={isForm ? (
         <>
           <ArcoButton onClick={() => setView('manage')}>取消</ArcoButton>
@@ -410,14 +409,14 @@ export function ComponentManagerDialog({
                     {component.scopes.length > 2 && <span style={{ color: 'var(--app-muted)', fontSize: 10 }}>+{component.scopes.length - 2}</span>}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                    <ArcoIconButton size="small" icon={<Edit3 size={13} />} aria-label={`编辑${component.name}`} title="编辑" onClick={() => beginEdit(component)} />
+                    <ArcoIconButton size="small" icon={<Edit3 size={13} />} aria-label={`编辑${component.name}`} tooltip="编辑" onClick={() => beginEdit(component)} />
                     {component.isCustom && (
                       <ArcoIconButton
                         size="small"
                         status="danger"
                         icon={<Trash2 size={13} />}
                         aria-label={`删除${component.name}`}
-                        title="删除"
+                        tooltip="删除"
                         onClick={() => deleteComponent(component.id)}
                       />
                     )}
@@ -490,7 +489,7 @@ export function ComponentManagerDialog({
                 <div style={{ color: 'var(--app-heading)', fontSize: 12, fontWeight: 600 }}>{componentNameFromFile(packageFile.name)}</div>
                 <div style={{ marginTop: 3, color: 'var(--app-muted)', fontSize: 12 }}>导入后将在组件库和自定义首页中同步可用</div>
               </div>
-              <ArcoIconButton type="text" size="small" icon={<X size={13} />} aria-label="移除组件包" onClick={() => setPackageFile(null)} />
+              <ArcoIconButton type="text" size="small" icon={<X size={13} />} aria-label="移除组件包" tooltip="移除组件包" onClick={() => setPackageFile(null)} />
             </div>
           )}
           {renderTagEditor('输入标签，例如：实时、告警', '导入组件标签')}

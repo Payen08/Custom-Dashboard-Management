@@ -1,5 +1,5 @@
 {
-  "version": "1.7.0",
+  "version": "1.8.0",
   "entrypoint": "src/app/components/ProductUI.tsx",
   "policy": "Business components import approved Product* exports only",
   "stable": [
@@ -31,6 +31,13 @@
     "ProductSteps",
     "ProductTimeline",
     "ProductBreadcrumb",
+    "ProductContentState"
+  ],
+  "publishedContractsRuntimePending": [
+    "ProductTree",
+    "ProductTable",
+    "ProductDateTimePicker",
+    "ProductSteps",
     "ProductContentState"
   ],
   "forbiddenDirectImports": [

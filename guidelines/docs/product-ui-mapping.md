@@ -84,7 +84,15 @@ import {
 
 ## 5. 待补正式组件
 
-以下能力进入业务页面前，应先发布 ProductUI 实现与组件契约：
+以下组件已在 1.7.0 发布完整设计契约，但当前原型还没有对应的 ProductUI 正式导出。契约发布不等于运行时实现 Stable；进入业务页面前仍需完成组件实现、映射、交互测试和视觉回归：
+
+- `ProductTree`
+- `ProductTable`
+- `ProductDateTimePicker`
+- `ProductSteps`
+- `ProductContentState`
+
+以下能力仍需补齐组件契约或正式实现：
 
 - `ProductDateTimePicker`
 - `ProductInputNumber`
@@ -93,4 +101,3 @@ import {
 - `ProductSteps`
 - `ProductTimeline`
 - `ProductBreadcrumb`
-

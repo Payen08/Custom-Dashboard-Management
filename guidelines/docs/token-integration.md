@@ -12,6 +12,7 @@
 | --- | --- | --- |
 | `docs/ui-guidelines.md` | 产品、设计、前端、测试 | 页面模板、业务组合、交互、状态、响应式、动效与验收规则。 |
 | `tokens/design-tokens.json` | 前端、设计系统维护者 | 机器可读 Token 源；主题、组件和样式变量均由此映射。 |
+| `tokens/design-tokens-resolved.md` | 设计、前端、测试 | 自动生成的主题已解析值索引；用于检索和评审，不作为手工编辑源。 |
 | `components/component-specs.json` | 前端、设计、测试 | 组件用途、边界、参数、状态、关联 Token、无障碍、响应式、示例和验收项。 |
 | `adapters/ant-design-theme.ts` | 前端 | Ant Design 主题映射示例。 |
 
@@ -25,6 +26,7 @@
 6. 组件库未开放某个组件 Token 时，保留全局语义 Token 映射并在接入记录中标注缺口；不得以硬编码样式绕过。
 7. `components/component-specs.json` 的参数名描述设计行为，而非某个实现的专有接口；前端实现须保持同等行为、状态与验收项，并在映射表中记录差异。
 8. `stylePresets` 只允许覆盖已发布 Token。`current` 是默认且稳定的回退；`industrial` 支持 Light / Dark，并通过 `colorThemes` 发布 steel、cobalt、graphite，不能为每套颜色复制组件。
+9. 修改 Token 后执行 `npm run generate:resolved` 更新已解析表；提交前 `npm run check` 会校验引用存在、引用无循环、生成文件未过期，以及主按钮、表头和状态文字对比度。
 
 ## 主题与风格切换
 

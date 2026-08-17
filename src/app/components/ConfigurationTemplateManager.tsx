@@ -253,10 +253,6 @@ export function ConfigurationTemplateManager({ categories }: { categories: Dicti
     setPolicyDraft(current => ({ ...current, [kind]: allowedSpecIds }));
   }
 
-  function selectAllForKind(kind: SlotKind) {
-    updatePolicy(kind, specifications.map(item => item.id));
-  }
-
   function saveSlotRules() {
     const validSpecIds = new Set(specifications.map(item => item.id));
     const nextPolicies: SlotPolicies = {
@@ -311,15 +307,15 @@ export function ConfigurationTemplateManager({ categories }: { categories: Dicti
             <tbody>
               {filtered.map(item => (
                 <tr key={item.id}>
-                  <td><button type="button" className="configuration-template-name" onClick={() => openConfiguration(item)}><strong>{item.name}</strong><span>{item.description || '暂无描述'}</span></button></td>
+                  <td><button type="button" className="configuration-template-name" onClick={() => openConfiguration(item)}><strong>{item.name}</strong></button></td>
                   <td><code>{item.key}</code></td>
                   <td>{item.dof} 轴</td>
                   <td>{item.slots.length} 个</td>
                   <td><div className="configuration-template-status"><ProductTag tone={item.enabled ? 'success' : 'neutral'} size="small">{item.enabled ? '已启用' : '已停用'}</ProductTag><TemplateStatusSwitch checked={item.enabled} label={`${item.name}${item.enabled ? '停用' : '启用'}`} onChange={enabled => setTemplates(current => current.map(template => template.id === item.id ? { ...template, enabled } : template))} /></div></td>
                   <td><div className="configuration-template-actions">
                     <ProductButton size="small" icon={<Settings2 size={13} />} onClick={() => openConfiguration(item)}>装配模板</ProductButton>
-                    <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`编辑${item.name}`} title="编辑" onClick={() => openEdit(item)} />
-                    <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${item.name}`} title="删除" onClick={() => setDeleteTarget(item)} />
+                    <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`编辑${item.name}`} tooltip="编辑" onClick={() => openEdit(item)} />
+                    <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${item.name}`} tooltip="删除" onClick={() => setDeleteTarget(item)} />
                   </div></td>
                 </tr>
               ))}
@@ -355,9 +351,8 @@ export function ConfigurationTemplateManager({ categories }: { categories: Dicti
         open={slotRulesOpen}
         onOpenChange={setSlotRulesOpen}
         title="槽位规则"
-        description="全局维护底座、关节和连杆允许使用的规格范围。"
         width="min(680px, calc(100vw - 48px))"
-        footer={<><ProductButton icon={<RotateCcw size={14} />} onClick={() => setPolicyDraft(getDefaultSlotPolicies(categories))}>恢复默认规则</ProductButton><ProductButton onClick={() => setSlotRulesOpen(false)}>取消</ProductButton><ProductButton type="primary" onClick={saveSlotRules}>保存规则</ProductButton></>}
+        footer={<div className="configuration-drawer-footer"><ProductButton icon={<RotateCcw size={14} />} onClick={() => setPolicyDraft(getDefaultSlotPolicies(categories))}>恢复默认</ProductButton><span /><ProductButton onClick={() => setSlotRulesOpen(false)}>取消</ProductButton><ProductButton type="primary" onClick={saveSlotRules}>保存规则</ProductButton></div>}
       >
         <div className="configuration-slot-editor">
           <div className="configuration-slot-editor__notice">
@@ -366,21 +361,25 @@ export function ConfigurationTemplateManager({ categories }: { categories: Dicti
           </div>
           <div className="configuration-policy-grid">
             {(['base', 'joint', 'link'] as SlotKind[]).map(kind => {
+              const defaultSpecIds = getDefaultSpecIds(categories, kind);
+              const availableSpecs = defaultSpecIds.length ? specifications.filter(spec => defaultSpecIds.includes(spec.id)) : specifications;
               const allowAll = policyDraft[kind].length === 0;
+              const allSelected = allowAll || (availableSpecs.length > 0 && availableSpecs.every(spec => policyDraft[kind].includes(spec.id)));
               return <section className="configuration-slot-group configuration-policy-card" key={kind}>
                 <header>
-                  <div><h2>{SLOT_META[kind].label}</h2><ProductTag tone="neutral" size="small">{kind}</ProductTag></div>
-                  <ProductButton size="small" onClick={() => selectAllForKind(kind)}>同类型全选</ProductButton>
+                  <div><ProductTag tone="neutral" size="small">{kind}</ProductTag><h2>{SLOT_META[kind].label}</h2></div>
+                  <ProductCheckbox label="全选" checked={allSelected} onChange={event => updatePolicy(kind, event.target.checked ? [] : availableSpecs.map(spec => spec.id))} />
                 </header>
                 <div className="configuration-policy-card__body">
                   <div className="configuration-slot-options">
-                    <ProductCheckbox label="全部规格" checked={allowAll} onChange={event => updatePolicy(kind, event.target.checked ? [] : getDefaultSpecIds(categories, kind))} />
-                    {specifications.map(spec => <ProductCheckbox
+                    {availableSpecs.map(spec => <ProductCheckbox
                       key={spec.id}
                       label={<span className="configuration-spec-option">{spec.name}<code>{spec.key}</code></span>}
-                      disabled={allowAll}
-                      checked={policyDraft[kind].includes(spec.id)}
-                      onChange={event => updatePolicy(kind, event.target.checked ? [...policyDraft[kind], spec.id] : policyDraft[kind].filter(id => id !== spec.id))}
+                      checked={allowAll || policyDraft[kind].includes(spec.id)}
+                      onChange={event => {
+                        const current = allowAll ? availableSpecs.map(item => item.id) : policyDraft[kind];
+                        updatePolicy(kind, event.target.checked ? [...new Set([...current, spec.id])] : current.filter(id => id !== spec.id));
+                      }}
                     />)}
                   </div>
                 </div>
@@ -395,41 +394,36 @@ export function ConfigurationTemplateManager({ categories }: { categories: Dicti
         open={Boolean(configuring)}
         onOpenChange={open => !open && setConfiguringId(null)}
         title={configuring ? `${configuring.name} · 装配模板` : '装配模板'}
-        description={configuring ? `${configuring.dof} 轴 · ${slotDraft.length} 个运动链槽位 · 规格来源：字段字典 / 组件库分类 / 规格` : undefined}
         width="min(760px, calc(100vw - 48px))"
-        footer={<><ProductButton icon={<RotateCcw size={14} />} onClick={() => configuring && setSlotDraft(generateSlots(configuring.dof))}>恢复继承状态</ProductButton><ProductButton onClick={() => setConfiguringId(null)}>取消</ProductButton><ProductButton type="primary" onClick={saveConfiguration}>保存模板</ProductButton></>}
+        footer={<div className="configuration-drawer-footer"><ProductButton icon={<RotateCcw size={14} />} onClick={() => configuring && setSlotDraft(generateSlots(configuring.dof))}>恢复默认</ProductButton><span /><ProductButton onClick={() => setConfiguringId(null)}>取消</ProductButton><ProductButton type="primary" onClick={saveConfiguration}>保存模板</ProductButton></div>}
       >
         {configuring && <div className="configuration-slot-editor">
           <div className="configuration-slot-editor__notice">
             <strong>具体槽位装配模板</strong>
             <span>每个槽位只能选择顶部“槽位规则”允许的规格；不单独选择时继承对应类型的全局规则。</span>
           </div>
-          <div className="configuration-slot-summary" aria-live="polite">{slotDraft.length} 个具体槽位</div>
           <div className="configuration-assembly-list">
             {slotDraft.map(slot => {
               const inherited = slot.allowedSpecIds.length === 0;
               const availableSpecs = slotPolicies[slot.kind].length
                 ? specifications.filter(spec => slotPolicies[slot.kind].includes(spec.id))
                 : specifications;
-              const code = slot.kind === 'base' ? 'BASE' : `${slot.kind === 'joint' ? 'J' : 'L'}${slot.id.split('-')[1]}`;
+              const code = slot.kind === 'base' ? '底座' : `${slot.kind === 'joint' ? 'J' : 'L'}${slot.id.split('-')[1]}`;
               return <article className="configuration-assembly-slot" key={slot.id}>
                 <div className="configuration-assembly-slot__identity">
                   <span>{code}</span>
-                  <div><strong>{slot.name}</strong><small>{SLOT_META[slot.kind].label}模块</small></div>
+                  <strong>{SLOT_META[slot.kind].label}</strong>
                 </div>
                 <div className="configuration-assembly-slot__content">
-                  <div className="configuration-assembly-slot__heading">
-                    <span>允许规格（多选）</span>
-                    <ProductTag tone={inherited ? 'accent' : 'neutral'} size="small">{inherited ? '继承槽位规则' : `${slot.allowedSpecIds.length} 项`}</ProductTag>
-                  </div>
                   <div className="configuration-slot-options">
-                    <ProductCheckbox label="继承槽位规则" checked={inherited} onChange={event => updateSlot(slot.id, event.target.checked ? [] : availableSpecs.map(spec => spec.id))} />
                     {availableSpecs.map(spec => <ProductCheckbox
                       key={spec.id}
                       label={<span className="configuration-spec-option">{spec.name}<code>{spec.key}</code></span>}
-                      disabled={inherited}
-                      checked={slot.allowedSpecIds.includes(spec.id)}
-                      onChange={event => updateSlot(slot.id, event.target.checked ? [...slot.allowedSpecIds, spec.id] : slot.allowedSpecIds.filter(id => id !== spec.id))}
+                      checked={inherited || slot.allowedSpecIds.includes(spec.id)}
+                      onChange={event => {
+                        const current = inherited ? availableSpecs.map(item => item.id) : slot.allowedSpecIds;
+                        updateSlot(slot.id, event.target.checked ? [...new Set([...current, spec.id])] : current.filter(id => id !== spec.id));
+                      }}
                     />)}
                   </div>
                 </div>
@@ -440,7 +434,7 @@ export function ConfigurationTemplateManager({ categories }: { categories: Dicti
         </div>}
       </ProductDrawer>
 
-      <ProductModal open={Boolean(deleteTarget)} onOpenChange={open => !open && setDeleteTarget(null)} title="确认删除构型" description="删除操作不可撤销。" status="danger" footer={<><ProductButton onClick={() => setDeleteTarget(null)}>取消</ProductButton><ProductButton type="primary" status="danger" onClick={confirmDelete}>确认删除</ProductButton></>}>
+      <ProductModal open={Boolean(deleteTarget)} onOpenChange={open => !open && setDeleteTarget(null)} title="删除构型" description="确认要删除该构型吗？删除后无法恢复。" status="danger" footer={<><ProductButton onClick={() => setDeleteTarget(null)}>取消</ProductButton><ProductButton type="primary" status="danger" onClick={confirmDelete}>删除</ProductButton></>}>
         <p className="configuration-template-delete-copy">确定删除“{deleteTarget?.name ?? ''}”吗？对应的槽位装配规则也会一并删除。</p>
       </ProductModal>
     </div>

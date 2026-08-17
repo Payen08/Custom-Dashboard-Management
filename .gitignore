@@ -5,3 +5,11 @@ dist/
 .DS_Store
 *.tar.gz
 *.zip
+
+# 大型资源目录（不纳入版本控制）
+Marvin M6-S-CCS-696-V4.0_Base_and_Stand_Asm urdf/
+public/draco/
+public/models/
+ui-main/
+urdf-html-1.0-main/
+public/__shot.html

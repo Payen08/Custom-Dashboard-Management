@@ -12,9 +12,10 @@
 
 | 角色 | 首先阅读 | 实际使用 |
 | --- | --- | --- |
-| 前端 | [前端接入清单](docs/frontend-onboarding.md) | [Design Token](tokens/design-tokens.json)、[产品模式](patterns/product-patterns.json)、[运行时清单](runtime/product-ui-manifest.json)、[React 模板](examples/react/README.md) |
+| 前端 | [快速速查](docs/quick-reference.md) → [前端接入清单](docs/frontend-onboarding.md) | [已解析 Token 表](tokens/design-tokens-resolved.md)、[Design Token JSON](tokens/design-tokens.json)、[产品模式](patterns/product-patterns.json)、[运行时清单](runtime/product-ui-manifest.json)、[React 模板](examples/react/README.md) |
 | 设计 | [UI 总规范](docs/ui-guidelines.md) | 颜色、字体、间距、状态、模板和组件边界 |
 | 测试 | [UI 总规范](docs/ui-guidelines.md#18-版本管理与自动化验收) | 状态矩阵、响应式、无障碍和验收清单 |
+| Token 检索 | [已解析 Token 表](tokens/design-tokens-resolved.md) | 由 `scripts/generate-resolved-tokens.mjs` 自动生成，禁止手工修改。 |
 | 维护者 | [贡献与发布](CONTRIBUTING.md) | 版本升级、变更评审、CI 校验与发布记录 |
 
 产品级页面实现还必须同时阅读 [产品外壳规范](docs/product-shell.md)、[页面 Recipe](docs/page-recipes.md)、[ProductUI 映射](docs/product-ui-mapping.md) 与 [视觉回归要求](docs/visual-regression.md)。
@@ -32,6 +33,7 @@
 ├── package.json                      # 规范包版本与本地命令
 ├── docs/
 │   ├── ui-guidelines.md              # 唯一文字规范与验收依据
+│   ├── quick-reference.md            # ★ 研发速查：常见问题、✅/❌ 示例、Ant Design 对照
 │   ├── token-integration.md          # 前端 Token 接入说明
 │   ├── product-shell.md              # 数字造机产品外壳与全局导航规范
 │   ├── page-recipes.md               # 管理页面、表单、抽屉与 CRUD 配方
@@ -44,11 +46,12 @@
 │   └── product-ui-manifest.json      # 正式组件、待补组件与禁止依赖
 ├── examples/react/                   # 可复制的 React 产品结构模板
 ├── tokens/
-│   └── design-tokens.json            # 唯一机器可读 Token 源
+│   ├── design-tokens.json            # 唯一机器可读 Token 源（含 {…} 引用）
+│   └── design-tokens-resolved.md    # ★ 已解析速查表：所有引用展开为真实值
 ├── components/
 │   └── component-specs.json          # 组件行为与状态契约
 ├── adapters/
-│   └── ant-design-theme.ts           # Ant Design 映射示例
+│   └── ant-design-theme.ts           # Ant Design 映射（v1.7.0 已修复 paddingInline/Checkbox/Popover 等）
 ├── references/
 │   └── ant-design-background.md      # 背景资料，不是当前规范
 └── scripts/
@@ -66,6 +69,20 @@
 3. `docs/ui-guidelines.md` 决定页面模板、组合模式、内容、响应式和无障碍规则。
 4. `adapters/*` 仅说明如何映射到特定组件库，不得反向修改前三项。
 5. `references/*` 只提供背景信息，不能作为实现或验收依据。
+
+## 遇到问题先查这里
+
+生成的组件样式与原型不一致？先按以下顺序排查：
+
+| 问题 | 先看 |
+| --- | --- |
+| 色号、字体、圆角的**具体数值**是什么 | [`tokens/design-tokens-resolved.md`](tokens/design-tokens-resolved.md) — 所有引用已展开为真实值 |
+| 组件写法对不对、颜色能不能硬编码 | [`docs/quick-reference.md`](docs/quick-reference.md) — ✅/❌ 代码示例 |
+| Current 和 Industrial **到底用哪套** | [`docs/quick-reference.md#十industrial-风格使用规则`](docs/quick-reference.md) — Current 是默认，Industrial 需审批 |
+| Ant Design 主题 Token 怎么传 | [`adapters/ant-design-theme.ts`](adapters/ant-design-theme.ts) — `createProductTheme(mode, preset)` |
+| 某个 Token `{...}` 引用是什么值 | 在 `design-tokens-resolved.md` 全文搜索 Token 名，找已展开的值 |
+
+---
 
 ## 前端接入
 

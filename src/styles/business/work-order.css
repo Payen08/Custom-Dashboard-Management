@@ -1,0 +1,149 @@
+/* 工单管理：严格复用 Product page、table、overlay 与状态规范。 */
+.mfg-main.wo-page {
+  display: flex !important;
+  overflow: hidden !important;
+}
+
+.wo-page-header { margin-bottom: 0; }
+.wo-page-heading { min-width: 0; }
+.wo-page-heading h1 { margin: 0; color: var(--app-heading); font-size: var(--ds-font-size-20); font-weight: var(--ds-font-weight-semibold); line-height: 1.3; }
+.wo-page-heading p { margin: var(--ds-space-1) 0 0; color: var(--app-muted); font-size: var(--ds-font-size-12); line-height: 18px; }
+.wo-toolbar { min-width: 0; margin-left: auto; }
+.wo-toolbar__filters { display: flex; align-items: center; gap: var(--ds-space-2); }
+.wo-toolbar__filters { min-width: 0; }
+.wo-toolbar__filters > .arcoui-select { width: 136px; flex: 0 0 136px; }
+.wo-transfer-menu { width: 168px; }
+
+/* 标准管理列表：工具栏与标题同行，表面仅承载表格和分页。 */
+.wo-list-surface { display: flex; flex-direction: column; }
+.wo-search { position: relative; width: 280px; height: 40px; color: var(--app-muted); flex: 0 1 280px; }
+.wo-search > svg { position: absolute; z-index: 2; left: var(--ds-space-3); top: 50%; transform: translateY(-50%); pointer-events: none; }
+.wo-search .arcoui-input { width: 100%; height: 40px; padding-left: 36px; }
+.wo-table-scroll { flex: 1 1 auto; height: auto; }
+.wo-table { width: 100%; min-width: 1260px; border-collapse: separate; border-spacing: 0; white-space: nowrap; }
+.wo-table th { position: sticky; top: 0; z-index: var(--ds-z-sticky); height: 44px; padding: 0 var(--ds-space-4); text-align: left; color: var(--ds-table-header-color); background: var(--ds-table-header-bg); border-bottom: 1px solid var(--ds-table-header-divider); font-size: var(--ds-table-header-font-size); font-weight: var(--ds-table-header-font-weight); }
+.wo-table td { height: 60px; padding: 0 var(--ds-space-4); color: var(--ds-table-cell-color); border-bottom: 1px solid var(--ds-table-row-divider); font-size: var(--ds-table-cell-font-size); font-weight: var(--ds-table-cell-font-weight); vertical-align: middle; }
+.wo-table tbody tr:last-child td { border-bottom: 0; }
+.wo-table small { display: block; margin-top: var(--ds-space-1); font-size: var(--ds-table-cell-secondary-font-size); }
+.wo-table__actions { position: sticky !important; right: 0; z-index: var(--ds-z-base); width: 192px; min-width: 192px; max-width: 192px; text-align: right !important; background: var(--app-surface); box-shadow: -10px 0 18px -18px var(--app-shadow-color); }
+.wo-table th.wo-table__actions { z-index: var(--ds-z-sticky); background: var(--ds-table-header-bg); }
+.wo-table .ds-table-row:hover .wo-table__actions { background: var(--ds-table-row-bg-hover); }
+.wo-order-link { padding: 0; border: 0; background: transparent; color: var(--app-accent); font: inherit; font-weight: var(--ds-font-weight-medium); cursor: pointer; }
+.wo-order-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.wo-order-link:focus-visible { border-radius: var(--ds-radius-xs); outline: var(--ds-state-focus-ring-width) solid var(--ds-state-focus-ring); outline-offset: var(--ds-state-focus-ring-offset); }
+.wo-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--ds-space-2); }
+.wo-row-actions > .arcoui-button { width: var(--ds-button-height-sm); min-width: var(--ds-button-height-sm); height: var(--ds-button-height-sm); padding: 0; flex: 0 0 var(--ds-button-height-sm); }
+.wo-row-actions > .arcoui-button > svg { width: var(--ds-button-icon-size-sm); height: var(--ds-button-icon-size-sm); }
+.wo-table-empty { min-height: 120px; display: grid; place-items: center; font-size: var(--ds-font-size-13); }
+
+.wo-pagination { min-height: 52px; display: flex; align-items: center; justify-content: flex-end; gap: var(--ds-space-2); padding: 0 var(--ds-space-4); border-top: 1px solid var(--app-border); flex: 0 0 auto; box-sizing: border-box; }
+.wo-pagination__summary { margin-right: var(--ds-space-2); color: var(--app-muted); font-size: var(--ds-font-size-12); }
+.wo-page-button { width: var(--ds-pagination-item-size); min-width: var(--ds-pagination-item-size); padding-inline: 0; }
+.wo-page-button[aria-current='page'] { background: var(--ds-pagination-item-bg-selected); color: var(--ds-pagination-item-text-selected); font-weight: var(--ds-font-weight-semibold); }
+
+/* 表单反馈与只读系统信息。 */
+.wo-form-errors { display: grid; gap: var(--ds-space-1); padding: var(--ds-space-3) var(--ds-space-4); border: 1px solid var(--app-danger-border); border-radius: var(--ds-radius-inner); background: var(--app-danger-soft); color: var(--app-danger); font-size: var(--ds-font-size-12); }
+.wo-form-errors b { font-size: var(--ds-font-size-13); }
+.wo-error { color: var(--app-danger); font-size: var(--ds-font-size-12); }
+.wo-sys-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--ds-space-3) var(--ds-space-4); margin: var(--ds-space-3) 0 0; }
+.wo-sys-item { padding: 10px var(--ds-space-3); border: 1px solid var(--app-border); border-radius: var(--ds-radius-sm); background: var(--app-soft); }
+.wo-sys-item dt { margin-bottom: var(--ds-space-1); color: var(--app-muted); font-size: var(--ds-font-size-12); }
+.wo-sys-item dd { margin: 0; color: var(--app-heading); font-size: var(--ds-font-size-13); font-weight: var(--ds-font-weight-medium); }
+.wo-input-action { position: relative; }
+.wo-input-action .arcoui-input { width: 100%; padding-right: 44px; }
+.wo-input-action > .arcoui-button { position: absolute; z-index: 2; right: var(--ds-space-1); top: var(--ds-space-1); }
+
+/* 工序明细。 */
+.mfg-modal-form > section.wo-operation-editor { display: grid; gap: var(--ds-space-3); padding: var(--ds-space-4) !important; border: 1px solid var(--app-border) !important; border-radius: var(--ds-radius-card); background: var(--app-soft); }
+.wo-operation-editor__header { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-space-3); }
+.wo-operation-editor__header > div { display: grid; gap: 2px; }
+.wo-operation-editor__header h3 { display: flex; align-items: center; gap: var(--ds-space-2); }
+.wo-operation-editor__header p { margin: 0; color: var(--app-muted); font-size: var(--ds-font-size-10); }
+.wo-op-head, .wo-op-row { display: grid; grid-template-columns: 44px minmax(96px, .8fr) minmax(90px, .7fr) minmax(90px, .7fr) minmax(110px, 1fr) minmax(140px, 1.2fr) 104px; gap: var(--ds-space-2); align-items: center; }
+.wo-op-head { color: var(--app-muted); font-size: var(--ds-font-size-12); font-weight: var(--ds-font-weight-medium); }
+.wo-table__actions-label { text-align: right; }
+.wo-op-list { display: grid; gap: var(--ds-space-2); }
+.wo-op-row { min-width: 0; }
+.wo-op-row[data-error='true'] { border-radius: var(--ds-radius-control); outline: 1px solid var(--app-danger-border); outline-offset: var(--ds-space-1); }
+.wo-op-index { height: 40px; display: flex; align-items: center; gap: var(--ds-space-1); color: var(--app-muted); font-size: var(--ds-font-size-12); font-weight: var(--ds-font-weight-semibold); }
+.wo-op-field { min-width: 0; }
+.wo-op-field > .arcoui-input, .wo-op-field > .arcoui-select { width: 100%; }
+.wo-op-field::before { display: none; }
+.wo-op-actions { display: flex; justify-content: flex-end; gap: var(--ds-space-1); }
+.wo-op-actions > .arcoui-button { flex: 0 0 var(--ds-button-height-sm); }
+.wo-op-empty { min-height: 80px; display: grid; place-items: center; padding: var(--ds-space-4); text-align: center; color: var(--app-muted); font-size: var(--ds-font-size-12); border: 1px dashed var(--app-border); border-radius: var(--ds-radius-inner); background: var(--app-surface); }
+
+/* 抽屉详情。 */
+.wo-progress-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ds-space-3); }
+.wo-progress-item { padding: var(--ds-space-3) 14px; border: 1px solid var(--app-border); border-radius: var(--ds-radius-inner); background: var(--app-surface); }
+.wo-progress-item b { display: block; color: var(--app-heading); font-size: var(--ds-font-size-18); }
+.wo-progress-item span { color: var(--app-muted); font-size: var(--ds-font-size-12); }
+.wo-table-frame { overflow: auto; border: 1px solid var(--app-border); border-radius: var(--ds-radius-inner); }
+.wo-table-frame--preview { max-height: 280px; }
+.wo-table-frame--result { max-height: 260px; }
+.wo-detail-table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: var(--ds-font-size-13); }
+.wo-detail-table th { height: 40px; padding: 0 var(--ds-space-3); text-align: left; color: var(--ds-table-header-color); font-weight: var(--ds-table-header-font-weight); font-size: var(--ds-table-header-font-size); border-bottom: 1px solid var(--ds-table-header-divider); background: var(--ds-table-header-bg); }
+.wo-detail-table td { height: 48px; padding: 0 var(--ds-space-3); border-bottom: 1px solid var(--ds-table-row-divider); color: var(--app-text); }
+.wo-detail-table tr:last-child td { border-bottom: 0; }
+.wo-snapshot { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--ds-space-6); margin: 0; }
+.wo-snapshot div { display: flex; justify-content: space-between; gap: var(--ds-space-3); padding: 6px 0; border-bottom: 1px dashed var(--app-border); font-size: var(--ds-font-size-12); }
+.wo-snapshot dt { color: var(--app-muted); }
+.wo-snapshot dd { margin: 0; color: var(--app-heading); text-align: right; }
+
+/* 小型确认表单与导入流程。 */
+.wo-dialog-stack, .wo-import-stack { display: grid; gap: var(--ds-space-4); }
+.wo-dialog-copy { margin: 0; color: var(--app-text); font-size: var(--ds-font-size-14); }
+.wo-dialog-copy b, .wo-priority-order b { color: var(--app-heading); }
+.wo-danger-note { padding: var(--ds-space-3); border: 1px solid var(--app-danger-border); border-radius: var(--ds-radius-inner); background: var(--app-danger-soft); color: var(--app-danger); font-size: var(--ds-font-size-12); }
+.wo-priority-order { display: flex; align-items: center; gap: var(--ds-space-2); color: var(--app-text); font-size: var(--ds-font-size-14); }
+.wo-muted-note { color: var(--app-muted); font-size: var(--ds-font-size-12); }
+.wo-muted-note--spaced { margin-top: var(--ds-space-2); }
+.wo-import-steps { display: flex; align-items: center; gap: var(--ds-space-2); margin-bottom: var(--ds-space-5); color: var(--app-muted); font-size: var(--ds-font-size-12); }
+.wo-import-steps span { display: inline-flex; align-items: center; gap: 6px; }
+.wo-import-steps i { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--app-soft); color: var(--app-muted); font-style: normal; font-size: var(--ds-font-size-11); flex: none; }
+.wo-import-steps span.is-current, .wo-import-steps span.is-done { color: var(--app-accent); font-weight: var(--ds-font-weight-semibold); }
+.wo-import-steps span.is-current i, .wo-import-steps span.is-done i { background: var(--app-accent); color: var(--ds-color-accent-contrast); }
+.wo-import-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ds-space-3); }
+.wo-import-stat { padding: 14px; border: 1px solid var(--app-border); border-radius: var(--ds-radius-inner); background: var(--app-soft); }
+.wo-import-stat b { display: block; color: var(--app-heading); font-size: var(--ds-font-size-20); line-height: 1.2; }
+.wo-import-stat b[data-tone='success'] { color: var(--app-success); }
+.wo-import-stat b[data-tone='warning'] { color: var(--app-warning); }
+.wo-import-stat b[data-tone='danger'] { color: var(--app-danger); }
+.wo-import-stat span { color: var(--app-muted); font-size: var(--ds-font-size-12); }
+.wo-import-note { display: flex; gap: 10px; padding: var(--ds-space-3) 14px; border: 1px solid var(--app-accent-border); border-radius: var(--ds-radius-inner); background: var(--app-accent-soft); color: var(--app-accent); font-size: var(--ds-font-size-12); }
+.wo-import-note b { color: var(--app-heading); }
+
+@media (max-width: 1100px) {
+  .wo-sys-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wo-progress-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .wo-op-head { display: none; }
+  .wo-op-list { gap: 0; }
+  .wo-op-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ds-space-3) var(--ds-space-4); padding: var(--ds-space-4) 0; border-top: 1px solid var(--app-border); }
+  .wo-op-row:first-child { padding-top: 0; border-top: 0; }
+  .wo-op-index { grid-column: 1 / -1; height: auto; }
+  .wo-op-index::before { content: '工序'; color: var(--app-heading); font-size: var(--ds-font-size-12); }
+  .wo-op-field { display: grid; gap: var(--ds-space-2); }
+  .wo-op-field::before { content: attr(data-label); display: block; color: var(--app-muted); font-size: var(--ds-font-size-12); font-weight: var(--ds-font-weight-medium); }
+  .wo-op-actions { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
+@media (max-width: 1500px) {
+  .wo-page-header { align-items: stretch; flex-direction: column; }
+  .wo-toolbar { width: 100%; margin-left: 0; flex-wrap: wrap; }
+}
+
+@media (max-width: 760px) {
+  .wo-toolbar, .wo-toolbar__filters { width: 100%; flex-wrap: wrap; }
+  .wo-search { width: 100%; flex-basis: 100%; }
+  .wo-toolbar__filters > .arcoui-select { flex: 1 1 136px; }
+  .wo-pagination { justify-content: flex-start; overflow-x: auto; }
+  .wo-pagination__summary { margin-right: auto; }
+  .wo-sys-grid, .wo-progress-grid, .wo-snapshot { grid-template-columns: 1fr; }
+  .wo-import-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wo-operation-editor__header { align-items: stretch; flex-direction: column; }
+  .wo-operation-editor__header > .arcoui-button { align-self: flex-start; }
+  .wo-op-row { grid-template-columns: 1fr; }
+}

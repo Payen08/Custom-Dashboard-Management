@@ -6,14 +6,30 @@
 - Minor：新增向后兼容的 Token、组件、模板或规则。
 - Patch：不改变契约的文字澄清、错误修正或示例更新。
 
+## 1.8.0 — 2026-08-14
+
+- 新增交互规范 §27.50"操作按钮统一命名、样式与图标提示"：同类型操作（新增 / 编辑 / 删除 / 搜索 / 刷新 / 导出等）命名以《多语言文案规则》全局操作词为唯一词表，样式按"主创建 Primary 40px、工具型 Outline 40px、行内 Danger/普通 IconButton 32px"统一；纯图标操作 Hover / Focus 必须在图标上方显示操作名 Tooltip，且 Tooltip 文案与 `aria-label` 一致。
+- Switch 形状 Token 化：新增 `--ds-switch-track-radius` / `--ds-switch-thumb-radius`，修复 Industrial 预设下轨道为方形而滑块仍为圆形的混合形态；Industrial 预设为 4px 方形轨道 + 2px 方形滑块，Current 预设保持胶囊轨道 + 圆形滑块。
+
 ## 1.7.0 — 2026-08-03
 
+- 新增配置编排业务模式与可切换样式预览，统一参数枚举项、两步创建组件、字段级联、装配模板和槽位规则的 Modal / Drawer 结构、选择组与固定操作区。
+- 修正 Dark 主按钮前景、表头与 Info/Success/Warning/Danger 状态文字对比度，并为 Danger Button 发布 Soft/Solid 六态契约。
+- 发布 Tree、Table、DateTimePicker、Steps、ContentState 关键组件契约；运行时尚未导出的组件明确标记为 Runtime Pending。
+- 新增 Tree、DateTimePicker、Steps、ContentState、Chart 与 3D Scene 组件 Token，并同步 Ant Design Table、Tree、DatePicker、Steps 映射。
+- `design-tokens-resolved.md` 改为脚本生成；校验新增 Token 引用、循环引用、生成结果同步与 WCAG 对比度门禁。
+- 补充服务端表单错误、异步校验、输入法、字段依赖、表格跨页选择/部分成功/虚拟化/偏好持久化规则。
+- 补充国际化、时区、RTL、WCAG 2.2 AA、强制色、缩放、3D Scene 与色觉友好图表规范。
+- 扩展独立的多语言与本地化规范，覆盖 Locale 声明、ICU 消息、文案膨胀、格式化与时区、搜索排序、组件适配、RTL、无障碍和伪本地化验收。
+- 扩展视觉回归和前端静态审计，覆盖多主题、键盘、缩放、强制色、硬编码功能色和无语义交互元素。
 - 新增机器可读的产品页面模式清单，覆盖 ProductShell、管理列表、Modal 表单、Drawer 详情与导入流程。
 - 新增 ProductUI 运行时组件清单，明确稳定组件、待补组件、底层依赖边界和禁止导入。
 - 新增 React 接入模板，前端可直接复制结构并映射到团队批准的组件实现。
 - 新增前端静态审计脚本，检查原生业务 Select、私有浮层、底层组件库直连、任意 z-index 与硬编码主题色。
 - 新增视觉回归矩阵与前端接入清单，将参考页面、状态、视口和合并门禁纳入交付。
 - 规范包可独立校验并打包分发，不依赖原型工程源码。
+- 新增 Table 模块标题、表头、普通单元格、主标识、辅助信息和数字的字号、字重与颜色 Token。
+- 明确表头使用 12px/500 高对比正文色、正文使用 14px/400 正文色，仅主标识单元格使用 14px/500 标题色，禁止整表加粗。
 
 ## 1.6.0 — 2026-08-03
 
@@ -44,6 +60,7 @@
 - Industrial 3D 预览改为独立近黑 Scene Scope（基准 `#101316`），Light / Dark 均保持暗色画布，并同步提升遥测文字、HUD、网格与坐标轴对比度。
 - 降低 Industrial 普通描边与结构分隔线对比度，建立 `border / borderStrong` 两级层次；Focus、选中与错误状态仍保留明确强调。
 - 进一步弱化首页工作区分隔线，并将选中方案卡片从 2px 深色框改为 1px 混合强调框；普通删除按钮统一为危险浅底、红色文字和轻红描边。
+- 新增 Table 外框、表头线、数据行线、列线和固定列线五级 Token；默认取消普通列竖线，数据行线低于表头线对比度，最后一行不重复画底线。
 
 ## 1.3.0 — 2026-07-28
 

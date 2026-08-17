@@ -160,6 +160,8 @@
   --ds-switch-width: 36px;
   --ds-switch-height: 20px;
   --ds-switch-thumb-size: 16px;
+  --ds-switch-track-radius: var(--ds-radius-pill);
+  --ds-switch-thumb-radius: var(--ds-radius-pill);
   --ds-number-height: 40px;
   --ds-number-stepper-width: 28px;
   --ds-pagination-item-size: 32px;

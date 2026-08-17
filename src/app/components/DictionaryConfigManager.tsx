@@ -28,6 +28,15 @@ import type {
   DictionaryValue,
   DictionaryValueDataType,
 } from '../dictionaryData';
+import { useI18n, type AppLocale } from '../i18n';
+
+const DICTIONARY_COPY: Record<AppLocale, Record<string, string>> = {
+  'zh-Hans': { title:'字典配置', description:'统一维护业务字段、枚举取值及字段间的级联依赖关系', search:'搜索', add:'新增', category:'分类名称', identifier:'标识符', fields:'字段', status:'状态', source:'来源', actions:'操作', noDescription:'暂无分类说明', fieldUnit:'个字段', disable:'停用', enable:'启用', builtin:'内置', custom:'自定义', viewFields:'查看类型字段', edit:'编辑分类', delete:'删除分类', modelName:'型号模板分类', modelDesc:'用于创建型号时配置机器人类型、自由度等型号属性。', componentName:'组件库分类', componentDesc:'用于创建组件和类型筛选时配置组件类型、子类型与规格。', extensionName:'项目扩展属性', extensionDesc:'自定义分类示例，可按项目补充筛选字段。' },
+  en: { title:'Dictionary Settings', description:'Maintain business fields, enum values, and cascading dependencies in one place.', search:'Search', add:'Add', category:'Category', identifier:'Identifier', fields:'Fields', status:'Status', source:'Source', actions:'Actions', noDescription:'No description', fieldUnit:'fields', disable:'Disable', enable:'Enable', builtin:'Built-in', custom:'Custom', viewFields:'View Fields', edit:'Edit Category', delete:'Delete Category', modelName:'Model Categories', modelDesc:'Configure robot type, degrees of freedom, and other model attributes.', componentName:'Component Categories', componentDesc:'Configure component type, subtype, and specifications for creation and filtering.', extensionName:'Project Extensions', extensionDesc:'Example custom category for project-specific filtering fields.' },
+  ms: { title:'Tetapan Kamus', description:'Urus medan perniagaan, nilai enum dan kebergantungan berantai di satu tempat.', search:'Cari', add:'Tambah', category:'Kategori', identifier:'Pengecam', fields:'Medan', status:'Status', source:'Sumber', actions:'Tindakan', noDescription:'Tiada penerangan', fieldUnit:'medan', disable:'Lumpuhkan', enable:'Aktifkan', builtin:'Terbina', custom:'Tersuai', viewFields:'Lihat Medan', edit:'Edit Kategori', delete:'Padam Kategori', modelName:'Kategori Model', modelDesc:'Konfigurasi jenis robot, darjah kebebasan dan atribut model lain.', componentName:'Kategori Komponen', componentDesc:'Konfigurasi jenis, subjenis dan spesifikasi komponen.', extensionName:'Sambungan Projek', extensionDesc:'Kategori tersuai contoh untuk medan penapisan khusus projek.' },
+  vi: { title:'Cấu hình từ điển', description:'Quản lý tập trung trường nghiệp vụ, giá trị liệt kê và quan hệ phụ thuộc.', search:'Tìm kiếm', add:'Thêm', category:'Danh mục', identifier:'Mã định danh', fields:'Trường', status:'Trạng thái', source:'Nguồn', actions:'Thao tác', noDescription:'Chưa có mô tả', fieldUnit:'trường', disable:'Tắt', enable:'Bật', builtin:'Tích hợp', custom:'Tùy chỉnh', viewFields:'Xem trường', edit:'Sửa danh mục', delete:'Xóa danh mục', modelName:'Danh mục mô hình', modelDesc:'Cấu hình loại robot, bậc tự do và các thuộc tính mô hình.', componentName:'Danh mục thành phần', componentDesc:'Cấu hình loại, loại phụ và quy cách thành phần.', extensionName:'Mở rộng dự án', extensionDesc:'Danh mục tùy chỉnh mẫu cho trường lọc theo dự án.' },
+  'zh-Hant': { title:'字典設定', description:'統一維護業務欄位、列舉取值及欄位間的級聯依賴關係', search:'搜尋', add:'新增', category:'分類名稱', identifier:'識別碼', fields:'欄位', status:'狀態', source:'來源', actions:'操作', noDescription:'暫無分類說明', fieldUnit:'個欄位', disable:'停用', enable:'啟用', builtin:'內建', custom:'自訂', viewFields:'查看類型欄位', edit:'編輯分類', delete:'刪除分類', modelName:'型號範本分類', modelDesc:'用於建立型號時設定機器人類型、自由度等型號屬性。', componentName:'元件庫分類', componentDesc:'用於建立元件和類型篩選時設定元件類型、子類型與規格。', extensionName:'專案擴充屬性', extensionDesc:'自訂分類範例，可按專案補充篩選欄位。' },
+};
 
 type Notice = { tone: 'success' | 'danger'; text: string } | null;
 type DrawerView = 'fields' | 'field';
@@ -72,7 +81,9 @@ function StatusSwitch({ checked, label, onChange }: { checked: boolean; label: s
 }
 
 function SourceTag({ source }: { source: DictionarySource }) {
-  return <ProductTag tone={source === 'builtin' ? 'accent' : 'neutral'} size="small">{source === 'builtin' ? '内置' : '自定义'}</ProductTag>;
+  const { locale } = useI18n();
+  const copy = DICTIONARY_COPY[locale];
+  return <ProductTag className="dictionary-source-tag" tone={source === 'builtin' ? 'accent' : 'neutral'}>{source === 'builtin' ? copy.builtin : copy.custom}</ProductTag>;
 }
 
 export function DictionaryConfigManager({
@@ -86,6 +97,11 @@ export function DictionaryConfigManager({
   embedded?: boolean;
   title?: string;
 }) {
+  const { locale } = useI18n();
+  const copy = DICTIONARY_COPY[locale];
+  const detailCopy = locale === 'zh-Hans' ? { fields:'类型字段', close:'关闭', search:'搜索字段', add:'新增字段', name:'字段名称', enabled:'已启用', disabled:'已停用', view:'查看', robot:'机器人类型', dof:'自由度', component:'组件类型', subtype:'子类型', specification:'规格', protection:'防护等级' } : locale === 'zh-Hant' ? { fields:'類型欄位', close:'關閉', search:'搜尋欄位', add:'新增欄位', name:'欄位名稱', enabled:'已啟用', disabled:'已停用', view:'查看', robot:'機器人類型', dof:'自由度', component:'元件類型', subtype:'子類型', specification:'規格', protection:'防護等級' } : locale === 'ms' ? { fields:'Medan Jenis', close:'Tutup', search:'Cari medan', add:'Tambah medan', name:'Nama medan', enabled:'Diaktifkan', disabled:'Dilumpuhkan', view:'Lihat', robot:'Jenis Robot', dof:'Darjah Kebebasan', component:'Jenis Komponen', subtype:'Subjenis', specification:'Spesifikasi', protection:'Tahap Perlindungan' } : locale === 'vi' ? { fields:'Trường loại', close:'Đóng', search:'Tìm trường', add:'Thêm trường', name:'Tên trường', enabled:'Đã bật', disabled:'Đã tắt', view:'Xem', robot:'Loại Robot', dof:'Bậc tự do', component:'Loại thành phần', subtype:'Loại phụ', specification:'Quy cách', protection:'Cấp bảo vệ' } : { fields:'Type Fields', close:'Close', search:'Search fields', add:'Add Field', name:'Field Name', enabled:'Enabled', disabled:'Disabled', view:'View', robot:'Robot Type', dof:'Degrees of Freedom', component:'Component Type', subtype:'Subtype', specification:'Specification', protection:'Protection Level' };
+  const displayCategory = (category: DictionaryCategory) => category.key === 'model_template' ? { name:copy.modelName, description:copy.modelDesc } : category.key === 'component_library' ? { name:copy.componentName, description:copy.componentDesc } : category.key === 'project_extension' ? { name:copy.extensionName, description:copy.extensionDesc } : { name:category.name, description:category.description };
+  const displayField = (field: DictionaryField) => ({ robot_type:detailCopy.robot, degrees_of_freedom:detailCopy.dof, component_type:detailCopy.component, component_subtype:detailCopy.subtype, component_specification:detailCopy.specification, protection_level:detailCopy.protection }[field.key] ?? field.name);
   const [query, setQuery] = useState('');
   const [drawerCategoryId, setDrawerCategoryId] = useState<string | null>(null);
   const [drawerView, setDrawerView] = useState<DrawerView>('fields');
@@ -312,8 +328,8 @@ export function DictionaryConfigManager({
     <main className={`ds-page ds-page--list dictionary-page${embedded ? ' dictionary-page--embedded' : ''}`}>
       <header className="ds-page__header ds-page-header">
         <div className="dictionary-page-heading">
-          <h1>{title}</h1>
-          <p>统一维护业务字段、枚举取值及字段间的级联依赖关系</p>
+          <h1>{title === '字典配置' ? copy.title : title}</h1>
+          <p>{copy.description}</p>
         </div>
         <div className="ds-page-toolbar">
           <div className="dictionary-page-search">
@@ -321,11 +337,11 @@ export function DictionaryConfigManager({
             <ProductTextInput
               value={query}
               onChange={event => setQuery(event.target.value)}
-              placeholder="搜索"
-              aria-label="搜索字典分类名称或标识符"
+              placeholder={copy.search}
+              aria-label={copy.search}
             />
           </div>
-          <ProductButton type="primary" size="large" icon={<Plus size={15} />} onClick={() => setCategoryForm(emptyCategory())}>新增</ProductButton>
+          <ProductButton type="primary" size="large" icon={<Plus size={15} />} onClick={() => setCategoryForm(emptyCategory())}>{copy.add}</ProductButton>
         </div>
       </header>
 
@@ -336,12 +352,12 @@ export function DictionaryConfigManager({
           <table className="dictionary-category-table">
             <thead>
               <tr>
-                <th>分类名称</th>
-                <th>标识符</th>
-                <th>字段</th>
-                <th>状态</th>
-                <th>来源</th>
-                <th aria-label="操作" />
+                <th>{copy.category}</th>
+                <th>{copy.identifier}</th>
+                <th>{copy.fields}</th>
+                <th>{copy.status}</th>
+                <th>{copy.source}</th>
+                <th aria-label={copy.actions} />
               </tr>
             </thead>
             <tbody>
@@ -349,15 +365,15 @@ export function DictionaryConfigManager({
                 <tr className="ds-table-row" key={category.id}>
                   <td>
                     <div className="dictionary-category-name">
-                      <div><strong>{category.name}</strong><small>{category.description || '暂无分类说明'}</small></div>
+                      <div><strong>{displayCategory(category).name}</strong><small>{displayCategory(category).description || copy.noDescription}</small></div>
                     </div>
                   </td>
                   <td><code>{category.key}</code></td>
-                  <td>{category.fields.length} 个字段</td>
+                  <td>{category.fields.length} {copy.fieldUnit}</td>
                   <td>
                     <StatusSwitch
                       checked={category.enabled}
-                      label={`${category.name}${category.enabled ? '停用' : '启用'}`}
+                      label={`${displayCategory(category).name} · ${category.enabled ? copy.disable : copy.enable}`}
                       onChange={enabled => updateCategory(category.id, item => ({ ...item, enabled }))}
                     />
                   </td>
@@ -365,13 +381,13 @@ export function DictionaryConfigManager({
                   <td>
                     <div className="dictionary-row-actions">
                       <ProductButton type="text" size="small" trailingIcon={<ChevronRight size={14} />} onClick={() => openFields(category)}>
-                        查看类型字段
+                        {copy.viewFields}
                       </ProductButton>
                       <ProductIconButton
                         size="small"
                         icon={<Pencil size={14} />}
-                        aria-label={`编辑${category.name}`}
-                        title="编辑分类"
+                        aria-label={`${copy.edit}: ${displayCategory(category).name}`}
+                        tooltip={copy.edit}
                         onClick={() => setCategoryForm({
                           id: category.id,
                           name: category.name,
@@ -386,8 +402,8 @@ export function DictionaryConfigManager({
                           status="danger"
                           size="small"
                           icon={<Trash2 size={14} />}
-                          aria-label={`删除${category.name}`}
-                          title="删除分类"
+                          aria-label={`${copy.delete}: ${displayCategory(category).name}`}
+                          tooltip={copy.delete}
                           onClick={() => setDeleteTarget({ kind: 'category', categoryId: category.id, label: category.name })}
                         />
                       )}
@@ -397,7 +413,7 @@ export function DictionaryConfigManager({
               ))}
             </tbody>
           </table>
-          {!filteredCategories.length && <div className="dictionary-empty"><Search size={24} /><strong>未找到分类</strong><span>请调整搜索关键词</span></div>}
+          {!filteredCategories.length && <div className="dictionary-empty" role="status"><Search size={20} aria-hidden="true" /><strong>未找到匹配的字典分类</strong><span>可调整搜索关键词或清除后查看全部数据</span><ProductButton size="small" onClick={() => setQuery('')}>清除搜索</ProductButton></div>}
         </div>
       </section>
 
@@ -409,12 +425,12 @@ export function DictionaryConfigManager({
             setDrawerView('fields');
           }
         }}
-        title={drawerView === 'field' && selectedField ? selectedField.name : (drawerCategory?.name ?? '类型字段')}
+        title={drawerView === 'field' && selectedField ? displayField(selectedField) : (drawerCategory ? displayCategory(drawerCategory).name : detailCopy.fields)}
         description={drawerView === 'field' && selectedField
           ? `seq ${selectedField.seq} · ${selectedField.key}`
-          : drawerCategory ? `${drawerCategory.description} · ${drawerCategory.key}` : undefined}
+          : drawerCategory ? `${displayCategory(drawerCategory).description} · ${drawerCategory.key}` : undefined}
         width="min(680px, calc(100vw - 48px))"
-        footer={<ProductButton onClick={() => setDrawerCategoryId(null)}>关闭</ProductButton>}
+        footer={<ProductButton onClick={() => setDrawerCategoryId(null)}>{detailCopy.close}</ProductButton>}
       >
         {drawerCategory && (
           <div className="dictionary-drawer-content">
@@ -423,22 +439,22 @@ export function DictionaryConfigManager({
                 <div className="dictionary-drawer-toolbar">
                   <div className="dictionary-drawer-search">
                     <Search size={14} />
-                    <ProductTextInput value={fieldQuery} onChange={event => setFieldQuery(event.target.value)} placeholder="搜索字段" aria-label="搜索类型字段" />
+                    <ProductTextInput value={fieldQuery} onChange={event => setFieldQuery(event.target.value)} placeholder={detailCopy.search} aria-label={detailCopy.search} />
                   </div>
-                  <ProductButton type="primary" size="small" icon={<Plus size={14} />} onClick={() => setFieldForm(emptyField(Math.max(0, ...drawerCategory.fields.map(item => item.seq)) + 1))}>新增字段</ProductButton>
+                  <ProductButton type="primary" size="small" icon={<Plus size={14} />} onClick={() => setFieldForm(emptyField(Math.max(0, ...drawerCategory.fields.map(item => item.seq)) + 1))}>{detailCopy.add}</ProductButton>
                 </div>
                 <div className="dictionary-drawer-table-wrap">
                   <table className="dictionary-drawer-table">
-                    <thead><tr><th>字段名称</th><th>seq</th><th>状态</th><th aria-label="操作" /></tr></thead>
+                    <thead><tr><th>{detailCopy.name}</th><th>seq</th><th>{copy.status}</th><th aria-label={copy.actions} /></tr></thead>
                     <tbody>{filteredFields.map(field => (
                       <tr key={field.id}>
-                        <td><button type="button" className="dictionary-field-link" onClick={() => openField(field)}><strong>{field.name}</strong><code>{field.key}</code></button></td>
+                        <td><button type="button" className="dictionary-field-link" onClick={() => openField(field)}><strong>{displayField(field)}</strong><code>{field.key}</code></button></td>
                         <td>{field.seq}</td>
-                        <td><ProductTag tone={field.enabled ? 'success' : 'neutral'} size="small">{field.enabled ? '已启用' : '已停用'}</ProductTag></td>
+                        <td><ProductTag tone={field.enabled ? 'success' : 'neutral'} size="small">{field.enabled ? detailCopy.enabled : detailCopy.disabled}</ProductTag></td>
                         <td><div className="dictionary-row-actions">
-                          <ProductButton type="text" size="small" trailingIcon={<ChevronRight size={14} />} onClick={() => openField(field)}>查看</ProductButton>
-                          <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`编辑${field.name}`} onClick={() => setFieldForm({ id: field.id, name: field.name, key: field.key, seq: String(field.seq), enabled: field.enabled, source: field.source })} />
-                          {field.source === 'custom' && <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${field.name}`} onClick={() => setDeleteTarget({ kind: 'field', categoryId: drawerCategory.id, fieldId: field.id, label: field.name })} />}
+                          <ProductButton type="text" size="small" trailingIcon={<ChevronRight size={14} />} onClick={() => openField(field)}>{detailCopy.view}</ProductButton>
+                          <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`${copy.edit}: ${displayField(field)}`} tooltip={copy.edit} onClick={() => setFieldForm({ id: field.id, name: field.name, key: field.key, seq: String(field.seq), enabled: field.enabled, source: field.source })} />
+                          {field.source === 'custom' && <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${field.name}`} tooltip={copy.delete} onClick={() => setDeleteTarget({ kind: 'field', categoryId: drawerCategory.id, fieldId: field.id, label: field.name })} />}
                         </div></td>
                       </tr>
                     ))}</tbody>
@@ -456,7 +472,7 @@ export function DictionaryConfigManager({
                       fields: category.fields.map(item => item.id === selectedField.id ? { ...item, enabled } : item),
                     }))} />
                     <SourceTag source={selectedField.source} />
-                    <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label="编辑字段" onClick={() => setFieldForm({ id: selectedField.id, name: selectedField.name, key: selectedField.key, seq: String(selectedField.seq), enabled: selectedField.enabled, source: selectedField.source })} />
+                    <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label="编辑字段" tooltip={copy.edit} onClick={() => setFieldForm({ id: selectedField.id, name: selectedField.name, key: selectedField.key, seq: String(selectedField.seq), enabled: selectedField.enabled, source: selectedField.source })} />
                   </div>
                 </div>
                 <div className="dictionary-detail-tabbar">
@@ -487,8 +503,8 @@ export function DictionaryConfigManager({
                             }))} /></td>
                             <td><div className="dictionary-row-actions">
                               {item.source === 'builtin' && <LockKeyhole size={13} aria-label="内置取值" />}
-                              <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`编辑${item.name}`} onClick={() => setValueForm({ ...item })} />
-                              {item.source === 'custom' && <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${item.name}`} onClick={() => setDeleteTarget({ kind: 'value', categoryId: drawerCategory.id, fieldId: selectedField.id, valueId: item.id, label: item.name })} />}
+                              <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`编辑${item.name}`} tooltip={copy.edit} onClick={() => setValueForm({ ...item })} />
+                              {item.source === 'custom' && <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label={`删除${item.name}`} tooltip={copy.delete} onClick={() => setDeleteTarget({ kind: 'value', categoryId: drawerCategory.id, fieldId: selectedField.id, valueId: item.id, label: item.name })} />}
                             </div></td>
                           </tr>
                         ))}</tbody>
@@ -517,8 +533,8 @@ export function DictionaryConfigManager({
                               cascadeRules: category.cascadeRules.map(item => item.id === rule.id ? { ...item, enabled } : item),
                             }))} /></td>
                             <td><div className="dictionary-row-actions">
-                              <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label="编辑级联" onClick={() => setRuleForm({ ...rule })} />
-                              {rule.source === 'custom' ? <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label="删除级联" onClick={() => setDeleteTarget({ kind: 'rule', categoryId: drawerCategory.id, ruleId: rule.id, label: `${parentValue?.name ?? ''} → ${child?.name ?? ''}` })} /> : <LockKeyhole size={13} aria-label="内置级联" />}
+                              <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label="编辑级联" tooltip={copy.edit} onClick={() => setRuleForm({ ...rule })} />
+                              {rule.source === 'custom' ? <ProductIconButton size="small" status="danger" icon={<Trash2 size={13} />} aria-label="删除级联" tooltip={copy.delete} onClick={() => setDeleteTarget({ kind: 'rule', categoryId: drawerCategory.id, ruleId: rule.id, label: `${parentValue?.name ?? ''} → ${child?.name ?? ''}` })} /> : <LockKeyhole size={13} aria-label="内置级联" />}
                             </div></td>
                           </tr>;
                         })}</tbody>
@@ -592,7 +608,7 @@ export function DictionaryConfigManager({
         </div>}
       </ProductModal>
 
-      <ProductModal open={Boolean(deleteTarget)} onOpenChange={open => !open && setDeleteTarget(null)} title="确认删除" description="删除操作不可撤销。" status="danger" footer={<><ProductButton onClick={() => setDeleteTarget(null)}>取消</ProductButton><ProductButton type="primary" status="danger" onClick={confirmDelete}>确认删除</ProductButton></>}>
+      <ProductModal open={Boolean(deleteTarget)} onOpenChange={open => !open && setDeleteTarget(null)} title="删除字典项" description="确认要删除该字典项吗？删除后无法恢复。" status="danger" footer={<><ProductButton onClick={() => setDeleteTarget(null)}>取消</ProductButton><ProductButton type="primary" status="danger" onClick={confirmDelete}>删除</ProductButton></>}>
         <p className="dictionary-delete-copy">确定删除“{deleteTarget?.label}”吗？相关的自定义内容与级联关系将同步清理。</p>
       </ProductModal>
     </main>

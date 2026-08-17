@@ -27,6 +27,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+import { useI18n, type AppLocale } from '../i18n';
+
+const VERSION_COPY: Record<AppLocale, Record<string, string>> = {
+  'zh-Hans': { catalog:'产品目录', addProduct:'新增产品', editProduct:'编辑产品', fallbackTitle:'产品包/版本管理', fallbackDescription:'管理该产品的软件版本、安装包与发布记录。', versions:'个版本', packages:'个安装包', lastUpdated:'最近更新', search:'搜索', quickRelease:'一键发版', chooseProduct:'请从左侧选择一个品牌/型号', noMatch:'没有匹配的包', noPackages:'暂无版本包', cancel:'取消', save:'保存', saveChanges:'保存修改', next:'下一步', categoryName:'产品类型名称', categoryPlaceholder:'选择已有类型或输入新名称', identifier:'标识符', description:'描述', categoryDescription:'请输入该类型的业务范围', subcategoryName:'子品类名称', subcategoryPlaceholder:'选择已有子品类或输入新名称', subcategoryDescription:'请输入该子品类的用途或适配范围', productName:'产品名称', productNamePlaceholder:'请输入产品名称', productIdentifier:'产品标识符', productDescription:'产品描述', productDescriptionPlaceholder:'请输入产品能力、用途或适配范围', controllerProducts:'控制器类产品', controllers:'控制器', arms:'机械臂', externalProducts:'外接设备类产品', grippers:'夹爪', sensors:'传感器', serviceProducts:'服务类产品', deviceServices:'设备服务', opsServices:'运维服务', shadow:'墨影控制器', seer:'仙工控制器', jaka:'节卡机械臂', agile:'思灵机械臂', rokae:'珞石机械臂', controllerDesc:'墨影机器人核心控制器软件，提供设备接入、运动控制与状态管理能力。', pkgDesc:'墨影 Shadow 控制器后端服务包', release:'正式发布版本', ci:'CI 构建' },
+  en: { catalog:'Product Catalog', addProduct:'Add Product', editProduct:'Edit Product', fallbackTitle:'Packages & Versions', fallbackDescription:'Manage software versions, packages, and release history for this product.', versions:'versions', packages:'packages', lastUpdated:'Last updated', search:'Search', quickRelease:'Quick Release', chooseProduct:'Select a product from the catalog.', noMatch:'No matching packages.', noPackages:'No version packages yet.', cancel:'Cancel', save:'Save', saveChanges:'Save', next:'Next', categoryName:'Product Type', categoryPlaceholder:'Select or enter a product type', identifier:'Identifier', description:'Description', categoryDescription:'Describe the scope of this product type', subcategoryName:'Subcategory', subcategoryPlaceholder:'Select or enter a subcategory', subcategoryDescription:'Describe the purpose or compatibility', productName:'Product Name', productNamePlaceholder:'Enter a product name', productIdentifier:'Product Identifier', productDescription:'Product Description', productDescriptionPlaceholder:'Describe capabilities, purpose, or compatibility', controllerProducts:'Controller Products', controllers:'Controllers', arms:'Robot Arms', externalProducts:'External Devices', grippers:'Grippers', sensors:'Sensors', serviceProducts:'Service Products', deviceServices:'Device Services', opsServices:'Operations Services', shadow:'Shadow Controller', seer:'SEER Controller', jaka:'JAKA Robot Arm', agile:'Agile Robots Arm', rokae:'Rokae Robot Arm', controllerDesc:'Core Shadow robot controller software for device access, motion control, and status management.', pkgDesc:'Shadow controller backend service package', release:'Production Release', ci:'CI Build' },
+  ms: { catalog:'Katalog Produk', addProduct:'Tambah Produk', editProduct:'Edit Produk', fallbackTitle:'Pakej & Versi', fallbackDescription:'Urus versi perisian, pakej dan sejarah keluaran produk ini.', versions:'versi', packages:'pakej', lastUpdated:'Kemas kini', search:'Cari', quickRelease:'Keluaran Pantas', chooseProduct:'Pilih produk daripada katalog.', noMatch:'Tiada pakej sepadan.', noPackages:'Tiada pakej versi.', cancel:'Batal', save:'Simpan', saveChanges:'Simpan', next:'Seterusnya', categoryName:'Jenis Produk', categoryPlaceholder:'Pilih atau masukkan jenis produk', identifier:'Pengecam', description:'Penerangan', categoryDescription:'Terangkan skop jenis produk ini', subcategoryName:'Subkategori', subcategoryPlaceholder:'Pilih atau masukkan subkategori', subcategoryDescription:'Terangkan tujuan atau keserasian', productName:'Nama Produk', productNamePlaceholder:'Masukkan nama produk', productIdentifier:'Pengecam Produk', productDescription:'Penerangan Produk', productDescriptionPlaceholder:'Terangkan keupayaan, tujuan atau keserasian', controllerProducts:'Produk Pengawal', controllers:'Pengawal', arms:'Lengan Robot', externalProducts:'Peranti Luaran', grippers:'Penggenggam', sensors:'Sensor', serviceProducts:'Produk Perkhidmatan', deviceServices:'Perkhidmatan Peranti', opsServices:'Perkhidmatan Operasi', shadow:'Pengawal Shadow', seer:'Pengawal SEER', jaka:'Lengan Robot JAKA', agile:'Lengan Agile Robots', rokae:'Lengan Robot Rokae', controllerDesc:'Perisian pengawal teras Shadow untuk akses peranti, kawalan gerakan dan pengurusan status.', pkgDesc:'Pakej perkhidmatan backend pengawal Shadow', release:'Keluaran Produksi', ci:'Binaan CI' },
+  vi: { catalog:'Danh mục sản phẩm', addProduct:'Thêm sản phẩm', editProduct:'Sửa sản phẩm', fallbackTitle:'Gói & phiên bản', fallbackDescription:'Quản lý phiên bản phần mềm, gói cài đặt và lịch sử phát hành.', versions:'phiên bản', packages:'gói', lastUpdated:'Cập nhật', search:'Tìm kiếm', quickRelease:'Phát hành nhanh', chooseProduct:'Chọn sản phẩm trong danh mục.', noMatch:'Không có gói phù hợp.', noPackages:'Chưa có gói phiên bản.', cancel:'Hủy', save:'Lưu', saveChanges:'Lưu', next:'Tiếp theo', categoryName:'Loại sản phẩm', categoryPlaceholder:'Chọn hoặc nhập loại sản phẩm', identifier:'Mã định danh', description:'Mô tả', categoryDescription:'Mô tả phạm vi của loại sản phẩm', subcategoryName:'Danh mục phụ', subcategoryPlaceholder:'Chọn hoặc nhập danh mục phụ', subcategoryDescription:'Mô tả mục đích hoặc khả năng tương thích', productName:'Tên sản phẩm', productNamePlaceholder:'Nhập tên sản phẩm', productIdentifier:'Mã sản phẩm', productDescription:'Mô tả sản phẩm', productDescriptionPlaceholder:'Mô tả tính năng, mục đích hoặc khả năng tương thích', controllerProducts:'Sản phẩm bộ điều khiển', controllers:'Bộ điều khiển', arms:'Tay máy', externalProducts:'Thiết bị ngoài', grippers:'Bộ kẹp', sensors:'Cảm biến', serviceProducts:'Sản phẩm dịch vụ', deviceServices:'Dịch vụ thiết bị', opsServices:'Dịch vụ vận hành', shadow:'Bộ điều khiển Shadow', seer:'Bộ điều khiển SEER', jaka:'Tay máy JAKA', agile:'Tay máy Agile Robots', rokae:'Tay máy Rokae', controllerDesc:'Phần mềm điều khiển lõi Shadow cho kết nối thiết bị, điều khiển chuyển động và quản lý trạng thái.', pkgDesc:'Gói dịch vụ backend bộ điều khiển Shadow', release:'Bản phát hành chính thức', ci:'Bản dựng CI' },
+  'zh-Hant': { catalog:'產品目錄', addProduct:'新增產品', editProduct:'編輯產品', fallbackTitle:'產品包／版本管理', fallbackDescription:'管理此產品的軟體版本、安裝包與發佈記錄。', versions:'個版本', packages:'個安裝包', lastUpdated:'最近更新', search:'搜尋', quickRelease:'快速發佈', chooseProduct:'請從左側選擇品牌／型號', noMatch:'沒有相符的安裝包', noPackages:'暫無版本包', cancel:'取消', save:'儲存', saveChanges:'儲存修改', next:'下一步', categoryName:'產品類型名稱', categoryPlaceholder:'選擇現有類型或輸入新名稱', identifier:'識別碼', description:'描述', categoryDescription:'請輸入此類型的業務範圍', subcategoryName:'子品類名稱', subcategoryPlaceholder:'選擇現有子品類或輸入新名稱', subcategoryDescription:'請輸入此子品類的用途或適配範圍', productName:'產品名稱', productNamePlaceholder:'請輸入產品名稱', productIdentifier:'產品識別碼', productDescription:'產品描述', productDescriptionPlaceholder:'請輸入產品能力、用途或適配範圍', controllerProducts:'控制器類產品', controllers:'控制器', arms:'機械臂', externalProducts:'外接裝置類產品', grippers:'夾爪', sensors:'感測器', serviceProducts:'服務類產品', deviceServices:'裝置服務', opsServices:'維運服務', shadow:'墨影控制器', seer:'仙工控制器', jaka:'節卡機械臂', agile:'思靈機械臂', rokae:'珞石機械臂', controllerDesc:'墨影機器人核心控制器軟體，提供裝置接入、運動控制與狀態管理能力。', pkgDesc:'墨影 Shadow 控制器後端服務包', release:'正式發佈版本', ci:'CI 建置' },
+};
 
 export interface ProductPackage {
   id: string;
@@ -314,6 +323,8 @@ function EditableCombobox({
   placeholder: string;
   onValueChange: (value: string) => void;
 }) {
+  const { locale } = useI18n();
+  const expandLabel = locale === 'zh-Hans' ? '展开选项' : locale === 'zh-Hant' ? '展開選項' : locale === 'ms' ? 'Buka pilihan' : locale === 'vi' ? 'Mở tùy chọn' : 'Open options';
   const [open, setOpen] = useState(false);
   const keyword = value.trim().toLowerCase();
   const visibleOptions = options.filter(option => (
@@ -345,7 +356,7 @@ function EditableCombobox({
         />
         <button
           type="button"
-          aria-label={`${label}展开选项`}
+          aria-label={`${label} · ${expandLabel}`}
           onClick={() => setOpen(current => !current)}
           style={{ position: 'absolute', top: 4, right: 4, width: 32, height: 32, border: 0, borderRadius: 8, background: 'transparent', color: 'var(--app-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >
@@ -447,6 +458,8 @@ export function CategoryTree({
   onSelectBrand?: (id: string) => void;
   onNodeAction?: (action: CategoryTreeNodeAction) => void;
 }) {
+  const { locale } = useI18n();
+  const treeCopy = locale === 'zh-Hans' ? { more:'更多操作', add:'新增', edit:'编辑', delete:'删除', addProduct:'添加产品', addSub:'添加子品类' } : locale === 'zh-Hant' ? { more:'更多操作', add:'新增', edit:'編輯', delete:'刪除', addProduct:'新增產品', addSub:'新增子品類' } : locale === 'ms' ? { more:'Tindakan lain', add:'Tambah', edit:'Edit', delete:'Padam', addProduct:'Tambah produk', addSub:'Tambah subkategori' } : locale === 'vi' ? { more:'Thao tác khác', add:'Thêm', edit:'Chỉnh sửa', delete:'Xóa', addProduct:'Thêm sản phẩm', addSub:'Thêm danh mục phụ' } : { more:'More actions', add:'Add', edit:'Edit', delete:'Delete', addProduct:'Add product', addSub:'Add subcategory' };
   const [localExpandedCategories, setLocalExpandedCategories] = useState<Set<string>>(
     () => new Set(categories.map(category => category.id)),
   );
@@ -473,8 +486,8 @@ export function CategoryTree({
           <button
             type="button"
             className="taxonomy-tree-action"
-            aria-label={`${label} 更多操作`}
-            title="更多操作"
+            aria-label={`${label} · ${treeCopy.more}`}
+            title={treeCopy.more}
           >
             <MoreHorizontal size={15} />
           </button>
@@ -482,15 +495,15 @@ export function CategoryTree({
         <DropdownMenuContent align="end" sideOffset={8} className="ds-context-menu">
           <DropdownMenuItem className="ds-context-menu__item" onSelect={() => onNodeAction({ ...actionBase, action: 'add' })}>
             <Plus size={16} strokeWidth={1.8} />
-            <span data-slot="label">新增</span>
+            <span data-slot="label">{treeCopy.add}</span>
           </DropdownMenuItem>
           <DropdownMenuItem className="ds-context-menu__item" onSelect={() => onNodeAction({ ...actionBase, action: 'edit' })}>
             <Pencil size={16} strokeWidth={1.8} />
-            <span data-slot="label">编辑</span>
+            <span data-slot="label">{treeCopy.edit}</span>
           </DropdownMenuItem>
           <DropdownMenuItem className="ds-context-menu__item" variant="destructive" onSelect={() => onNodeAction({ ...actionBase, action: 'delete' })}>
             <Trash2 size={16} strokeWidth={1.8} />
-            <span data-slot="label">删除</span>
+            <span data-slot="label">{treeCopy.delete}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -589,7 +602,7 @@ export function CategoryTree({
                             onClick={() => onNodeAction({ action: 'add', kind: 'brand', categoryId: category.id, subcategoryId: subcategory.id })}
                           >
                             <Plus size={16} />
-                            添加产品
+                            {treeCopy.addProduct}
                           </button>
                         )}
                       </div>
@@ -604,7 +617,7 @@ export function CategoryTree({
                   onClick={() => onNodeAction({ action: 'add', kind: 'category', categoryId: category.id })}
                 >
                   <Plus size={16} />
-                  添加子品类
+                  {treeCopy.addSub}
                 </button>
               )}
             </div>
@@ -633,6 +646,8 @@ function VersionAccordion({
   onDeletePackage: (pkg: ProductPackage) => void;
   onDownloadPackage: (pkg: ProductPackage) => void;
 }) {
+  const { locale } = useI18n();
+  const ui = locale === 'zh-Hans' ? { selected:'已选', cancel:'取消', all:'全选', delete:'删除', packages:'个包', stable:'正式版', edit:'编辑', download:'下载' } : locale === 'zh-Hant' ? { selected:'已選', cancel:'取消', all:'全選', delete:'刪除', packages:'個包', stable:'正式版', edit:'編輯', download:'下載' } : locale === 'ms' ? { selected:'Dipilih', cancel:'Batal', all:'Pilih semua', delete:'Padam', packages:'pakej', stable:'Stabil', edit:'Edit', download:'Muat turun' } : locale === 'vi' ? { selected:'Đã chọn', cancel:'Hủy', all:'Chọn tất cả', delete:'Xóa', packages:'gói', stable:'Ổn định', edit:'Chỉnh sửa', download:'Tải xuống' } : { selected:'Selected', cancel:'Clear', all:'Select all', delete:'Delete', packages:'packages', stable:'Stable', edit:'Edit', download:'Download' };
   const hasRC = group.packages.some(pkg => isRC(pkg.version));
   const [isOpen, setIsOpen] = useState(group.version === '1.8.0');
 
@@ -682,26 +697,26 @@ function VersionAccordion({
           if (selCount > 0) {
             return (
               <>
-                <span style={{ color: 'var(--app-accent)', fontSize: 12, fontWeight: 500 }}>已选 {selCount}</span>
+                <span style={{ color: 'var(--app-accent)', fontSize: 12, fontWeight: 500 }}>{ui.selected} {selCount}</span>
                 <ArcoButton size="small" onClick={e => {
                   e.stopPropagation();
                   const ids = group.packages.map(p => p.id);
                   const allSel = ids.every(id => selectedPkgIds.has(id));
                   ids.forEach(id => { if (allSel) onTogglePkg(id); else if (!selectedPkgIds.has(id)) onTogglePkg(id); });
                 }}>
-                  {group.packages.every(p => selectedPkgIds.has(p.id)) ? '取消' : '全选'}
+                  {group.packages.every(p => selectedPkgIds.has(p.id)) ? ui.cancel : ui.all}
                 </ArcoButton>
                 <ArcoButton size="small" status="danger" icon={<Trash2 size={12} />} onClick={e => {
                   e.stopPropagation();
                   group.packages = group.packages.filter(p => !selectedPkgIds.has(p.id));
                   onBatchDelete();
                 }}>
-                  删除
+                  {ui.delete}
                 </ArcoButton>
               </>
             );
           }
-          return <Badge>{total} 个包</Badge>;
+          return <Badge>{total} {ui.packages}</Badge>;
         })()}
       </button>
 
@@ -752,7 +767,7 @@ function VersionAccordion({
                     }}>
                       {pkg.name}
                     </span>
-                    <Badge tone={rc ? 'accent' : 'success'}>{rc ? 'RC' : '正式版'}</Badge>
+                    <Badge tone={rc ? 'accent' : 'success'}>{rc ? 'RC' : ui.stable}</Badge>
                     <Badge>{pkg.architecture}</Badge>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--app-muted)', fontSize: 12, minWidth: 0, flexWrap: 'wrap' }}>
@@ -771,9 +786,9 @@ function VersionAccordion({
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  <ArcoIconButton type="text" size="small" icon={<Edit3 size={14} />} title="编辑" aria-label="编辑" onClick={() => onEditPackage(pkg)} />
-                  <ArcoIconButton type="secondary" size="small" icon={<Download size={14} />} title="下载" aria-label="下载" onClick={() => onDownloadPackage(pkg)} />
-                  <ArcoIconButton type="text" status="danger" size="small" icon={<Trash2 size={14} />} title="删除" aria-label="删除" onClick={() => onDeletePackage(pkg)} />
+                  <ArcoIconButton type="text" size="small" icon={<Edit3 size={14} />} tooltip={ui.edit} aria-label={ui.edit} onClick={() => onEditPackage(pkg)} />
+                  <ArcoIconButton type="secondary" size="small" icon={<Download size={14} />} tooltip={ui.download} aria-label={ui.download} onClick={() => onDownloadPackage(pkg)} />
+                  <ArcoIconButton type="text" status="danger" size="small" icon={<Trash2 size={14} />} tooltip={ui.delete} aria-label={ui.delete} onClick={() => onDeletePackage(pkg)} />
                 </div>
               </div>
             );
@@ -941,6 +956,8 @@ function ProductWizardNav({
   subcategoryLocked?: boolean;
   onStepChange: (step: ProductWizardStep) => void;
 }) {
+  const { locale } = useI18n();
+  const copy = VERSION_COPY[locale];
   const item = (
     target: ProductWizardStep,
     label: string,
@@ -979,18 +996,18 @@ function ProductWizardNav({
 
   const separator = <ChevronRight size={18} color="var(--app-subtle)" style={{ flexShrink: 0 }} />;
   const categoryItem = step === 'category'
-    ? item('category', categoryExists ? categoryLabel : '新增产品类型', true, !categoryExists)
-    : item('category', categoryLabel || '产品类型', !categoryLocked, false);
+    ? item('category', categoryExists ? categoryLabel : copy.categoryName, true, !categoryExists)
+    : item('category', categoryLabel || copy.categoryName, !categoryLocked, false);
   const subcategoryItem = step === 'subcategory'
-    ? item('subcategory', subcategoryExists ? subcategoryLabel : '新增子品类', true, !subcategoryExists)
-    : item('subcategory', subcategoryLabel || '新增子品类', step === 'category' ? canOpenSubcategory : !subcategoryLocked, step === 'category');
+    ? item('subcategory', subcategoryExists ? subcategoryLabel : copy.subcategoryName, true, !subcategoryExists)
+    : item('subcategory', subcategoryLabel || copy.subcategoryName, step === 'category' ? canOpenSubcategory : !subcategoryLocked, step === 'category');
   const productItem = step === 'product'
-    ? item('product', productActionLabel, true, productActionLabel.startsWith('新增'))
-    : item('product', '新增产品', canOpenProduct, true);
+    ? item('product', productActionLabel, true, productActionLabel === copy.addProduct)
+    : item('product', copy.addProduct, canOpenProduct, true);
 
   return (
-    <div aria-label="产品层级步骤" style={{ padding: '14px 16px 16px', borderRadius: 12, background: 'var(--app-soft)' }}>
-      <div style={{ marginBottom: 10, color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>所属目录</div>
+    <div aria-label={copy.catalog} style={{ padding: '14px 16px 16px', borderRadius: 12, background: 'var(--app-soft)' }}>
+      <div style={{ marginBottom: 10, color: 'var(--app-muted)', fontSize: 12, fontWeight: 500 }}>{copy.catalog}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto' }}>
         {categoryItem}
         {separator}
@@ -1107,6 +1124,9 @@ function RelatedSoftwarePicker({
 }
 
 export function ProductVersionManager() {
+  const { locale } = useI18n();
+  const copy = VERSION_COPY[locale];
+  const example = locale === 'zh-Hans' ? '例如' : locale === 'zh-Hant' ? '例如' : locale === 'ms' ? 'cth.' : locale === 'vi' ? 'VD' : 'e.g.';
   const [categories, setCategories] = useState<ProductCategory[]>(buildInitialData);
   const [revision, setRevision] = useState(0);
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>('moying');
@@ -1155,6 +1175,9 @@ export function ProductVersionManager() {
   const [deleteTarget, setDeleteTarget] = useState<ProductPackage | null>(null);
   const [selectedPkgIds, setSelectedPkgIds] = useState<Set<string>>(new Set());
 
+  const entityName = (id: string, fallback: string) => ({ controller: copy.controllerProducts, controllers: copy.controllers, arms: copy.arms, external: copy.externalProducts, grippers: copy.grippers, sensors: copy.sensors, service: copy.serviceProducts, 'device-services': copy.deviceServices, 'ops-services': copy.opsServices, moying: copy.shadow, src: copy.seer, jaka: copy.jaka, agile: copy.agile, rokae: copy.rokae }[id] ?? fallback);
+  const localizedCategories = useMemo(() => categories.map(category => ({ ...category, name: entityName(category.id, category.name), subcategories: category.subcategories.map(subcategory => ({ ...subcategory, name: entityName(subcategory.id, subcategory.name), brands: subcategory.brands.map(item => ({ ...item, name: entityName(item.id, item.name) })) })) })), [categories, locale, revision]);
+
   const activeBrandLocation = useMemo(
     () => findBrandLocation(categories, selectedBrandId),
     [categories, selectedBrandId, revision],
@@ -1167,15 +1190,18 @@ export function ProductVersionManager() {
       .map(versionGroup => ({
         ...versionGroup,
         packages: versionGroup.packages.filter(pkg =>
-          !keyword ||
-          pkg.name.toLowerCase().includes(keyword) ||
-          pkg.version.toLowerCase().includes(keyword) ||
-          pkg.description.toLowerCase().includes(keyword) ||
-          pkg.architecture.toLowerCase().includes(keyword)
-        ),
+          !keyword || pkg.name.toLowerCase().includes(keyword) || pkg.version.toLowerCase().includes(keyword) || pkg.description.toLowerCase().includes(keyword) || pkg.architecture.toLowerCase().includes(keyword)
+        ).map(pkg => ({
+          ...pkg,
+          source: pkg.source.replace('CI 构建', copy.ci),
+          description: pkg.id === 'p1' || pkg.id === 'p2' || pkg.id === 'p3' || pkg.id === 'p4' || pkg.id === 'p15' || pkg.id === 'p16'
+            ? `${copy.pkgDesc}${pkg.description.includes('x86_64') ? ' · x86_64' : pkg.description.includes('ARM64') ? ' · ARM64' : ''}`
+            : pkg.description,
+          releaseNotes: pkg.releaseNotes === '正式发布版本' ? copy.release : pkg.releaseNotes,
+        })),
       }))
       .filter(versionGroup => versionGroup.packages.length > 0);
-  }, [brand, query, revision]);
+  }, [brand, query, revision, copy]);
 
   const totalPackages = versions.reduce((sum, versionGroup) => sum + versionGroup.packages.length, 0);
   const softwareOptions = useMemo(() => categories.flatMap(category => (
@@ -1754,11 +1780,11 @@ export function ProductVersionManager() {
         overflow: 'hidden',
       }}>
         <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid var(--app-border)' }}>
-          <div style={{ color: 'var(--app-heading)', fontSize: 18, fontWeight: 700 }}>产品目录</div>
+          <div style={{ color: 'var(--app-heading)', fontSize: 18, fontWeight: 700 }}>{copy.catalog}</div>
         </div>
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
           <CategoryTree
-            categories={categories}
+            categories={localizedCategories}
             selectedBrandId={selectedBrandId}
             expandedCategories={expandedCategories}
             expandedSubs={expandedSubs}
@@ -1776,7 +1802,7 @@ export function ProductVersionManager() {
             icon={<Plus size={16} />}
             onClick={() => openCreateProduct()}
           >
-            新增产品
+            {copy.addProduct}
           </ArcoButton>
         </div>
       </aside>
@@ -1802,28 +1828,28 @@ export function ProductVersionManager() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, whiteSpace: 'nowrap' }}>
               {activeBrandLocation && (
                 <>
-                  <span title={activeBrandLocation.category.name} style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--app-muted)', fontSize: 12 }}>
-                    {activeBrandLocation.category.name}
+                  <span title={entityName(activeBrandLocation.category.id, activeBrandLocation.category.name)} style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--app-muted)', fontSize: 12 }}>
+                    {entityName(activeBrandLocation.category.id, activeBrandLocation.category.name)}
                   </span>
                   <ChevronRight size={14} color="var(--app-subtle)" style={{ flexShrink: 0 }} />
-                  <span title={activeBrandLocation.subcategory.name} style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--app-muted)', fontSize: 12 }}>
-                    {activeBrandLocation.subcategory.name}
+                  <span title={entityName(activeBrandLocation.subcategory.id, activeBrandLocation.subcategory.name)} style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--app-muted)', fontSize: 12 }}>
+                    {entityName(activeBrandLocation.subcategory.id, activeBrandLocation.subcategory.name)}
                   </span>
                   <ChevronRight size={14} color="var(--app-subtle)" style={{ flexShrink: 0 }} />
                 </>
               )}
               <h1 title={brand?.name} style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--app-heading)', fontSize: 20, fontWeight: 700, margin: 0, lineHeight: 1.25 }}>
-                {brand ? brand.name : '产品包/版本管理'}
+                {brand ? entityName(brand.id, brand.name) : copy.fallbackTitle}
               </h1>
               {brand && <span style={{ flexShrink: 0 }}><Badge tone="accent">{brand.identifier ?? brand.id}</Badge></span>}
             </div>
             {brand && (
               <>
                 <p style={{ maxWidth: 640, margin: '6px 0 0', color: 'var(--app-text)', fontSize: 14, lineHeight: 1.5 }}>
-                  {brand.description || '管理该产品的软件版本、安装包与发布记录。'}
+                  {brand.id === 'moying' ? copy.controllerDesc : brand.description || copy.fallbackDescription}
                 </p>
                 <div style={{ color: 'var(--app-muted)', fontSize: 12, marginTop: 6 }}>
-                  {brand.versions.length} 个版本 · {totalPackages} 个安装包 · 最近更新 {brand.versions[0]?.packages[0]?.createdAt ?? '-'}
+                  {brand.versions.length} {copy.versions} · {totalPackages} {copy.packages} · {copy.lastUpdated} {brand.versions[0]?.packages[0]?.createdAt ?? '-'}
                 </div>
               </>
             )}
@@ -1831,7 +1857,7 @@ export function ProductVersionManager() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <div style={{ width: 240 }}>
               <TextInput
-                placeholder="搜索包名或版本..."
+                placeholder={copy.search}
                 value={query}
                 onValueChange={setQuery}
                 startContent={<Search size={14} />}
@@ -1840,7 +1866,7 @@ export function ProductVersionManager() {
             {brand && (
               <>
                 <ArcoButton type="primary" size="large" icon={<Layers size={14} />} onClick={openBatchPublish}>
-                  一键发版
+                  {copy.quickRelease}
                 </ArcoButton>
               </>
             )}
@@ -1851,12 +1877,12 @@ export function ProductVersionManager() {
           {!brand ? (
             <div style={{ textAlign: 'center', padding: '72px 0', color: 'var(--app-muted)', fontSize: 14 }}>
               <Layers size={40} style={{ margin: '0 auto 12px', color: 'var(--app-subtle)' }} />
-              <p style={{ margin: 0 }}>请从左侧选择一个品牌/型号</p>
+              <p style={{ margin: 0 }}>{copy.chooseProduct}</p>
             </div>
           ) : versions.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '72px 0', color: 'var(--app-muted)', fontSize: 14 }}>
               <Search size={40} style={{ margin: '0 auto 12px', color: 'var(--app-subtle)' }} />
-              <p style={{ margin: 0 }}>{query ? '没有匹配的包' : '暂无版本包，点击“发布新版本”开始'}</p>
+              <p style={{ margin: 0 }}>{query ? copy.noMatch : copy.noPackages}</p>
             </div>
           ) : (
             versions.map(versionGroup => (
@@ -1966,26 +1992,26 @@ export function ProductVersionManager() {
           setCreateProductOpen(open);
           if (!open) setEditingBrandId(null);
         }}
-        title={editingBrandId ? '编辑产品' : '新增产品'}
+        title={editingBrandId ? copy.editProduct : copy.addProduct}
         size={fixedProductContext ? 'md' : 'lg'}
         footer={(
           <>
-            <ArcoButton onClick={() => setCreateProductOpen(false)}>取消</ArcoButton>
+            <ArcoButton onClick={() => setCreateProductOpen(false)}>{copy.cancel}</ArcoButton>
             {!fixedProductContext && productWizardStep !== 'product' ? (
               <>
                 {!currentLayerExists && (
                   <ArcoButton onClick={handleCreateProduct} disabled={!productFormValid}>
-                    保存
+                    {copy.save}
                   </ArcoButton>
                 )}
                 <ArcoButton type="primary" onClick={handleWizardNext} disabled={!productFormValid}>
-                  下一步
+                  {copy.next}
                   <ChevronRight size={15} />
                 </ArcoButton>
               </>
             ) : (
               <ArcoButton type="primary" onClick={handleCreateProduct} disabled={!productFormValid}>
-                {editingBrandId ? '保存修改' : '保存'}
+                {editingBrandId ? copy.saveChanges : copy.save}
               </ArcoButton>
             )}
           </>
@@ -1998,7 +2024,7 @@ export function ProductVersionManager() {
             subcategoryLabel={createBrandSub?.name ?? subcategoryInput}
             categoryExists={Boolean(createBrandCat)}
             subcategoryExists={Boolean(createBrandSub)}
-            productActionLabel={editingBrandId ? '编辑产品' : '新增产品'}
+            productActionLabel={editingBrandId ? copy.editProduct : copy.addProduct}
             canOpenSubcategory={categoryStepValid}
             canOpenProduct={subcategoryStepValid}
             categoryLocked={categoryLocked}
@@ -2012,7 +2038,7 @@ export function ProductVersionManager() {
           {!fixedProductContext && productWizardStep === 'category' && (
             <>
               <EditableCombobox
-                label="产品类型名称"
+                label={copy.categoryName}
                 required
                 value={createBrandCat?.name ?? newBrandCatId}
                 options={categories.map(category => ({ id: category.id, label: category.name }))}
@@ -2030,14 +2056,14 @@ export function ProductVersionManager() {
                   setNewBrandDescription('');
                   setNewBrandSoftwareIds([]);
                 }}
-                placeholder="选择已有类型或输入新名称"
+                placeholder={copy.categoryPlaceholder}
               />
               <TextInput
-                label="标识符"
+                label={copy.identifier}
                 required
                 value={categoryIdentifierInput}
                 onValueChange={setNewCategoryIdentifier}
-                placeholder="例如：controller-products"
+                placeholder={`${example}: controller-products`}
                 disabled={Boolean(createBrandCat)}
               />
               {duplicateCategoryIdentifier && (
@@ -2046,10 +2072,10 @@ export function ProductVersionManager() {
                 </div>
               )}
               <TextAreaField
-                label="描述"
+                label={copy.description}
                 value={categoryDescriptionInput}
                 onValueChange={setNewCategoryDescription}
-                placeholder="请输入该类型的业务范围"
+                placeholder={copy.categoryDescription}
                 disabled={Boolean(createBrandCat)}
               />
             </>
@@ -2058,7 +2084,7 @@ export function ProductVersionManager() {
           {!fixedProductContext && productWizardStep === 'subcategory' && (
             <>
               <EditableCombobox
-                label="子品类名称"
+                label={copy.subcategoryName}
                 required
                 value={createBrandSub?.name ?? newBrandSubId}
                 options={(createBrandCat?.subcategories ?? []).map(subcategory => ({ id: subcategory.id, label: subcategory.name }))}
@@ -2073,14 +2099,14 @@ export function ProductVersionManager() {
                   setNewBrandDescription('');
                   setNewBrandSoftwareIds([]);
                 }}
-                placeholder="选择已有子品类或输入新名称"
+                placeholder={copy.subcategoryPlaceholder}
               />
               <TextInput
-                label="标识符"
+                label={copy.identifier}
                 required
                 value={subcategoryIdentifierInput}
                 onValueChange={setNewSubcategoryIdentifier}
-                placeholder="例如：controllers"
+                placeholder={`${example}: controllers`}
                 disabled={Boolean(createBrandSub)}
               />
               {duplicateSubcategoryIdentifier && (
@@ -2089,10 +2115,10 @@ export function ProductVersionManager() {
                 </div>
               )}
               <TextAreaField
-                label="描述"
+                label={copy.description}
                 value={subcategoryDescriptionInput}
                 onValueChange={setNewSubcategoryDescription}
-                placeholder="请输入该子品类的用途或适配范围"
+                placeholder={copy.subcategoryDescription}
                 disabled={Boolean(createBrandSub)}
               />
               <RelatedSoftwarePicker
@@ -2111,18 +2137,18 @@ export function ProductVersionManager() {
           {(fixedProductContext || productWizardStep === 'product') && (
             <>
               <TextInput
-                label="产品名称"
+                label={copy.productName}
                 required
                 value={newBrandName}
                 onValueChange={setNewBrandName}
-                placeholder="请输入产品名称"
+                placeholder={copy.productNamePlaceholder}
               />
               <TextInput
-                label="产品标识符"
+                label={copy.productIdentifier}
                 required
                 value={newBrandIdentifier}
                 onValueChange={setNewBrandIdentifier}
-                placeholder="例如：shadow-controller"
+                placeholder={`${example}: shadow-controller`}
               />
               {productNameInput && !productIdentifierInput && (
                 <div role="alert" style={{ color: 'var(--app-danger)', fontSize: 12, marginTop: -10 }}>
@@ -2139,10 +2165,10 @@ export function ProductVersionManager() {
                 ))}
               />
               <TextAreaField
-                label="产品描述"
+                label={copy.productDescription}
                 value={newBrandDescription}
                 onValueChange={setNewBrandDescription}
-                placeholder="请输入产品能力、用途或适配范围"
+                placeholder={copy.productDescriptionPlaceholder}
               />
             </>
           )}
@@ -2169,7 +2195,7 @@ export function ProductVersionManager() {
         footer={(
           <>
             <ArcoButton onClick={() => setTreeDeleteTarget(null)}>取消</ArcoButton>
-            <ArcoButton type="primary" status="danger" onClick={handleDeleteTreeNode}>确认删除</ArcoButton>
+            <ArcoButton type="primary" status="danger" onClick={handleDeleteTreeNode}>删除</ArcoButton>
           </>
         )}
       >

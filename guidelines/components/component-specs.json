@@ -1,5 +1,5 @@
 {
-  "version": "1.7.0",
+  "version": "1.8.0",
   "name": "Component Contracts",
   "description": "Framework-agnostic component contracts. Parameter names describe design behavior; each frontend implementation maps them to its approved component set.",
   "categories": [
@@ -120,7 +120,7 @@
     {
       "name": "Switch", "category": "entry", "purpose": "切换立即生效的独立开关状态", "whenToUse": "启用、通知、自动同步等开/关设置", "avoid": "多项表单选择、需要统一提交的选项或不可逆动作确认", "sizes": ["36 × 20"],
       "api": [{ "name": "checked / defaultChecked", "values": "boolean", "required": false, "description": "开关状态" }, { "name": "loading", "values": "boolean", "required": false, "description": "异步保存中，阻止重复切换" }, { "name": "disabled", "values": "boolean", "required": false, "description": "不可切换" }],
-      "states": ["Off", "Hover", "Focus", "On", "Loading", "Disabled"], "tokens": ["--ds-switch-width", "--ds-switch-height", "--ds-switch-thumb-size", "--ds-switch-bg", "--ds-switch-bg-checked"], "rules": ["切换即生效；异步失败需恢复或明确保留原值。", "Loading 期间锁定开关并显示 Spinner，阻止重复切换；失败在控件附近反馈且不弹 Toast。", "不用于需要最后统一保存的多项选择。"], "a11y": ["使用 switch 语义和 aria-checked。", "Loading 和失败结果可被读出。", "标签描述切换后实际生效的状态。"], "responsive": "标签可换行，开关本体不压缩。", "example": "<Switch checked={enabled}>启用自动同步</Switch>", "acceptance": ["Loading 防重入", "异步失败恢复原值并有字段级反馈", "On + Focus 同时可见"]
+      "states": ["Off", "Hover", "Focus", "On", "Loading", "Disabled"], "tokens": ["--ds-switch-width", "--ds-switch-height", "--ds-switch-thumb-size", "--ds-switch-track-radius", "--ds-switch-thumb-radius", "--ds-switch-bg", "--ds-switch-bg-checked"], "rules": ["切换即生效；异步失败需恢复或明确保留原值。", "轨道与滑块圆角由 `--ds-switch-track-radius` / `--ds-switch-thumb-radius` 决定：Current 预设为胶囊轨道 + 圆形滑块，Industrial 预设为 4px 方形轨道 + 2px 方形滑块；页面不得硬编码 pill 或 50%。", "Loading 期间锁定开关并显示 Spinner，阻止重复切换；失败在控件附近反馈且不弹 Toast。", "不用于需要最后统一保存的多项选择。"], "a11y": ["使用 switch 语义和 aria-checked。", "Loading 和失败结果可被读出。", "标签描述切换后实际生效的状态。"], "responsive": "标签可换行，开关本体不压缩。", "example": "<Switch checked={enabled}>启用自动同步</Switch>", "acceptance": ["Loading 防重入", "异步失败恢复原值并有字段级反馈", "On + Focus 同时可见", "Industrial 预设下轨道与滑块均为方形"]
     },
     {
       "name": "Checkbox", "category": "entry", "purpose": "独立多选或确认状态", "whenToUse": "批量选择、开关确认、多个互不排斥选项", "avoid": "单选互斥项或立即生效设置", "sizes": ["16 control"],

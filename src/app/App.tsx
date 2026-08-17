@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useLocation, useNavigate } from 'react-router';
 import {
-  Activity, ArrowLeft, ArrowRight, Bell, BookKey, BookOpen, Box, CheckCircle2, ChevronRight, ClipboardList, Clock3, Cpu, Database, Download, Eye, Factory, FileKey2, FileText,
+  Activity, ArrowLeft, ArrowRight, Bell, BookKey, BookOpen, Box, CheckCircle2, ChevronRight, ClipboardList, Clock3, Cpu, Cuboid, Database, Download, Eye, Factory, FileKey2, FileText,
   Home, LogOut, Moon, MousePointerClick, Package, Palette, PanelLeft, Pencil, RotateCcw, Save, Search, ShieldCheck, Sun, Trash2, User, Wand2,
 } from 'lucide-react';
 import { PanelList } from './components/PanelList';
@@ -10,6 +11,7 @@ import { ComponentLibrary } from './components/ComponentLibrary';
 import { CanvasArea } from './components/CanvasArea';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { RobotComponentLibrary, RobotModelManager } from './components/RobotModelManager';
+import { RobotComponentLibrary2 } from './components/RobotComponentLibrary2';
 import { ProductVersionManager } from './components/ProductVersionManager';
 import { SoftwareManager } from './components/SoftwareManager';
 import { InstallationRecordsManager } from './components/InstallationRecordsManager';
@@ -29,7 +31,7 @@ import { useComponentCatalog } from './components/useComponentCatalog';
 import { ArcoButton, ArcoIconButton, ArcoIconToggleButton, ArcoModal, ArcoTag } from './components/ProductUI';
 import { ManufacturingSystem } from './components/ManufacturingSystem';
 import { getAppThemeVars, type IndustrialColorTheme, type StylePreset, type ThemeMode } from './theme';
-import { LanguageSelect } from './i18n';
+import { AdaptiveText, LanguageSelect, useI18n } from './i18n';
 import {
   type HomepageScheme, type PlacedItem,
   COMPONENT_PROPS, GRID_COLS, GRID_ROWS, CANVAS_W, CANVAS_H,
@@ -38,9 +40,24 @@ import {
 
 const FONT = "'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
 
-type EditorNavKey = 'home' | 'status' | 'components' | 'records' | 'alerts' | 'settings' | 'apps' | 'robotComponents' | 'products' | 'software' | 'installations' | 'dictionary' | 'dataManagement' | 'guidelines' | 'interactionSpecs';
+type EditorNavKey = 'home' | 'status' | 'components' | 'records' | 'alerts' | 'settings' | 'apps' | 'robotComponents' | 'robotComponents2' | 'products' | 'software' | 'installations' | 'dictionary' | 'dataManagement' | 'guidelines' | 'interactionSpecs';
 type AppThemeMode = ThemeMode;
 type WorkspaceProduct = 'login' | 'workspace' | 'software' | 'authorization' | 'machine' | 'manufacturing';
+
+const WORKSPACE_PRODUCT_PATHS: Record<WorkspaceProduct, string> = {
+  login: '/',
+  workspace: '/workspace',
+  software: '/software',
+  authorization: '/authorization',
+  machine: '/machine',
+  manufacturing: '/manufacturing/work-orders',
+};
+
+function workspaceProductFromPath(pathname: string): WorkspaceProduct {
+  const segment = pathname.split('/').filter(Boolean)[0];
+  if (segment === 'workspace' || segment === 'software' || segment === 'authorization' || segment === 'machine' || segment === 'manufacturing') return segment;
+  return 'login';
+}
 
 const ROBOT_THEME_STORAGE_KEY = 'robot-manager-theme-mode';
 const STYLE_PRESET_STORAGE_KEY = 'digital-machine-style-preset';
@@ -79,32 +96,32 @@ const WORKSPACE_PRODUCTS = [
     key: 'manufacturing' as const,
     icon: Factory,
     eyebrow: 'MES',
-    title: '智能制造',
-    description: '贯通工单、工装、工作台与生产基础数据，追踪制造全过程。',
+    titleKey: 'smartManufacturing',
+    descriptionKey: 'manufacturingDesc',
     meta: '生产协同',
   },
   {
     key: 'software' as const,
     icon: Package,
     eyebrow: 'Software',
-    title: '软件管理',
-    description: '统一管理软件包、产品版本、测试包与发布流程。',
+    titleKey: 'softwareManagement',
+    descriptionKey: 'softwareDesc',
     meta: '版本与制品',
   },
   {
     key: 'authorization' as const,
     icon: ShieldCheck,
     eyebrow: 'License',
-    title: '授权平台',
-    description: '集中配置产品授权、许可策略与设备使用权限。',
+    titleKey: 'authorization',
+    descriptionKey: 'authorizationDesc',
     meta: '许可与权限',
   },
   {
     key: 'machine' as const,
     icon: Box,
     eyebrow: 'Digital Machine',
-    title: '数字造机',
-    description: '配置机器人型号、组件生态与自定义运行面板。',
+    titleKey: 'digitalMachine',
+    descriptionKey: 'digitalMachineDesc',
     meta: '型号与工作台',
   },
 ];
@@ -121,6 +138,7 @@ function WorkspaceLauncher({
   onOpen: (product: Exclude<WorkspaceProduct, 'workspace' | 'login'>) => void;
 }) {
   const isDark = themeMode === 'dark';
+  const { copy, t, locale } = useI18n();
 
   return (
     <div className="workspace-launcher">
@@ -371,6 +389,8 @@ function WorkspaceLauncher({
             width: auto;
             height: 180px;
           }
+          .workspace-launcher__brand-copy { display: none; }
+          .workspace-launcher__return-copy { max-width: 46px !important; }
           .workspace-recent { align-items: flex-start; }
         }
         @media (prefers-reduced-motion: reduce) {
@@ -392,18 +412,19 @@ function WorkspaceLauncher({
           }}>
             <Box size={18} />
           </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.25 }}>墨影工作台</div>
-            <div style={{ marginTop: 2, color: 'var(--app-muted)', fontSize: 12 }}>产品与设备开发中心</div>
+          <div className="workspace-launcher__brand-copy" style={{ minWidth: 0 }}>
+            <AdaptiveText copy={copy('workbench')} style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.25, maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden' }} />
+            <AdaptiveText copy={copy('devCenter')} style={{ display: 'block', marginTop: 2, color: 'var(--app-muted)', fontSize: 12, maxWidth: 240, whiteSpace: 'nowrap', overflow: 'hidden' }} />
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ArcoButton icon={<LogOut size={14} />} onClick={onReturnLogin}>返回登录</ArcoButton>
+          <LanguageSelect compact />
+          <ArcoButton icon={<LogOut size={14} />} onClick={onReturnLogin}><AdaptiveText className="workspace-launcher__return-copy" copy={copy('returnLogin')} style={{ display: 'block', maxWidth: 116, whiteSpace: 'nowrap', overflow: 'hidden' }} /></ArcoButton>
           <button
             className="workspace-icon-button"
             onClick={onThemeToggle}
-            title={isDark ? '切换为浅色模式' : '切换为暗色模式'}
-            aria-label={isDark ? '切换为浅色模式' : '切换为暗色模式'}
+            title={t(isDark ? 'lightMode' : 'darkMode')}
+            aria-label={t(isDark ? 'lightMode' : 'darkMode')}
             style={{
               width: 40,
               height: 40,
@@ -434,10 +455,10 @@ function WorkspaceLauncher({
               MOYING WORKBENCH
             </div>
             <h1 style={{ margin: 0, fontSize: 30, lineHeight: 1.25, fontWeight: 700, letterSpacing: 0 }}>
-              上午好，robot-admin
+              {t('greeting')}
             </h1>
             <p style={{ margin: '12px 0 0', color: 'var(--app-text)', fontSize: 14, lineHeight: 1.7 }}>
-              从一个工作台进入软件、授权、数字造机与智能制造能力。
+              {t('intro')}
             </p>
           </div>
           <div style={{
@@ -453,12 +474,12 @@ function WorkspaceLauncher({
             flexShrink: 0,
           }}>
             <span style={{ width: 7, height: 7, borderRadius: 99, background: 'var(--app-success)' }} />
-            所有服务运行正常
+            <AdaptiveText copy={copy('healthy')} style={{ display: 'block', maxWidth: 240, whiteSpace: 'nowrap', overflow: 'hidden' }} />
           </div>
         </div>
 
-        <div className="workspace-launcher__grid" aria-label="工作空间列表">
-          <button className="workspace-product workspace-product--primary" onClick={() => onOpen('machine')} aria-label="进入数字造机">
+        <div className="workspace-launcher__grid" aria-label={t('workspaceList')}>
+          <button className="workspace-product workspace-product--primary" onClick={() => onOpen('machine')} aria-label={`${t('enterWorkspace')} ${t('digitalMachine')}`}>
             <div className="workspace-primary-content">
               <div style={{
                 width: 44, height: 44, borderRadius: 12, display: 'grid', placeItems: 'center',
@@ -467,12 +488,10 @@ function WorkspaceLauncher({
                 <Cpu size={21} />
               </div>
               <div style={{ marginTop: 28, color: 'var(--app-muted)', fontSize: 12, fontWeight: 700 }}>DIGITAL MACHINE</div>
-              <h2 style={{ margin: '7px 0 0', fontSize: 24, lineHeight: 1.3, fontWeight: 700 }}>数字造机</h2>
-              <p style={{ margin: '12px 0 0', color: 'var(--app-text)', fontSize: 14, lineHeight: 1.7 }}>
-                从机器人型号、三维模型到组件生态与运行面板，完成数字设备配置。
-              </p>
+              <h2 style={{ margin: '7px 0 0', fontSize: 24, lineHeight: 1.3, fontWeight: 700 }}>{t('digitalMachine')}</h2>
+              <AdaptiveText copy={copy('digitalMachineDesc')} style={{ display: 'block', height: 48, marginTop: 12, color: 'var(--app-text)', fontSize: 14, lineHeight: 1.7, overflow: 'hidden' }} />
               <div className="workspace-primary-entry">
-                进入工作空间 <ArrowRight size={16} />
+                <AdaptiveText copy={copy('enterWorkspace')} style={{ display: 'block', maxWidth: 160, whiteSpace: 'nowrap', overflow: 'hidden' }} /> <ArrowRight size={16} />
               </div>
             </div>
             <div className="workspace-machine-visual" aria-hidden="true">
@@ -489,7 +508,7 @@ function WorkspaceLauncher({
           {WORKSPACE_PRODUCTS.filter(product => product.key !== 'machine').map(product => {
             const Icon = product.icon;
             return (
-              <button key={product.key} className="workspace-product workspace-product--secondary" onClick={() => onOpen(product.key)} aria-label={`进入${product.title}`}>
+              <button key={product.key} className="workspace-product workspace-product--secondary" onClick={() => onOpen(product.key)} aria-label={`${t('enterWorkspace')} ${t(product.titleKey)}`}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
                   <div style={{
                     width: 40, height: 40, borderRadius: 12, display: 'grid', placeItems: 'center',
@@ -501,8 +520,8 @@ function WorkspaceLauncher({
                 </div>
                 <div style={{ marginTop: 20 }}>
                   <div style={{ color: 'var(--app-muted)', fontSize: 10, fontWeight: 700 }}>{product.eyebrow.toUpperCase()}</div>
-                  <h2 style={{ margin: '5px 0 0', fontSize: 18, lineHeight: 1.35, fontWeight: 650 }}>{product.title}</h2>
-                  <p style={{ margin: '8px 0 0', color: 'var(--app-text)', fontSize: 14, lineHeight: 1.6 }}>{product.description}</p>
+                  <h2 style={{ margin: '5px 0 0', fontSize: 18, lineHeight: 1.35, fontWeight: 650 }}>{t(product.titleKey)}</h2>
+                  <AdaptiveText copy={copy(product.descriptionKey)} style={{ display: 'block', height: 44, marginTop: 8, color: 'var(--app-text)', fontSize: 14, lineHeight: 1.6, overflow: 'hidden' }} />
                 </div>
               </button>
             );
@@ -511,10 +530,10 @@ function WorkspaceLauncher({
 
         <div className="workspace-recent">
           <Clock3 size={16} color="var(--app-accent)" style={{ flexShrink: 0 }} />
-          <span style={{ color: 'var(--app-muted)', flexShrink: 0 }}>最近访问</span>
-          <strong style={{ color: 'var(--app-heading)', fontWeight: 600 }}>MCR复合机器人 · 软件版本 2.1.0</strong>
+          <span style={{ color: 'var(--app-muted)', flexShrink: 0 }}>{t('recent')}</span>
+          <strong style={{ color: 'var(--app-heading)', fontWeight: 600 }}>{t('compositeRobot')} · {locale === 'zh-Hans' ? '软件版本' : locale === 'zh-Hant' ? '軟體版本' : locale === 'ms' ? 'Versi perisian' : locale === 'vi' ? 'Phiên bản phần mềm' : 'Software version'} 2.1.0</strong>
           <span style={{ flex: 1 }} />
-          <span style={{ color: 'var(--app-muted)', flexShrink: 0 }}>今天 09:42</span>
+          <span style={{ color: 'var(--app-muted)', flexShrink: 0 }}>{t('today')}</span>
         </div>
       </main>
     </div>
@@ -756,7 +775,7 @@ function WorkspaceProductFrame({
             icon={<ArrowLeft size={16} />}
             onClick={onBack}
             aria-label="返回墨影工作台"
-            title="返回墨影工作台"
+            tooltip="返回墨影工作台"
           />
           <span style={{ color: 'var(--app-heading)', fontSize: 16, fontWeight: 650 }}>{title}</span>
         </div>
@@ -765,7 +784,7 @@ function WorkspaceProductFrame({
           icon={isDark ? <Sun size={16} /> : <Moon size={16} />}
           onClick={onThemeToggle}
           aria-label={isDark ? '切换为浅色模式' : '切换为暗色模式'}
-          title={isDark ? '切换为浅色模式' : '切换为暗色模式'}
+          tooltip={isDark ? '切换为浅色模式' : '切换为暗色模式'}
         />
       </header>
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>{children}</div>
@@ -782,6 +801,7 @@ const EDITOR_NAV_META: Record<EditorNavKey, { label: string; description: string
   settings: { label: '设置', description: '配置当前编辑器偏好' },
   apps: { label: '型号管理', description: '管理机器人型号、拓扑结构与模型导出' },
   robotComponents: { label: '组件库', description: '管理机器人 3D 组件、结构与参数配置' },
+  robotComponents2: { label: '组件库2', description: '编辑 URDF / GLB 机械臂结构并实时调试关节' },
   products: { label: '版本管理', description: '产品包与版本迭代发布管理' },
   software: { label: '软件产品', description: '管理软件产品信息、标识码与授权' },
   installations: { label: '装机记录', description: '追踪机器人软件出库与现场装机结果' },
@@ -882,6 +902,8 @@ function GlobalTopBar({
   industrialColorTheme?: IndustrialColorTheme;
   onIndustrialColorThemeChange?: (theme: IndustrialColorTheme) => void;
 }) {
+  const { t, locale } = useI18n();
+  const sidebarToggle = locale === 'zh-Hans' ? '切换侧边栏' : locale === 'zh-Hant' ? '切換側邊欄' : locale === 'ms' ? 'Togol bar sisi' : locale === 'vi' ? 'Bật/tắt thanh bên' : 'Toggle sidebar';
   const isDark = themeMode === 'dark';
   const isIndustrial = stylePreset === 'industrial';
   const barBg = 'var(--app-surface)';
@@ -906,8 +928,8 @@ function GlobalTopBar({
           type="text"
           size="small"
           icon={<PanelLeft size={17} />}
-          aria-label="切换侧边栏"
-          title="切换侧边栏"
+          aria-label={sidebarToggle}
+          tooltip={sidebarToggle}
         />
       </div>
 
@@ -915,7 +937,7 @@ function GlobalTopBar({
         <label style={{ position: 'relative', width: 162, height: 40, display: 'block' }}>
           <Search size={15} color="var(--app-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <input
-            placeholder="Search"
+            placeholder={t('search')}
             style={{
               width: '100%',
               height: '100%',
@@ -952,8 +974,8 @@ function GlobalTopBar({
           selected={isIndustrial}
           onClick={onStyleToggle}
           icon={<Factory size={16} />}
-          aria-label={isIndustrial ? '恢复当前风格' : '切换为工业风格'}
-          title={isIndustrial ? '恢复当前风格' : '工业风格'}
+          aria-label={t(isIndustrial ? 'currentStyle' : 'industrialStyle')}
+          tooltip={t(isIndustrial ? 'currentStyle' : 'industrialStyle', 'short')}
           size="small"
         />
         {isIndustrial && (
@@ -993,23 +1015,16 @@ function GlobalTopBar({
             </select>
           </label>
         )}
-        <button
+        <ArcoIconButton
+          type="text"
+          size="small"
           onClick={onThemeToggle}
-          title={isDark ? '浅色模式' : '暗色模式'}
-          style={{
-            width: 32, height: 32, borderRadius: 8,
-            border: 'none', background: 'transparent', color: textColor,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer',
-            transition: 'background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out)',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = hoverBg; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-        >
-          {isDark ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-        <ArcoIconButton type="text" size="small" icon={<RotateCcw size={16} />} aria-label="刷新" title="刷新" />
-        <ArcoIconButton type="text" size="small" icon={<Bell size={16} />} aria-label="通知" title="通知" />
+          icon={isDark ? <Sun size={16} /> : <Moon size={16} />}
+          aria-label={t(isDark ? 'lightMode' : 'darkMode', 'short')}
+          tooltip={t(isDark ? 'lightMode' : 'darkMode', 'short')}
+        />
+        <ArcoIconButton type="text" size="small" icon={<RotateCcw size={16} />} aria-label={t('refresh')} tooltip={t('refresh')} />
+        <ArcoIconButton type="text" size="small" icon={<Bell size={16} />} aria-label={t('notifications')} tooltip={t('notifications')} />
       </div>
     </header>
   );
@@ -1026,34 +1041,37 @@ function EditorNavRail({
   onWorkspace?: () => void;
   themeMode?: AppThemeMode;
 }) {
+  const { copy, locale, t } = useI18n();
+  const navVariant = locale === 'zh-Hans' || locale === 'zh-Hant' ? 'standard' : 'short';
   const [dataMenuOpen, setDataMenuOpen] = useState(false);
   const [activeDataSection, setActiveDataSection] = useState<DataManagementSection>(readDataManagementSection);
   const bg = 'var(--app-surface)';
   const textColor = 'var(--app-text)';
   const mutedColor = 'var(--app-muted)';
   const hoverBg = 'var(--app-soft)';
-  const activeBg = 'var(--app-accent-soft)';
-  const activeColor = 'var(--app-accent)';
+  const activeBg = 'var(--ds-navigation-selected-bg)';
+  const activeColor = 'var(--ds-navigation-selected-text)';
   const borderColor = 'var(--app-border)';
 
   const navItems = [
-    { key: 'home' as const, icon: Home, label: '首页自定义' },
-    { key: 'apps' as const, icon: FileText, label: '型号模板' },
-    { key: 'robotComponents' as const, icon: Box, label: '组件库' },
-    { key: 'products' as const, icon: Package, label: '版本管理' },
-    { key: 'software' as const, icon: Cpu, label: '软件产品' },
-    { key: 'installations' as const, icon: ClipboardList, label: '装机记录' },
-    { key: 'dictionary' as const, icon: BookKey, label: '字典配置' },
-    { key: 'dataManagement' as const, icon: Database, label: '数据管理' },
-    { key: 'guidelines' as const, icon: BookOpen, label: '设计规范' },
-    { key: 'interactionSpecs' as const, icon: MousePointerClick, label: '交互规范' },
+    { key: 'home' as const, icon: Home, labelKey: 'navCustomHome' },
+    { key: 'apps' as const, icon: FileText, labelKey: 'navModelTemplates' },
+    { key: 'robotComponents' as const, icon: Box, labelKey: 'navComponentLibrary' },
+    { key: 'robotComponents2' as const, icon: Cuboid, labelKey: 'navComponentLibrary2' },
+    { key: 'products' as const, icon: Package, labelKey: 'navVersionManagement' },
+    { key: 'software' as const, icon: Cpu, labelKey: 'navSoftwareProducts' },
+    { key: 'installations' as const, icon: ClipboardList, labelKey: 'navInstallations' },
+    { key: 'dictionary' as const, icon: BookKey, labelKey: 'navDictionary' },
+    { key: 'dataManagement' as const, icon: Database, labelKey: 'navData' },
+    { key: 'guidelines' as const, icon: BookOpen, labelKey: 'navGuidelines' },
+    { key: 'interactionSpecs' as const, icon: MousePointerClick, labelKey: 'navInteractionSpecs' },
     // 外设库、用户管理模块暂时隐藏，页面能力保留以便后续恢复。
   ];
 
   function renderItem(
     key: EditorNavKey,
     Icon: typeof Home,
-    label: string,
+    labelKey: string,
     options?: {
       onClick?: () => void;
       ariaExpanded?: boolean;
@@ -1091,11 +1109,11 @@ function EditorNavRail({
         {isActive && (
           <div style={{
             position: 'absolute', left: 0, top: 10, bottom: 10, width: 3,
-            borderRadius: '0 4px 4px 0', background: activeColor,
+            borderRadius: '0 4px 4px 0', background: 'var(--ds-navigation-selected-marker)',
           }} />
         )}
         <Icon size={18} strokeWidth={isActive ? 2.3 : 1.8} />
-        <span style={{ minWidth: 0, flex: 1, textAlign: 'left' }}>{label}</span>
+        <span style={{ minWidth: 0, flex: 1, textAlign: 'left', whiteSpace: 'nowrap' }}>{t(labelKey, navVariant)}</span>
         {options?.trailing}
       </button>
     );
@@ -1110,7 +1128,7 @@ function EditorNavRail({
 
   return (
     <nav
-      aria-label="编辑器模块切换"
+      aria-label={t('editorNavigation')}
       style={{
         width: 200,
         flexShrink: 0,
@@ -1123,8 +1141,8 @@ function EditorNavRail({
     >
       <button
         onClick={onWorkspace}
-        title="返回墨影工作台"
-        aria-label="返回墨影工作台"
+        title={t('returnLogin')}
+        aria-label={t('returnLogin')}
         style={{
           width: '100%',
           display: 'flex',
@@ -1153,8 +1171,8 @@ function EditorNavRail({
           <Box size={17} />
         </div>
         <div style={{ minWidth: 0 }}>
-          <div style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 700, lineHeight: 1.25 }}>数字造机</div>
-          <div style={{ color: mutedColor, fontSize: 10, marginTop: 2 }}>软件管理与授权平台</div>
+          <div style={{ color: 'var(--app-heading)', fontSize: 14, fontWeight: 700, lineHeight: 1.25, whiteSpace: 'nowrap' }}>{t('digitalMachine', navVariant)}</div>
+          <div style={{ color: mutedColor, fontSize: 10, lineHeight: 1.4, marginTop: 2, whiteSpace: 'nowrap' }}>{t('platformSubtitle', navVariant)}</div>
         </div>
       </button>
 
@@ -1176,7 +1194,7 @@ function EditorNavRail({
               }
             }}
           >
-            {renderItem(item.key, item.icon, item.label, {
+            {renderItem(item.key, item.icon, item.labelKey, {
               onClick: () => setDataMenuOpen(open => !open),
               ariaExpanded: dataMenuOpen,
               ariaHasPopup: 'menu',
@@ -1192,13 +1210,13 @@ function EditorNavRail({
                     aria-current={active === 'dataManagement' && activeDataSection === section.key ? 'page' : undefined}
                     onClick={() => selectDataSection(section.key)}
                   >
-                    {section.label}
+                    {t(section.key === 'dictionary' ? 'dataFieldDictionary' : section.key === 'templates' ? 'dataTemplates' : 'dataParameters', navVariant)}
                   </button>
                 ))}
               </div>
             )}
           </div>
-        ) : renderItem(item.key, item.icon, item.label))}
+        ) : renderItem(item.key, item.icon, item.labelKey))}
       </div>
 
       <div style={{ flex: 1 }} />
@@ -1331,13 +1349,20 @@ function EditorPlaceholderPanel({
   );
 }
 
-function getSchemePageTitle(scheme: HomepageScheme) {
+function getSchemePageTitle(scheme: HomepageScheme, suffix = '自定义首页-01') {
   const prefix = scheme.name
     .replace('复合机器人', '')
     .replace('搬运机器人', '')
     .replace('机器人', '')
     .trim();
-  return `${prefix || scheme.name}自定义首页-01`;
+  return `${prefix || scheme.name} ${suffix}`;
+}
+
+function getLocalizedSchemeName(scheme: HomepageScheme, t: (key: string, variant?: 'standard' | 'short') => string) {
+  if (scheme.name === 'MCR复合机器人') return t('compositeRobot');
+  if (scheme.name === 'AGV搬运机器人') return t('agvRobot');
+  if (scheme.name === '巡检机器人') return t('inspectionRobot');
+  return scheme.name;
 }
 
 function safeFileName(value: string) {
@@ -1359,17 +1384,18 @@ function DeleteHomepageDialog({
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <ArcoModal
       open={open}
       onOpenChange={onOpenChange}
-      title="删除首页"
+      title={t('deleteHomepage')}
       status="danger"
       size="sm"
       footer={(
         <>
-          <ArcoButton onClick={() => onOpenChange(false)}>取消</ArcoButton>
-          <ArcoButton type="primary" status="danger" onClick={onConfirm}>删除</ArcoButton>
+          <ArcoButton onClick={() => onOpenChange(false)}>{t('cancel')}</ArcoButton>
+          <ArcoButton type="primary" status="danger" onClick={onConfirm}>{t('delete')}</ArcoButton>
         </>
       )}
     >
@@ -1507,14 +1533,20 @@ function fillEmptySpaces(items: PlacedItem[]): PlacedItem[] {
 }
 
 export default function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { copy, t } = useI18n();
   const { components: catalogComponents } = useComponentCatalog();
-  const [workspaceProduct, setWorkspaceProduct] = useState<WorkspaceProduct>('login');
+  const [workspaceProduct, setWorkspaceProduct] = useState<WorkspaceProduct>(() => workspaceProductFromPath(location.pathname));
   const [softwareProducts, setSoftwareProducts] = useState<SoftwareProduct[]>(INITIAL_SOFTWARE_PRODUCTS);
   const [dictionaryCategories, setDictionaryCategories] = useState<DictionaryCategory[]>(initialDictionaryCategories);
   const [schemes, setSchemes] = useState<HomepageScheme[]>(INITIAL_SCHEMES);
   const [activeSchemeId, setActiveSchemeId] = useState('s1');
   const [canvasItems, setCanvasItems] = useState<Record<string, PlacedItem[]>>(INITIAL_ITEMS);
   const [isEditing, setIsEditing] = useState(false);
+  const [isRobotModelDetail, setIsRobotModelDetail] = useState(false);
+  const [isRobotComponentDetail, setIsRobotComponentDetail] = useState(false);
+  const [isRobotComponent2Editing, setIsRobotComponent2Editing] = useState(false);
   const [isCanvasPreview, setIsCanvasPreview] = useState(false);
   const [activeEditorNav, setActiveEditorNav] = useState<EditorNavKey>('home');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -1524,6 +1556,15 @@ export default function App() {
   const [stylePreset, setStylePreset] = useState<StylePreset>(initialStylePreset);
   const [industrialColorTheme, setIndustrialColorTheme] = useState<IndustrialColorTheme>(initialIndustrialColorTheme);
   const appliedThemeVarKeysRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    setWorkspaceProduct(workspaceProductFromPath(location.pathname));
+  }, [location.pathname]);
+
+  const openWorkspaceProduct = useCallback((product: WorkspaceProduct) => {
+    setWorkspaceProduct(product);
+    navigate(WORKSPACE_PRODUCT_PATHS[product]);
+  }, [navigate]);
 
   const toggleRobotThemeMode = useCallback(() => {
     setRobotThemeMode(prev => {
@@ -1688,7 +1729,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${safeFileName(getSchemePageTitle(scheme))}.json`;
+    link.download = `${safeFileName(getSchemePageTitle(scheme, t('customHomepageSuffix')))}.json`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -1770,6 +1811,7 @@ export default function App() {
   const handleShellNavChange = useCallback((key: EditorNavKey) => {
     setSelectedItemId(null);
     setIsCanvasPreview(false);
+    setIsRobotComponent2Editing(false);
 
     if (key === 'components') {
       setIsEditing(true);
@@ -1782,19 +1824,19 @@ export default function App() {
   }, []);
 
   const returnToWorkspace = useCallback(() => {
-    setWorkspaceProduct('workspace');
+    openWorkspaceProduct('workspace');
     setIsEditing(false);
     setIsCanvasPreview(false);
     setActiveEditorNav('home');
     setSelectedItemId(null);
-  }, []);
+  }, [openWorkspaceProduct]);
 
   if (workspaceProduct === 'login') {
     return (
       <WorkspaceLoginScreen
         themeMode={robotThemeMode}
         onThemeToggle={toggleRobotThemeMode}
-        onLogin={() => setWorkspaceProduct('workspace')}
+        onLogin={() => openWorkspaceProduct('workspace')}
       />
     );
   }
@@ -1804,8 +1846,8 @@ export default function App() {
       <WorkspaceLauncher
         themeMode={robotThemeMode}
         onThemeToggle={toggleRobotThemeMode}
-        onReturnLogin={() => setWorkspaceProduct('login')}
-        onOpen={setWorkspaceProduct}
+        onReturnLogin={() => openWorkspaceProduct('login')}
+        onOpen={openWorkspaceProduct}
       />
     );
   }
@@ -1857,6 +1899,8 @@ export default function App() {
         onIndustrialColorThemeChange={changeIndustrialColorTheme}
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
+        sidebarCollapsed={isRobotModelDetail}
+        hideTopBar={isRobotModelDetail}
       >
         <RobotModelManager
           themeMode={robotThemeMode}
@@ -1864,6 +1908,7 @@ export default function App() {
           industrialColorTheme={industrialColorTheme}
           softwareProducts={softwareProducts}
           dictionaryCategories={dictionaryCategories}
+          onDetailChange={setIsRobotModelDetail}
         />
       </AppShell>
     );
@@ -1881,12 +1926,40 @@ export default function App() {
         onIndustrialColorThemeChange={changeIndustrialColorTheme}
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
+        sidebarCollapsed={isRobotComponentDetail}
+        hideTopBar={isRobotComponentDetail}
       >
         <RobotComponentLibrary
           themeMode={robotThemeMode}
           stylePreset={stylePreset}
           industrialColorTheme={industrialColorTheme}
           dictionaryCategories={dictionaryCategories}
+          onDetailChange={setIsRobotComponentDetail}
+        />
+      </AppShell>
+    );
+  }
+
+  if (!isEditing && !isCanvasPreview && activeEditorNav === 'robotComponents2') {
+    return (
+      <AppShell
+        active={activeEditorNav}
+        themeMode={robotThemeMode}
+        onThemeToggle={toggleRobotThemeMode}
+        stylePreset={stylePreset}
+        onStyleToggle={toggleStylePreset}
+        industrialColorTheme={industrialColorTheme}
+        onIndustrialColorThemeChange={changeIndustrialColorTheme}
+        onNavChange={handleShellNavChange}
+        onWorkspace={returnToWorkspace}
+        sidebarCollapsed={isRobotComponent2Editing}
+        hideTopBar={isRobotComponent2Editing}
+      >
+        <RobotComponentLibrary2
+          themeMode={robotThemeMode}
+          stylePreset={stylePreset}
+          industrialColorTheme={industrialColorTheme}
+          onEditingChange={setIsRobotComponent2Editing}
         />
       </AppShell>
     );
@@ -1995,7 +2068,7 @@ export default function App() {
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
       >
-        <DesignGuidelines themeMode={robotThemeMode} />
+        <DesignGuidelines key="guidelines" themeMode={robotThemeMode} />
       </AppShell>
     );
   }
@@ -2013,7 +2086,7 @@ export default function App() {
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
       >
-        <DesignGuidelines themeMode={robotThemeMode} initialTopicKey="interaction-state" scope="interaction" />
+        <DesignGuidelines key="interactionSpecs" themeMode={robotThemeMode} initialTopicKey="interaction-state" scope="interaction" />
       </AppShell>
     );
   }
@@ -2170,7 +2243,13 @@ export default function App() {
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                   }}>
-                    {getSchemePageTitle(activeScheme)}
+                    <AdaptiveText
+                      copy={{
+                        standard: getSchemePageTitle(activeScheme, t('customHomepageSuffix')),
+                        short: getSchemePageTitle(activeScheme, t('customHomepageSuffix', 'short')),
+                      }}
+                      style={{ display: 'block', height: 28, maxWidth: 420, whiteSpace: 'nowrap', overflow: 'hidden' }}
+                    />
                   </h1>
                   <span style={{
                     flexShrink: 0,
@@ -2182,11 +2261,11 @@ export default function App() {
                     padding: '3px 8px',
                     borderRadius: 99,
                   }}>
-                    {activeScheme.name} · {activeScheme.version}
+                    {getLocalizedSchemeName(activeScheme, t)} · {activeScheme.version}
                   </span>
                 </div>
                 <p style={{ color: 'var(--app-muted)', fontSize: 14, lineHeight: 1.6, margin: 0 }}>
-                  根据现场任务和设备状态搭建首页
+                  {t('homepageDescription')}
                 </p>
               </div>
 
@@ -2197,20 +2276,20 @@ export default function App() {
                   status="danger"
                   icon={<Trash2 size={14} />}
                 >
-                  删除
+                  {t('delete')}
                 </ArcoButton>
                 <ArcoButton
                   onClick={() => exportScheme(activeScheme.id)}
                   icon={<Download size={14} />}
                 >
-                  导出面板
+                  <AdaptiveText copy={copy('exportPanel')} style={{ display: 'block', maxWidth: 100, whiteSpace: 'nowrap', overflow: 'hidden' }} />
                 </ArcoButton>
                 <ArcoButton
                   onClick={() => { setIsEditing(true); setIsCanvasPreview(false); setActiveEditorNav('components'); }}
                   type="primary"
                   icon={<Pencil size={14} />}
                 >
-                  编辑面板
+                  <AdaptiveText copy={copy('editPanel')} style={{ display: 'block', maxWidth: 100, whiteSpace: 'nowrap', overflow: 'hidden' }} />
                 </ArcoButton>
               </div>
             </div>

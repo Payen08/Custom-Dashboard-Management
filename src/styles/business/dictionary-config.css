@@ -14,7 +14,10 @@
   z-index: var(--ds-z-toast);
   top: var(--ds-space-4);
   left: 50%;
-  padding: var(--ds-space-3) var(--ds-space-5);
+  min-height: var(--ds-toast-min-height);
+  display: flex;
+  align-items: center;
+  padding: var(--ds-toast-padding);
   border: 1px solid var(--ds-state-success-border);
   border-radius: var(--ds-radius-overlay);
   background: var(--ds-state-success-bg);
@@ -23,6 +26,7 @@
   font-size: var(--ds-font-size-14);
   font-weight: var(--ds-font-weight-medium);
   transform: translateX(-50%);
+  box-sizing: border-box;
 }
 .dictionary-notice[data-tone='danger'] { border-color: var(--ds-state-error-border); background: var(--ds-color-danger-soft); color: var(--ds-color-danger); }
 
@@ -41,7 +45,7 @@
   font-weight: var(--ds-font-weight-medium);
   text-align: left;
 }
-.dictionary-category-table td { height: var(--ds-table-row-height); padding: 0 var(--ds-space-4); border-bottom: 1px solid var(--app-border); color: var(--app-text); vertical-align: middle; }
+.dictionary-category-table td { height: var(--ds-table-row-height); padding: 0 var(--ds-space-4); border-bottom: 1px solid var(--ds-table-row-divider); color: var(--app-text); vertical-align: middle; }
 .dictionary-category-table th:nth-child(1) { width: 32%; }
 .dictionary-category-table th:nth-child(2) { width: 20%; }
 .dictionary-category-table th:nth-child(3) { width: 11%; }
@@ -59,7 +63,15 @@
 .dictionary-category-name small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dictionary-category-name strong { color: var(--app-heading); font-size: var(--ds-font-size-14); font-weight: var(--ds-font-weight-medium); }
 .dictionary-category-name small { color: var(--app-muted); font-size: var(--ds-font-size-12); }
-.dictionary-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--ds-space-2); color: var(--app-muted); }
+.dictionary-category-table td:last-child { text-align: right; }
+.dictionary-row-actions { width: 100%; display: flex; align-items: center; justify-content: flex-end; gap: var(--ds-space-2); color: var(--app-muted); }
+.dictionary-source-tag { min-width: 48px; font-size: var(--ds-font-size-12); font-weight: var(--ds-font-weight-semibold); }
+.dictionary-source-tag[data-tone='neutral'] { --arcoui-tag-background: var(--ds-color-soft); --arcoui-tag-color: var(--ds-color-heading); }
+.dictionary-source-tag[data-tone='accent'] { --arcoui-tag-background: var(--ds-color-accent-soft); --arcoui-tag-color: var(--ds-color-accent); }
+.dictionary-empty { min-height: 240px; padding: var(--ds-space-6); color: var(--app-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--ds-space-2); text-align: center; }
+.dictionary-empty > svg { width: 40px; height: 40px; padding: 10px; border-radius: var(--ds-radius-inner); background: var(--app-soft); color: var(--app-icon); box-sizing: border-box; }
+.dictionary-empty strong { color: var(--app-heading); font-size: var(--ds-font-size-14); font-weight: var(--ds-font-weight-semibold); }
+.dictionary-empty span { max-width: 360px; color: var(--app-muted); font-size: var(--ds-font-size-12); line-height: var(--ds-line-height-relaxed); }
 
 .dictionary-switch {
   width: var(--ds-switch-width);
@@ -69,13 +81,13 @@
   flex: 0 0 auto;
   padding: 2px;
   border: 0;
-  border-radius: var(--ds-radius-pill);
+  border-radius: var(--ds-switch-track-radius);
   background: var(--ds-switch-bg);
   cursor: pointer;
   box-sizing: border-box;
   transition: background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out);
 }
-.dictionary-switch span { width: var(--ds-switch-thumb-size); height: var(--ds-switch-thumb-size); border-radius: 50%; background: var(--ds-switch-thumb); box-shadow: var(--ds-shadow-xs); transition: transform var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out); }
+.dictionary-switch span { width: var(--ds-switch-thumb-size); height: var(--ds-switch-thumb-size); border-radius: var(--ds-switch-thumb-radius); background: var(--ds-switch-thumb); box-shadow: var(--ds-shadow-xs); transition: transform var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out); }
 .dictionary-switch[data-selected='true'] { background: var(--ds-switch-bg-checked); }
 .dictionary-switch[data-selected='true'] span { transform: translateX(calc(var(--ds-switch-width) - var(--ds-switch-thumb-size) - 4px)); }
 .dictionary-switch:focus-visible,
@@ -95,8 +107,8 @@
 .dictionary-drawer-search { width: min(320px, 62%); }
 .dictionary-drawer-table-wrap { min-height: 0; flex: 1 1 auto; border: 1px solid var(--app-border); border-radius: var(--ds-radius-inner); overflow: auto; }
 .dictionary-drawer-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.dictionary-drawer-table th { position: sticky; z-index: var(--ds-z-sticky); top: 0; height: var(--ds-table-header-height); padding: 0 var(--ds-space-4); border-bottom: 1px solid var(--app-border); background: var(--app-soft); color: var(--app-muted); font-size: var(--ds-font-size-12); font-weight: var(--ds-font-weight-medium); text-align: left; }
-.dictionary-drawer-table td { height: var(--ds-table-row-height); padding: 0 var(--ds-space-4); border-bottom: 1px solid var(--app-border); color: var(--app-text); font-size: var(--ds-font-size-14); vertical-align: middle; }
+.dictionary-drawer-table th { position: sticky; z-index: var(--ds-z-sticky); top: 0; height: var(--ds-table-header-height); padding: 0 var(--ds-space-4); border-bottom: 1px solid var(--ds-table-header-divider); background: var(--ds-table-header-bg); color: var(--app-muted); font-size: var(--ds-font-size-12); font-weight: var(--ds-font-weight-medium); text-align: left; }
+.dictionary-drawer-table td { height: var(--ds-table-row-height); padding: 0 var(--ds-space-4); border-bottom: 1px solid var(--ds-table-row-divider); color: var(--app-text); font-size: var(--ds-font-size-14); vertical-align: middle; }
 .dictionary-drawer-table tbody tr:last-child td { border-bottom: 0; }
 .dictionary-drawer-table tbody tr:hover { background: var(--ds-table-row-bg-hover); }
 .dictionary-drawer-table th:nth-child(1) { width: 44%; }

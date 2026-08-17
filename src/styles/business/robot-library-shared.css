@@ -1,0 +1,215 @@
+.robot-library-list-page {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--robot-page-padding);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--robot-page);
+  color: var(--robot-text);
+  box-sizing: border-box;
+}
+
+.robot-library-list-header {
+  margin-bottom: var(--robot-section-gap);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--robot-section-gap);
+  flex: 0 0 auto;
+}
+
+.robot-library-list-heading { min-width: 0; }
+.robot-library-list-heading h1 {
+  margin: 0;
+  color: var(--robot-heading);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.robot-library-list-heading p {
+  margin: 4px 0 0;
+  color: var(--robot-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+.robot-library-list-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+.robot-library-list-search { width: 280px; min-width: 0; }
+.robot-library-list-toolbar .arcoui-button,
+.robot-library-list-search.arcoui-input { min-height: var(--ds-field-height-md, 40px); }
+.robot-library-list-content {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px 2px 20px;
+}
+.robot-library-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-content: start;
+  gap: var(--robot-section-gap);
+}
+
+.robot-card-section-header {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.robot-card-section-header::after {
+  content: '';
+  position: absolute;
+  right: var(--ds-space-4);
+  bottom: 0;
+  left: var(--ds-space-4);
+  height: 1px;
+  background: var(--robot-border);
+}
+
+.robot-component-page .software-config-edit,
+.robot-component-page .robot-detail-tool-button[data-icon-only='true'] {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 32px;
+  border: 0;
+  border-radius: var(--ds-radius-control);
+  background: var(--robot-soft);
+  color: var(--robot-muted);
+  box-shadow: none;
+  cursor: pointer;
+  transition: background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out), color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out);
+}
+
+.robot-component-page .software-config-edit:hover,
+.robot-component-page .robot-detail-tool-button[data-icon-only='true']:hover {
+  border-color: transparent;
+  background: var(--robot-accent-soft);
+  color: var(--robot-accent-text);
+}
+
+.robot-component-page .software-config-edit:focus-visible,
+.robot-component-page .robot-detail-tool-button[data-icon-only='true']:focus-visible {
+  outline: 2px solid var(--robot-accent-border);
+  outline-offset: 2px;
+}
+
+/* Industrial preset: all three sibling libraries share one compact list shell. */
+html[data-style='industrial'] .robot-library-list-page,
+html[data-style='industrial'] .robot-component-page--list {
+  padding: 0 !important;
+  gap: var(--ds-layout-grid-gap) !important;
+}
+
+/* The generic component workbench rule adds detail-page padding. The list
+   variant must remain edge-to-edge like every other industrial list page. */
+html[data-style='industrial'] .robot-component-page.robot-component-page--list {
+  padding: 0 !important;
+}
+
+/* Component Library has one extra list wrapper; keep the header-to-content
+   rhythm identical to the sibling list pages. */
+html[data-style='industrial'] .robot-component-page--list > .component-library-list {
+  gap: var(--ds-layout-grid-gap);
+}
+
+html[data-style='industrial'] .robot-library-list-header {
+  min-height: 72px;
+  margin-bottom: 0 !important;
+  padding: var(--ds-space-3) var(--ds-space-4) 0;
+  align-items: flex-end;
+  border: 0;
+  background: transparent;
+}
+
+html[data-style='industrial'] .robot-library-list-heading h1 {
+  line-height: 1.3;
+}
+
+html[data-style='industrial'] .robot-library-list-heading p {
+  font-size: var(--ds-font-size-12);
+  line-height: normal;
+}
+
+html[data-style='industrial'] .robot-library-list-toolbar {
+  gap: var(--ds-space-2);
+}
+
+html[data-style='industrial'] .robot-library-list-content {
+  padding: 0 var(--ds-space-4) var(--ds-space-4) !important;
+}
+
+html[data-style='industrial'] .robot-library-card-grid {
+  gap: var(--ds-layout-grid-gap) !important;
+}
+
+html[data-style='industrial'] .robot-library-card-grid .model-card-preview,
+html[data-style='industrial'] .robot-library-card-grid .urdf-card__preview {
+  height: 190px;
+}
+
+html[data-style='industrial'] .urdf-workspace,
+html[data-style='industrial'] .urdf-left-sidebar {
+  gap: var(--ds-layout-grid-gap);
+}
+
+html[data-style='industrial'] .urdf-workspace {
+  padding: var(--ds-layout-grid-gap);
+}
+
+.robot-workbench-topbar {
+  min-height: 68px;
+  margin: calc(-1 * var(--robot-page-padding)) calc(-1 * var(--robot-page-padding)) var(--robot-section-gap);
+  padding: 0 var(--robot-page-padding);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-4);
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--robot-border);
+  background: var(--robot-surface);
+}
+
+.robot-workbench-topbar__title,
+.robot-workbench-topbar__actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+
+.robot-workbench-topbar__title h1 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--robot-heading);
+  font-size: var(--ds-font-size-20);
+  line-height: 1.3;
+  font-weight: var(--ds-font-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-style='industrial'] .robot-workbench-topbar {
+  min-height: 64px;
+  margin: calc(-1 * var(--ds-layout-grid-gap)) calc(-1 * var(--ds-layout-grid-gap)) var(--ds-layout-grid-gap);
+  padding: 0 var(--ds-space-4);
+}
+
+@media (max-width: 760px) {
+  .robot-library-list-header { align-items: stretch; flex-direction: column; }
+  .robot-library-list-toolbar, .robot-library-list-search { width: 100%; }
+  .robot-library-list-search { flex: 1; }
+  .robot-library-card-grid { grid-template-columns: minmax(0, 1fr); }
+}
