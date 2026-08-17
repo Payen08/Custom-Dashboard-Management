@@ -2644,12 +2644,14 @@ export function RobotModelManager({
   stylePreset = 'current',
   industrialColorTheme = 'steel',
   dictionaryCategories = [],
+  onDetailChange,
 }: {
   themeMode?: ThemeMode;
   stylePreset?: StylePreset;
   industrialColorTheme?: IndustrialColorTheme;
   softwareProducts?: SoftwareProduct[];
   dictionaryCategories?: DictionaryCategory[];
+  onDetailChange?: (open: boolean) => void;
 } = {}) {
   const { locale } = useI18n();
   const listCopy = MODEL_LIBRARY_COPY[locale];
@@ -2707,6 +2709,10 @@ export function RobotModelManager({
 
   // Auto-fix activeId only when it points to a deleted/missing model (not when user is on table view)
   useEffect(() => {
+    onDetailChange?.(activeId !== null);
+  }, [activeId, onDetailChange]);
+
+  useEffect(() => {
     if (activeId === null) return; // user is on table view, don't override
     if (models.some(model => model.id === activeId)) return; // activeId is still valid
     setActiveId(models[0]?.id ?? null); // model was deleted, fallback to first
@@ -2743,7 +2749,7 @@ export function RobotModelManager({
     <div className="ds-global-notice" data-tone="warning" role="status" aria-live="polite">
       <span className="ds-global-notice__indicator"><LockKeyhole size={16} /></span>
       <span className="ds-global-notice__message">当前型号已发布，请先取消发布后再编辑</span>
-      <ArcoIconButton type="text" size="small" icon={<X size={14} />} aria-label="关闭提示" title="关闭" onClick={() => setPublishLockNotice(false)} className="ds-global-notice__close" />
+      <ArcoIconButton type="text" size="small" icon={<X size={14} />} aria-label="关闭提示" tooltip="关闭" onClick={() => setPublishLockNotice(false)} className="ds-global-notice__close" />
     </div>
   ) : null;
 
@@ -2814,7 +2820,7 @@ export function RobotModelManager({
           transition: 'background-color var(--ds-motion-duration-slow) var(--ds-motion-ease-in-out), color var(--ds-motion-duration-slow) var(--ds-motion-ease-in-out)',
         }}>
           {/* Header */}
-          <header className="robot-manager-page__header robot-library-list-header">
+          <header className="robot-manager-page__header robot-library-list-header ds-page__header ds-page-header">
             <div className="robot-library-list-heading">
               <h1>{listCopy.title}</h1>
               <p>{listCopy.description}</p>
@@ -3357,6 +3363,18 @@ export function RobotModelManager({
       transition: 'background-color var(--ds-motion-duration-slow) var(--ds-motion-ease-in-out), color var(--ds-motion-duration-slow) var(--ds-motion-ease-in-out)',
     }}>
       {publishLockToast}
+      <header className="robot-workbench-topbar">
+        <div className="robot-workbench-topbar__title">
+          <h1>{activeModel.name}</h1>
+          <RobotChip tone={activeModel.status === 'published' ? 'success' : 'default'}>
+            <span className="robot-status-dot" />
+            {STATUS_META[activeModel.status].label}
+          </RobotChip>
+        </div>
+        <div className="robot-workbench-topbar__actions">
+          <ArcoButton scope="robot" onClick={() => setActiveId(null)}>返回型号模板</ArcoButton>
+        </div>
+      </header>
       <style>{`
         .robot-detail-card {
           width: 100%;
@@ -3815,7 +3833,7 @@ export function RobotModelManager({
               <ArcoIconButton
                 scope="robot"
                 icon={<Plus size={16} />}
-                title="从硬件目录添加"
+                tooltip="从硬件目录添加"
                 onClick={openComponentPicker}
               />
             </header>
@@ -4306,11 +4324,13 @@ export function RobotComponentLibrary({
   stylePreset = 'current',
   industrialColorTheme = 'steel',
   dictionaryCategories = [],
+  onDetailChange,
 }: {
   themeMode?: ThemeMode;
   stylePreset?: StylePreset;
   industrialColorTheme?: IndustrialColorTheme;
   dictionaryCategories?: DictionaryCategory[];
+  onDetailChange?: (open: boolean) => void;
 }) {
   const { locale } = useI18n();
   const copy = COMPONENT_LIBRARY_COPY[locale];
@@ -4422,6 +4442,10 @@ export function RobotComponentLibrary({
     () => findTopologyNode(topology, selectedId) ?? topology[0] ?? null,
     [topology, selectedId],
   );
+
+  useEffect(() => {
+    onDetailChange?.(activeComponentId !== null);
+  }, [activeComponentId, onDetailChange]);
 
   function updateNode(patch: Partial<TopologyNode>) {
     if (!selectedNode) return;
@@ -4597,7 +4621,7 @@ export function RobotComponentLibrary({
   }
 
   return (
-    <div className="robot-component-page" style={{ ...robotThemeVars(activeTheme, stylePreset, industrialColorTheme), flex: 1, minWidth: 0, height: '100%', padding: 'var(--robot-page-padding)', display: 'flex', flexDirection: 'column', background: 'var(--robot-page)', color: 'var(--robot-text)', boxSizing: 'border-box', overflow: 'hidden' }}>
+    <div className={`robot-component-page ${activeComponentId === null ? 'robot-component-page--list' : 'robot-component-page--detail'}`} style={{ ...robotThemeVars(activeTheme, stylePreset, industrialColorTheme), flex: 1, minWidth: 0, height: '100%', padding: 'var(--robot-page-padding)', display: 'flex', flexDirection: 'column', background: 'var(--robot-page)', color: 'var(--robot-text)', boxSizing: 'border-box', overflow: 'hidden' }}>
       <style>{`
         .component-library-grid { display: grid; grid-template-columns: 320px minmax(560px, 1fr) 330px; gap: var(--robot-section-gap); min-height: 0; flex: 1; overflow: hidden; }
         .component-library-card { min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--robot-border); border-radius: var(--robot-card-radius); background: var(--robot-surface); box-shadow: var(--robot-shadow-soft); }
@@ -4713,7 +4737,7 @@ export function RobotComponentLibrary({
 
       {activeComponentId === null ? (
         <section className="component-library-list">
-          <header className="component-library-list__header robot-library-list-header">
+          <header className="component-library-list__header robot-library-list-header ds-page__header ds-page-header">
             <div className="robot-library-list-heading">
               <h1>{copy.title}</h1>
               <p>{copy.description}</p>
@@ -4745,8 +4769,8 @@ export function RobotComponentLibrary({
                     <footer className="model-card-footer">
                       <span className="model-card-updated">{copy.updated} {component.updatedAt}</span>
                       <div className="model-card-actions">
-                        <ArcoIconButton scope="robot" type="text" size="small" icon={<Pencil size={14} />} aria-label={`${copy.view}: ${component.name}`} title={copy.view} onClick={() => openComponentDetail(component.id)} />
-                        {!component.builtin ? <ArcoIconButton scope="robot" type="text" status="danger" size="small" icon={<Trash2 size={14} />} aria-label={`${copy.delete}: ${component.name}`} title={copy.delete} onClick={() => setComponentDeleteTargetId(component.id)} /> : null}
+                        <ArcoIconButton scope="robot" type="text" size="small" icon={<Pencil size={14} />} aria-label={`${copy.view}: ${component.name}`} tooltip={copy.view} onClick={() => openComponentDetail(component.id)} />
+                        {!component.builtin ? <ArcoIconButton scope="robot" type="text" status="danger" size="small" icon={<Trash2 size={14} />} aria-label={`${copy.delete}: ${component.name}`} tooltip={copy.delete} onClick={() => setComponentDeleteTargetId(component.id)} /> : null}
                       </div>
                     </footer>
                   </article>
@@ -4756,10 +4780,15 @@ export function RobotComponentLibrary({
           </div>
         </section>
       ) : (
+      <>
+      <header className="robot-workbench-topbar">
+        <div className="robot-workbench-topbar__title"><h1>{activeComponent.name}</h1><RobotChip tone="accent">组件</RobotChip></div>
+        <div className="robot-workbench-topbar__actions"><ArcoButton scope="robot" onClick={() => setActiveComponentId(null)}>返回组件库</ArcoButton></div>
+      </header>
       <div className="component-library-grid">
         <div className="component-library-left">
         <section className="component-library-card component-library-info">
-          <header className="component-library-card__header"><ArcoIconButton scope="robot" type="text" size="small" icon={<ArrowLeft size={17} />} aria-label="返回组件库" title="返回组件库" onClick={() => setActiveComponentId(null)} /><h1 style={{ flex: 1 }}>{activeComponent.name}</h1></header>
+          <header className="component-library-card__header"><ArcoIconButton scope="robot" type="text" size="small" icon={<ArrowLeft size={17} />} aria-label="返回组件库" tooltip="返回组件库" onClick={() => setActiveComponentId(null)} /><h1 style={{ flex: 1 }}>{activeComponent.name}</h1></header>
           <div className="component-library-meta">
             <div style={{ padding: 12, borderRadius: 'var(--robot-inner-radius)', background: 'var(--robot-accent-soft)', color: 'var(--robot-accent-text)', fontSize: 14, fontWeight: 600 }}>{activeComponent.name}</div>
             <label>名称<strong>{activeComponent.name}</strong></label>
@@ -4844,6 +4873,7 @@ export function RobotComponentLibrary({
           {selectedNode && <TopologyParamPanel node={selectedNode} onChange={updateNode} readOnly={false} onReadOnlyAttempt={() => {}} />}
         </div>
       </div>
+      </>
       )}
 
       <ArcoModal

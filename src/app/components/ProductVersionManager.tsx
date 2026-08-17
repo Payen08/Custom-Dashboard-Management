@@ -786,9 +786,9 @@ function VersionAccordion({
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  <ArcoIconButton type="text" size="small" icon={<Edit3 size={14} />} title={ui.edit} aria-label={ui.edit} onClick={() => onEditPackage(pkg)} />
-                  <ArcoIconButton type="secondary" size="small" icon={<Download size={14} />} title={ui.download} aria-label={ui.download} onClick={() => onDownloadPackage(pkg)} />
-                  <ArcoIconButton type="text" status="danger" size="small" icon={<Trash2 size={14} />} title={ui.delete} aria-label={ui.delete} onClick={() => onDeletePackage(pkg)} />
+                  <ArcoIconButton type="text" size="small" icon={<Edit3 size={14} />} tooltip={ui.edit} aria-label={ui.edit} onClick={() => onEditPackage(pkg)} />
+                  <ArcoIconButton type="secondary" size="small" icon={<Download size={14} />} tooltip={ui.download} aria-label={ui.download} onClick={() => onDownloadPackage(pkg)} />
+                  <ArcoIconButton type="text" status="danger" size="small" icon={<Trash2 size={14} />} tooltip={ui.delete} aria-label={ui.delete} onClick={() => onDeletePackage(pkg)} />
                 </div>
               </div>
             );

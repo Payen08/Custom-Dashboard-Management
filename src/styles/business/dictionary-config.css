@@ -81,13 +81,13 @@
   flex: 0 0 auto;
   padding: 2px;
   border: 0;
-  border-radius: var(--ds-radius-pill);
+  border-radius: var(--ds-switch-track-radius);
   background: var(--ds-switch-bg);
   cursor: pointer;
   box-sizing: border-box;
   transition: background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out);
 }
-.dictionary-switch span { width: var(--ds-switch-thumb-size); height: var(--ds-switch-thumb-size); border-radius: 50%; background: var(--ds-switch-thumb); box-shadow: var(--ds-shadow-xs); transition: transform var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out); }
+.dictionary-switch span { width: var(--ds-switch-thumb-size); height: var(--ds-switch-thumb-size); border-radius: var(--ds-switch-thumb-radius); background: var(--ds-switch-thumb); box-shadow: var(--ds-shadow-xs); transition: transform var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out); }
 .dictionary-switch[data-selected='true'] { background: var(--ds-switch-bg-checked); }
 .dictionary-switch[data-selected='true'] span { transform: translateX(calc(var(--ds-switch-width) - var(--ds-switch-thumb-size) - 4px)); }
 .dictionary-switch:focus-visible,

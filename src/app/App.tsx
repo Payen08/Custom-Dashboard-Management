@@ -775,7 +775,7 @@ function WorkspaceProductFrame({
             icon={<ArrowLeft size={16} />}
             onClick={onBack}
             aria-label="返回墨影工作台"
-            title="返回墨影工作台"
+            tooltip="返回墨影工作台"
           />
           <span style={{ color: 'var(--app-heading)', fontSize: 16, fontWeight: 650 }}>{title}</span>
         </div>
@@ -784,7 +784,7 @@ function WorkspaceProductFrame({
           icon={isDark ? <Sun size={16} /> : <Moon size={16} />}
           onClick={onThemeToggle}
           aria-label={isDark ? '切换为浅色模式' : '切换为暗色模式'}
-          title={isDark ? '切换为浅色模式' : '切换为暗色模式'}
+          tooltip={isDark ? '切换为浅色模式' : '切换为暗色模式'}
         />
       </header>
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>{children}</div>
@@ -929,7 +929,7 @@ function GlobalTopBar({
           size="small"
           icon={<PanelLeft size={17} />}
           aria-label={sidebarToggle}
-          title={sidebarToggle}
+          tooltip={sidebarToggle}
         />
       </div>
 
@@ -975,7 +975,7 @@ function GlobalTopBar({
           onClick={onStyleToggle}
           icon={<Factory size={16} />}
           aria-label={t(isIndustrial ? 'currentStyle' : 'industrialStyle')}
-          title={t(isIndustrial ? 'currentStyle' : 'industrialStyle', 'short')}
+          tooltip={t(isIndustrial ? 'currentStyle' : 'industrialStyle', 'short')}
           size="small"
         />
         {isIndustrial && (
@@ -1015,23 +1015,16 @@ function GlobalTopBar({
             </select>
           </label>
         )}
-        <button
+        <ArcoIconButton
+          type="text"
+          size="small"
           onClick={onThemeToggle}
-          title={t(isDark ? 'lightMode' : 'darkMode', 'short')}
-          style={{
-            width: 32, height: 32, borderRadius: 8,
-            border: 'none', background: 'transparent', color: textColor,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer',
-            transition: 'background-color var(--ds-motion-duration-fast) var(--ds-motion-ease-in-out)',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = hoverBg; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-        >
-          {isDark ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-        <ArcoIconButton type="text" size="small" icon={<RotateCcw size={16} />} aria-label={t('refresh')} title={t('refresh')} />
-        <ArcoIconButton type="text" size="small" icon={<Bell size={16} />} aria-label={t('notifications')} title={t('notifications')} />
+          icon={isDark ? <Sun size={16} /> : <Moon size={16} />}
+          aria-label={t(isDark ? 'lightMode' : 'darkMode', 'short')}
+          tooltip={t(isDark ? 'lightMode' : 'darkMode', 'short')}
+        />
+        <ArcoIconButton type="text" size="small" icon={<RotateCcw size={16} />} aria-label={t('refresh')} tooltip={t('refresh')} />
+        <ArcoIconButton type="text" size="small" icon={<Bell size={16} />} aria-label={t('notifications')} tooltip={t('notifications')} />
       </div>
     </header>
   );
@@ -1551,6 +1544,8 @@ export default function App() {
   const [activeSchemeId, setActiveSchemeId] = useState('s1');
   const [canvasItems, setCanvasItems] = useState<Record<string, PlacedItem[]>>(INITIAL_ITEMS);
   const [isEditing, setIsEditing] = useState(false);
+  const [isRobotModelDetail, setIsRobotModelDetail] = useState(false);
+  const [isRobotComponentDetail, setIsRobotComponentDetail] = useState(false);
   const [isRobotComponent2Editing, setIsRobotComponent2Editing] = useState(false);
   const [isCanvasPreview, setIsCanvasPreview] = useState(false);
   const [activeEditorNav, setActiveEditorNav] = useState<EditorNavKey>('home');
@@ -1904,6 +1899,8 @@ export default function App() {
         onIndustrialColorThemeChange={changeIndustrialColorTheme}
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
+        sidebarCollapsed={isRobotModelDetail}
+        hideTopBar={isRobotModelDetail}
       >
         <RobotModelManager
           themeMode={robotThemeMode}
@@ -1911,6 +1908,7 @@ export default function App() {
           industrialColorTheme={industrialColorTheme}
           softwareProducts={softwareProducts}
           dictionaryCategories={dictionaryCategories}
+          onDetailChange={setIsRobotModelDetail}
         />
       </AppShell>
     );
@@ -1928,12 +1926,15 @@ export default function App() {
         onIndustrialColorThemeChange={changeIndustrialColorTheme}
         onNavChange={handleShellNavChange}
         onWorkspace={returnToWorkspace}
+        sidebarCollapsed={isRobotComponentDetail}
+        hideTopBar={isRobotComponentDetail}
       >
         <RobotComponentLibrary
           themeMode={robotThemeMode}
           stylePreset={stylePreset}
           industrialColorTheme={industrialColorTheme}
           dictionaryCategories={dictionaryCategories}
+          onDetailChange={setIsRobotComponentDetail}
         />
       </AppShell>
     );

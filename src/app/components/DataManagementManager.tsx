@@ -317,14 +317,14 @@ function FieldDictionaryVersionView({
                       fields: category.fields.map(field => field.id === selectedField.id ? { ...field, values: field.values.map(value => value.id === item.id ? { ...value, enabled } : value) } : field),
                     }))} /></td>
                     <td><div className="data-field-dictionary__row-actions">
-                      <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`${ui.edit} ${entity(item.key, item.name)}`} title={ui.edit} onClick={() => openEditValue(item)} />
+                      <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`${ui.edit} ${entity(item.key, item.name)}`} tooltip={ui.edit} onClick={() => openEditValue(item)} />
                       {item.source !== 'builtin' && (
                         <ProductIconButton
                           size="small"
                           status="danger"
                           icon={<Trash2 size={13} />}
                           aria-label={`${ui.delete} ${entity(item.key, item.name)}`}
-                          title={ui.delete}
+                          tooltip={ui.delete}
                           onClick={() => setDeleteValue(item)}
                         />
                       )}
@@ -339,14 +339,14 @@ function FieldDictionaryVersionView({
                     const child = selectedCategory.fields.find(item => item.id === rule.childFieldId);
                     const allowed = child?.values.filter(item => rule.allowedChildValueIds.includes(item.id)).map(item => entity(item.key, item.name)) ?? [];
                     return <tr key={rule.id}><td><strong>{parentValue ? entity(parentValue.key, parentValue.name) : '-'}</strong></td><td>{child ? entity(child.key, child.name) : '-'}</td><td><span className="data-field-dictionary__ellipsis" title={allowed.join(', ')}>{allowed.join(', ') || '-'}</span></td><td><StatusSwitch checked={rule.enabled} label={ui.cascade} onChange={enabled => updateSelectedCategory(category => ({ ...category, cascadeRules: category.cascadeRules.map(item => item.id === rule.id ? { ...item, enabled } : item) }))} /></td><td><div className="data-field-dictionary__row-actions">
-                      <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`${ui.edit} ${parentValue ? entity(parentValue.key, parentValue.name) : ui.cascade}`} title={ui.edit} onClick={() => openEditRule(rule)} />
+                      <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`${ui.edit} ${parentValue ? entity(parentValue.key, parentValue.name) : ui.cascade}`} tooltip={ui.edit} onClick={() => openEditRule(rule)} />
                       {rule.source !== 'builtin' && (
                         <ProductIconButton
                           size="small"
                           status="danger"
                           icon={<Trash2 size={13} />}
                           aria-label={`删除${parentValue?.name ?? '级联'}`}
-                          title={ui.delete}
+                          tooltip={ui.delete}
                           onClick={() => setDeleteRule(rule)}
                         />
                       )}

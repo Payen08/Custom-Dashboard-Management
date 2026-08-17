@@ -170,6 +170,8 @@ Mobile (<768px): 16px
 <button style={{ height: '36px', borderRadius: '6px' }}>保存</button>
 ```
 
+> 同类型操作（新增 / 编辑 / 删除 / 搜索 / 刷新 / 导出等）的命名与样式统一，以及纯图标按钮 Hover / Focus 显示操作名 Tooltip 的规则，统一见 `ui-guidelines.md` §27.50；操作词以《多语言文案规则》"全局操作词"为唯一词表。
+
 ### Q：一个区域能有几个 Primary 按钮？
 
 主操作数量与“同一操作区”的边界以 `ui-guidelines.md` §13.1.1 为准。

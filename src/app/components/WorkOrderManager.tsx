@@ -836,12 +836,12 @@ export function WorkOrderManager({
                   <td>{order.creator}</td>
                   <td className="wo-table__actions">
                     <div className="wo-row-actions">
-                      <ProductIconButton size="small" icon={<Eye size={13} />} aria-label={`查看${order.id}`} title="查看" onClick={() => openDetail(order)} />
+                      <ProductIconButton size="small" icon={<Eye size={13} />} aria-label={`查看${order.id}`} tooltip="查看" onClick={() => openDetail(order)} />
                       {order.status === '新建' && (
                         <>
-                          <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`编辑${order.id}`} title="编辑工单" onClick={() => openEdit(order)} />
-                          <ProductIconButton size="small" icon={<ArrowDownUp size={13} />} aria-label={`调整${order.id}优先级`} title="调整优先级" onClick={() => openPriority(order)} />
-                          <ProductIconButton status="danger" size="small" icon={<Trash2 size={13} />} aria-label={`删除${order.id}`} title="删除工单" onClick={() => setDeleteTarget(order)} />
+                          <ProductIconButton size="small" icon={<Pencil size={13} />} aria-label={`编辑${order.id}`} tooltip="编辑工单" onClick={() => openEdit(order)} />
+                          <ProductIconButton size="small" icon={<ArrowDownUp size={13} />} aria-label={`调整${order.id}优先级`} tooltip="调整优先级" onClick={() => openPriority(order)} />
+                          <ProductIconButton status="danger" size="small" icon={<Trash2 size={13} />} aria-label={`删除${order.id}`} tooltip="删除工单" onClick={() => setDeleteTarget(order)} />
                         </>
                       )}
                     </div>
@@ -859,7 +859,7 @@ export function WorkOrderManager({
 
         <nav className="wo-pagination" aria-label="工单列表分页">
           <span className="wo-pagination__summary">每页 {PAGE_SIZE} 条 · 共 {filtered.length} 条</span>
-          <ProductIconButton size="small" disabled={safePage <= 1} icon={<ChevronLeft size={14} />} onClick={() => setPage(safePage - 1)} aria-label="上一页" />
+          <ProductIconButton size="small" disabled={safePage <= 1} icon={<ChevronLeft size={14} />} onClick={() => setPage(safePage - 1)} aria-label="上一页" tooltip="上一页" />
           {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
             <ProductButton
               key={number}
@@ -871,7 +871,7 @@ export function WorkOrderManager({
               {number}
             </ProductButton>
           ))}
-          <ProductIconButton size="small" disabled={safePage >= totalPages} icon={<ChevronRight size={14} />} onClick={() => setPage(safePage + 1)} aria-label="下一页" />
+          <ProductIconButton size="small" disabled={safePage >= totalPages} icon={<ChevronRight size={14} />} onClick={() => setPage(safePage + 1)} aria-label="下一页" tooltip="下一页" />
         </nav>
       </section>
 
@@ -916,7 +916,7 @@ export function WorkOrderManager({
               <ProductField label="加工单号 *" hint={formErrors.id ? <span className="wo-error">{formErrors.id}</span> : undefined}>
                 <div className="wo-input-action">
                   <ProductTextInput value={draft.id} onChange={e => setDraftField('id', e.target.value)} data-error={formErrors.id ? 'true' : undefined} aria-label="加工单号" />
-                  <ProductIconButton size="small" icon={<ScanLine size={15} />} aria-label="扫码输入加工单号" title="扫码输入" onClick={scanId} />
+                  <ProductIconButton size="small" icon={<ScanLine size={15} />} aria-label="扫码输入加工单号" tooltip="扫码输入" onClick={scanId} />
                 </div>
               </ProductField>
               <ProductField label="优先级 *" hint={formErrors.priority ? <span className="wo-error">{formErrors.priority}</span> : undefined}>
@@ -1021,9 +1021,9 @@ export function WorkOrderManager({
                         <ProductTextInput value={op.remark} onChange={e => setOperationField(index, 'remark', e.target.value)} placeholder="填写生产备注" aria-label={`第${index + 1}行生产备注`} />
                       </div>
                       <div className="wo-op-actions">
-                        <ProductIconButton size="small" disabled={index === 0} icon={<ArrowUp size={13} />} aria-label="上移工序" title="上移" onClick={() => moveOperation(index, -1)} />
-                        <ProductIconButton size="small" disabled={index === draft.operations.length - 1} icon={<ArrowDown size={13} />} aria-label="下移工序" title="下移" onClick={() => moveOperation(index, 1)} />
-                        <ProductIconButton status="danger" size="small" icon={<Trash2 size={13} />} aria-label="删除工序" title="删除工序" onClick={() => removeOperation(index)} />
+                        <ProductIconButton size="small" disabled={index === 0} icon={<ArrowUp size={13} />} aria-label="上移工序" tooltip="上移" onClick={() => moveOperation(index, -1)} />
+                        <ProductIconButton size="small" disabled={index === draft.operations.length - 1} icon={<ArrowDown size={13} />} aria-label="下移工序" tooltip="下移" onClick={() => moveOperation(index, 1)} />
+                        <ProductIconButton status="danger" size="small" icon={<Trash2 size={13} />} aria-label="删除工序" tooltip="删除工序" onClick={() => removeOperation(index)} />
                       </div>
                     </div>
                   ))}

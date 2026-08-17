@@ -152,8 +152,8 @@ export function SoftwareManager({
                     </td>
                     <td style={{ height: 60, padding: '0 16px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                        <ArcoIconButton size="small" icon={<Edit3 size={13} />} aria-label={action.edit} title={action.edit} onClick={() => openEdit(item)} />
-                        <ArcoIconButton size="small" icon={<Trash2 size={13} />} aria-label={action.delete} title={action.delete} onClick={() => setDeleteTarget(item)} />
+                        <ArcoIconButton size="small" icon={<Edit3 size={13} />} aria-label={action.edit} tooltip={action.edit} onClick={() => openEdit(item)} />
+                        <ArcoIconButton size="small" icon={<Trash2 size={13} />} aria-label={action.delete} tooltip={action.delete} onClick={() => setDeleteTarget(item)} />
                       </div>
                     </td>
                   </tr>

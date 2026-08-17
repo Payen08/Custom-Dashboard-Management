@@ -105,6 +105,108 @@
   outline-offset: 2px;
 }
 
+/* Industrial preset: all three sibling libraries share one compact list shell. */
+html[data-style='industrial'] .robot-library-list-page,
+html[data-style='industrial'] .robot-component-page--list {
+  padding: 0 !important;
+  gap: var(--ds-layout-grid-gap) !important;
+}
+
+/* The generic component workbench rule adds detail-page padding. The list
+   variant must remain edge-to-edge like every other industrial list page. */
+html[data-style='industrial'] .robot-component-page.robot-component-page--list {
+  padding: 0 !important;
+}
+
+/* Component Library has one extra list wrapper; keep the header-to-content
+   rhythm identical to the sibling list pages. */
+html[data-style='industrial'] .robot-component-page--list > .component-library-list {
+  gap: var(--ds-layout-grid-gap);
+}
+
+html[data-style='industrial'] .robot-library-list-header {
+  min-height: 72px;
+  margin-bottom: 0 !important;
+  padding: var(--ds-space-3) var(--ds-space-4) 0;
+  align-items: flex-end;
+  border: 0;
+  background: transparent;
+}
+
+html[data-style='industrial'] .robot-library-list-heading h1 {
+  line-height: 1.3;
+}
+
+html[data-style='industrial'] .robot-library-list-heading p {
+  font-size: var(--ds-font-size-12);
+  line-height: normal;
+}
+
+html[data-style='industrial'] .robot-library-list-toolbar {
+  gap: var(--ds-space-2);
+}
+
+html[data-style='industrial'] .robot-library-list-content {
+  padding: 0 var(--ds-space-4) var(--ds-space-4) !important;
+}
+
+html[data-style='industrial'] .robot-library-card-grid {
+  gap: var(--ds-layout-grid-gap) !important;
+}
+
+html[data-style='industrial'] .robot-library-card-grid .model-card-preview,
+html[data-style='industrial'] .robot-library-card-grid .urdf-card__preview {
+  height: 190px;
+}
+
+html[data-style='industrial'] .urdf-workspace,
+html[data-style='industrial'] .urdf-left-sidebar {
+  gap: var(--ds-layout-grid-gap);
+}
+
+html[data-style='industrial'] .urdf-workspace {
+  padding: var(--ds-layout-grid-gap);
+}
+
+.robot-workbench-topbar {
+  min-height: 68px;
+  margin: calc(-1 * var(--robot-page-padding)) calc(-1 * var(--robot-page-padding)) var(--robot-section-gap);
+  padding: 0 var(--robot-page-padding);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-4);
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--robot-border);
+  background: var(--robot-surface);
+}
+
+.robot-workbench-topbar__title,
+.robot-workbench-topbar__actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+
+.robot-workbench-topbar__title h1 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--robot-heading);
+  font-size: var(--ds-font-size-20);
+  line-height: 1.3;
+  font-weight: var(--ds-font-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-style='industrial'] .robot-workbench-topbar {
+  min-height: 64px;
+  margin: calc(-1 * var(--ds-layout-grid-gap)) calc(-1 * var(--ds-layout-grid-gap)) var(--ds-layout-grid-gap);
+  padding: 0 var(--ds-space-4);
+}
+
 @media (max-width: 760px) {
   .robot-library-list-header { align-items: stretch; flex-direction: column; }
   .robot-library-list-toolbar, .robot-library-list-search { width: 100%; }
